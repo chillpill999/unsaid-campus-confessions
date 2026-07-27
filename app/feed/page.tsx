@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Navbar } from '@/components/navbar';
 import { MobileNav } from '@/components/mobile-nav';
 import { ConfessionCard } from '@/components/confession-card';
@@ -12,9 +13,11 @@ import { ReportDialog } from '@/components/report-dialog';
 import { EmptyState } from '@/components/empty-state';
 import { MOCK_CONFESSIONS, MOCK_CATEGORIES } from '@/lib/mock-data';
 import { PublicConfession, Category } from '@/lib/types';
+import { isDemoModeActive } from '@/lib/demo-mode';
 import { Flame, Sparkles, PlusCircle } from 'lucide-react';
 
 export default function FeedPage() {
+  const router = useRouter();
   const [confessions, setConfessions] = useState<PublicConfession[]>(MOCK_CONFESSIONS);
   const [activeTab, setActiveTab] = useState<'for-you' | 'latest' | 'trending'>('latest');
   const [selectedCategorySlug, setSelectedCategorySlug] = useState<string | null>(null);
@@ -23,6 +26,25 @@ export default function FeedPage() {
   const [isComposerOpen, setIsComposerOpen] = useState(false);
   const [reportingCode, setReportingCode] = useState<string | null>(null);
   const [thinkAboutYouNotice, setThinkAboutYouNotice] = useState<string | null>(null);
+
+  // Client-Side Authentication Guard
+  useEffect(() => {
+    async function verifyAuth() {
+      if (isDemoModeActive() && localStorage.getItem('unsaid_demo_role')) return;
+
+      try {
+        const { createClient } = await import('@/lib/supabase/client');
+        const supabase = createClient();
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+          router.replace('/login');
+        }
+      } catch (err) {
+        router.replace('/login');
+      }
+    }
+    verifyAuth();
+  }, [router]);
 
   // Filter Confessions
   const filteredConfessions = confessions.filter((c) => {
