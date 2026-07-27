@@ -125,7 +125,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               <ShieldAlert className="w-5 h-5" />
             </div>
             <div>
-              <span className="font-heading font-extrabold text-lg text-white">Unsaid Admin Portal</span>
+              <span className="font-heading font-extrabold text-lg text-white">ConfessionLnjpit Admin Portal</span>
               <span className="ml-2 text-[10px] uppercase font-bold text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/30">
                 Audited & Restricted
               </span>

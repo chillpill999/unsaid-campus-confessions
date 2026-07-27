@@ -42,10 +42,7 @@ export function Navbar({ onOpenComposer, isAdmin = true }: NavbarProps) {
           </div>
           <div>
             <span className="font-heading font-extrabold text-xl tracking-tight text-white group-hover:text-indigo-400 transition-colors">
-              Unsaid
-            </span>
-            <span className="hidden sm:inline-block text-[10px] uppercase font-semibold tracking-widest text-indigo-400/80 ml-2 bg-indigo-500/10 px-2 py-0.5 rounded-full border border-indigo-500/20">
-              Campus
+              ConfessionLnjpit
             </span>
           </div>
         </Link>

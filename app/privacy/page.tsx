@@ -23,7 +23,7 @@ export default function PrivacyPage() {
           </div>
           <h1 className="text-3xl font-extrabold text-white font-heading">Privacy Notice & Anonymity Model</h1>
           <p className="text-sm text-slate-400">
-            Understand how Unsaid handles student authentication, public anonymity, and administrative accountability.
+            Understand how ConfessionLnjpit handles student authentication, public anonymity, and administrative accountability.
           </p>
         </div>
 

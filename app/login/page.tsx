@@ -66,7 +66,7 @@ export default function LoginPage() {
             <Lock className="w-7 h-7 stroke-[2.5]" />
           </div>
           <div>
-            <h1 className="text-2xl font-extrabold text-white font-heading">Welcome to Unsaid</h1>
+            <h1 className="text-2xl font-extrabold text-white font-heading">Welcome to ConfessionLnjpit</h1>
             <p className="text-xs text-slate-400 mt-1">Verified students. Anonymous conversations.</p>
           </div>
         </div>

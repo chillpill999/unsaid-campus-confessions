@@ -27,7 +27,7 @@ export default function LandingPage() {
               <Lock className="w-5 h-5 stroke-[2.5]" />
             </div>
             <span className="font-heading font-extrabold text-xl tracking-tight text-white">
-              Unsaid
+              ConfessionLnjpit
             </span>
           </div>
 
@@ -95,7 +95,7 @@ export default function LandingPage() {
       <section className="py-16 px-4 border-t border-slate-900 bg-slate-950/60">
         <div className="max-w-6xl mx-auto space-y-12">
           <div className="text-center space-y-2">
-            <h2 className="text-2xl sm:text-3xl font-extrabold text-white">How Unsaid Works</h2>
+            <h2 className="text-2xl sm:text-3xl font-extrabold text-white">How ConfessionLnjpit Works</h2>
             <p className="text-slate-400 text-xs sm:text-sm">Built for authentic campus interaction with strict safety guardrails.</p>
           </div>
 
@@ -138,7 +138,7 @@ export default function LandingPage() {
       {/* Footer */}
       <footer className="mt-auto border-t border-slate-900 py-8 px-4 text-center text-xs text-slate-500">
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div>© 2026 Unsaid Campus Platform. All rights reserved.</div>
+          <div>© 2026 ConfessionLnjpit Campus Platform. All rights reserved.</div>
           <div className="flex items-center gap-6">
             <Link href="/guidelines" className="hover:text-slate-300">Community Guidelines</Link>
             <Link href="/privacy" className="hover:text-slate-300">Privacy Policy</Link>

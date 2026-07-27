@@ -2,13 +2,13 @@ import type { Metadata } from 'next';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'Unsaid — Anonymous Campus Confessions',
-  description: 'Say what you couldn’t say. Verified students, anonymous conversations.',
-  keywords: ['college confessions', 'anonymous campus', 'crushes', 'hostel stories', 'unsaid'],
+  title: 'ConfessionLnjpit — LNJPIT Anonymous Campus Confessions',
+  description: 'Say what you couldn’t say. Verified LNJPIT students, anonymous conversations.',
+  keywords: ['LNJPIT confessions', 'anonymous campus', 'crushes', 'hostel stories', 'LNJPIT'],
   openGraph: {
-    title: 'Unsaid — Anonymous Campus Confessions',
-    description: 'The anonymous space for your campus — confessions, crushes, stories, and questions.',
-    siteName: 'Unsaid',
+    title: 'ConfessionLnjpit — LNJPIT Anonymous Campus Confessions',
+    description: 'The anonymous space for Loknayak Jai Prakash Institute of Technology campus.',
+    siteName: 'ConfessionLnjpit',
     type: 'website',
   },
 };
