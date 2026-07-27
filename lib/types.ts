@@ -69,6 +69,9 @@ export interface PublicComment {
 
 export interface UserProfile {
   id: string; // internal UUID
+  full_name?: string;
+  name?: string;
+  branch?: string;
   gender: Gender;
   college_id: string;
   college_name: string;

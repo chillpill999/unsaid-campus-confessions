@@ -13,11 +13,11 @@ import { ReportDialog } from '@/components/report-dialog';
 import { EmptyState } from '@/components/empty-state';
 import { MOCK_CONFESSIONS, MOCK_CATEGORIES } from '@/lib/mock-data';
 import { PublicConfession, Category } from '@/lib/types';
-import { isDemoModeActive } from '@/lib/demo-mode';
 import { Flame, Sparkles, PlusCircle } from 'lucide-react';
 
 export default function FeedPage() {
   const router = useRouter();
+  const [isAuthVerified, setIsAuthVerified] = useState(false);
   const [confessions, setConfessions] = useState<PublicConfession[]>(MOCK_CONFESSIONS);
   const [activeTab, setActiveTab] = useState<'for-you' | 'latest' | 'trending'>('latest');
   const [selectedCategorySlug, setSelectedCategorySlug] = useState<string | null>(null);
@@ -27,22 +27,36 @@ export default function FeedPage() {
   const [reportingCode, setReportingCode] = useState<string | null>(null);
   const [thinkAboutYouNotice, setThinkAboutYouNotice] = useState<string | null>(null);
 
-  // Client-Side Authentication Guard
+  // STRICT Client-Side Authentication Guard — blocks rendering until verified
   useEffect(() => {
     async function verifyAuth() {
       try {
         const { createClient } = await import('@/lib/supabase/client');
         const supabase = createClient();
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) {
+        const { data: { user }, error } = await supabase.auth.getUser();
+        if (!user || error) {
           router.replace('/login');
+          return;
         }
+        setIsAuthVerified(true);
       } catch (err) {
         router.replace('/login');
       }
     }
     verifyAuth();
   }, [router]);
+
+  // BLOCK: Show nothing until auth is confirmed
+  if (!isAuthVerified) {
+    return (
+      <div className="min-h-screen bg-slate-950 flex items-center justify-center">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+          <p className="text-xs text-slate-400 font-semibold">Verifying authentication...</p>
+        </div>
+      </div>
+    );
+  }
 
   // Filter Confessions
   const filteredConfessions = confessions.filter((c) => {
