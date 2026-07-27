@@ -19,20 +19,22 @@ export default function LoginPage() {
     setErrorMsg('');
 
     try {
-      if (isDemo) {
-        // In demo mode, redirect seamlessly to onboarding or feed
-        router.push('/onboarding');
-      } else {
-        const { createClient } = await import('@/lib/supabase/client');
-        const supabase = createClient();
-        const { error } = await supabase.auth.signInWithOAuth({
-          provider: 'google',
-          options: {
-            redirectTo: `${window.location.origin}/auth/callback`,
-          },
-        });
-        if (error) throw error;
-      }
+      const { createClient } = await import('@/lib/supabase/client');
+      const supabase = createClient();
+
+      // Ensure redirect URL matches live deployment or current window origin
+      const origin = typeof window !== 'undefined' && window.location.hostname !== 'localhost'
+        ? window.location.origin
+        : (process.env.NEXT_PUBLIC_APP_URL || 'https://unsaid-campus-confessions.vercel.app');
+
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${origin}/auth/callback`,
+        },
+      });
+      
+      if (error) throw error;
     } catch (err: any) {
       setErrorMsg(err.message || 'We couldn’t sign you in with Google. Please try again.');
     } finally {
