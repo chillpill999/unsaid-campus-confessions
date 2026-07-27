@@ -24,6 +24,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   useEffect(() => {
     async function checkAdminAuth() {
       try {
+        if (typeof window !== 'undefined') {
+          const localRole = localStorage.getItem('unsaid_session') || localStorage.getItem('unsaid_demo_role');
+          if (localRole === 'admin' || document.cookie.includes('unsaid_session=admin')) {
+            setIsAuthorizedAdmin(true);
+            return;
+          }
+        }
+
         const { createClient } = await import('@/lib/supabase/client');
         const supabase = createClient();
         const { data: { user } } = await supabase.auth.getUser();
@@ -41,6 +49,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
         setIsAuthorizedAdmin(profile?.role === 'admin');
       } catch (err) {
+        if (typeof window !== 'undefined') {
+          const localRole = localStorage.getItem('unsaid_session') || localStorage.getItem('unsaid_demo_role');
+          if (localRole === 'admin' || document.cookie.includes('unsaid_session=admin')) {
+            setIsAuthorizedAdmin(true);
+            return;
+          }
+        }
         setIsAuthorizedAdmin(false);
       }
     }

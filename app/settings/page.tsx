@@ -32,9 +32,17 @@ export default function SettingsPage() {
   };
 
   const handleSignOut = async () => {
-    const { createClient } = await import('@/lib/supabase/client');
-    const supabase = createClient();
-    await supabase.auth.signOut();
+    if (typeof window !== 'undefined') {
+      document.cookie = 'unsaid_session=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+      document.cookie = 'unsaid_demo_role=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+      localStorage.removeItem('unsaid_session');
+      localStorage.removeItem('unsaid_demo_role');
+    }
+    try {
+      const { createClient } = await import('@/lib/supabase/client');
+      const supabase = createClient();
+      await supabase.auth.signOut();
+    } catch (e) {}
     router.push('/login');
   };
 

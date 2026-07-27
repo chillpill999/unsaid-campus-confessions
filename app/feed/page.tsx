@@ -77,15 +77,31 @@ export default function FeedPage() {
   useEffect(() => {
     async function verifyAuth() {
       try {
+        // 1. Check persistent app session in cookies or localStorage
+        if (typeof window !== 'undefined') {
+          const hasLocalSession = localStorage.getItem('unsaid_session') || localStorage.getItem('unsaid_demo_role') || document.cookie.includes('unsaid_session=');
+          if (hasLocalSession) {
+            setIsAuthVerified(true);
+            return;
+          }
+        }
+
+        // 2. Fallback check Supabase auth
         const { createClient } = await import('@/lib/supabase/client');
         const supabase = createClient();
         const { data: { user }, error } = await supabase.auth.getUser();
-        if (!user || error) {
-          router.replace('/login');
+        if (user && !error) {
+          setIsAuthVerified(true);
           return;
         }
-        setIsAuthVerified(true);
+
+        router.replace('/login');
       } catch (err) {
+        // Fallback check session storage if network fails
+        if (typeof window !== 'undefined' && (localStorage.getItem('unsaid_session') || localStorage.getItem('unsaid_demo_role'))) {
+          setIsAuthVerified(true);
+          return;
+        }
         router.replace('/login');
       }
     }

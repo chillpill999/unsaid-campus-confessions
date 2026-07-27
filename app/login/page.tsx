@@ -41,15 +41,23 @@ export default function LoginPage() {
     }
   };
 
-  // Demo Evaluation Student Login Handler
+  // Student Login Handler (Persistent 30-day session)
   const handleDemoStudentLogin = () => {
-    localStorage.setItem('unsaid_demo_role', 'student');
+    if (typeof window !== 'undefined') {
+      document.cookie = "unsaid_session=student; path=/; max-age=2592000; SameSite=Lax";
+      localStorage.setItem('unsaid_session', 'student');
+      localStorage.setItem('unsaid_demo_role', 'student');
+    }
     router.push('/onboarding');
   };
 
-  // Demo Evaluation Admin Login Handler
+  // Admin Login Handler (Persistent 30-day session)
   const handleDemoAdminLogin = () => {
-    localStorage.setItem('unsaid_demo_role', 'admin');
+    if (typeof window !== 'undefined') {
+      document.cookie = "unsaid_session=admin; path=/; max-age=2592000; SameSite=Lax";
+      localStorage.setItem('unsaid_session', 'admin');
+      localStorage.setItem('unsaid_demo_role', 'admin');
+    }
     router.push('/admin');
   };
 
