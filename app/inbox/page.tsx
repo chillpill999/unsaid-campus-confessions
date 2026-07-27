@@ -19,9 +19,8 @@ import {
   ShieldCheck,
   AtSign,
   Edit2,
-  Trash2,
   CheckCircle2,
-  AlertCircle
+  UserCheck
 } from 'lucide-react';
 import { MOCK_INBOX_CONVERSATIONS, MOCK_CONVERSATION_MESSAGES } from '@/lib/mock-data';
 import { AnonymousMessage, DirectMessage, FriendContact, FriendRequest } from '@/lib/types';
@@ -29,7 +28,7 @@ import { formatTimeAgo } from '@/lib/utils';
 import {
   getSavedUsername,
   saveUsername,
-  initializeDemoChatData,
+  initializeChatData,
   getFriendsList,
   getFriendRequests,
   sendFriendRequest,
@@ -39,7 +38,6 @@ import {
   sendDirectMessage,
   getConversationKey,
   getRemainingTimeFormatted,
-  MOCK_CAMPUS_DIRECTORY,
   purgeExpiredMessages
 } from '@/lib/friends-chat';
 
@@ -72,15 +70,19 @@ export default function InboxPage() {
   const [confessionMessages, setConfessionMessages] = useState<Record<string, AnonymousMessage[]>>(MOCK_CONVERSATION_MESSAGES);
   const [confessionInputMsg, setConfessionInputMsg] = useState('');
 
-  // 1. Initialize Username & Demo Data on load
+  // 1. Initialize Clean Production State on load
   useEffect(() => {
     const handle = getSavedUsername();
     setMyUsername(handle);
     setUsernameInput(handle);
-    initializeDemoChatData(handle);
+    initializeChatData(handle);
 
-    setFriends(getFriendsList());
+    const loadedFriends = getFriendsList();
+    setFriends(loadedFriends);
     setRequests(getFriendRequests());
+    if (loadedFriends.length > 0) {
+      setActiveFriend(loadedFriends[0]);
+    }
   }, []);
 
   // 2. Refresh active Direct Chat messages & Auto-purge expired 24h messages
@@ -101,13 +103,6 @@ export default function InboxPage() {
     return () => clearInterval(interval);
   }, [activeFriend, myUsername, inboxMode]);
 
-  // Set default active friend if available
-  useEffect(() => {
-    if (friends.length > 0 && !activeFriend) {
-      setActiveFriend(friends[0]);
-    }
-  }, [friends, activeFriend]);
-
   // Save username handler
   const handleSaveUsernameSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -115,7 +110,7 @@ export default function InboxPage() {
     const clean = saveUsername(usernameInput);
     setMyUsername(clean);
     setIsEditingUsername(false);
-    setUsernameNotice(`Username updated to @${clean}!`);
+    setUsernameNotice(`Username handle saved as @${clean}!`);
     setTimeout(() => setUsernameNotice(null), 3000);
   };
 
@@ -132,10 +127,11 @@ export default function InboxPage() {
   // Send Friend Request
   const handleSendRequestSubmit = (targetHandle: string) => {
     setSearchNotice(null);
-    const res = sendFriendRequest(myUsername, 'Me', targetHandle);
+    const res = sendFriendRequest(myUsername, 'LNJPIT Student', targetHandle);
     if (res.success) {
       setSearchNotice({ type: 'success', text: res.message });
       setRequests(getFriendRequests());
+      setSearchHandle('');
     } else {
       setSearchNotice({ type: 'error', text: res.message });
     }
@@ -183,6 +179,7 @@ export default function InboxPage() {
   };
 
   const pendingIncomingRequests = requests.filter((r) => r.receiver_username.toLowerCase() === myUsername.toLowerCase() && r.status === 'pending');
+  const pendingOutgoingRequests = requests.filter((r) => r.sender_username.toLowerCase() === myUsername.toLowerCase() && r.status === 'pending');
   const activeConfessionConv = MOCK_INBOX_CONVERSATIONS.find((c) => c.id === activeConfessionConvId);
 
   return (
@@ -213,7 +210,7 @@ export default function InboxPage() {
               <button
                 onClick={() => setIsEditingUsername(true)}
                 className="p-1 text-slate-400 hover:text-white transition-colors"
-                title="Edit Username"
+                title="Edit Username Handle"
               >
                 <Edit2 className="w-3.5 h-3.5" />
               </button>
@@ -322,20 +319,23 @@ export default function InboxPage() {
                                 <Clock className="w-3 h-3 inline" /> 24h
                               </span>
                             </div>
-                            <p className="text-[11px] text-slate-400 truncate">{friend.full_name} • {friend.department}</p>
+                            <p className="text-[11px] text-slate-400 truncate">{friend.full_name}</p>
                           </div>
                         </button>
                       );
                     })
                   ) : (
-                    <div className="py-8 text-center space-y-2">
-                      <Users className="w-8 h-8 text-slate-600 mx-auto" />
-                      <p className="text-xs text-slate-400 font-medium">No friends added yet.</p>
+                    <div className="py-12 text-center space-y-3">
+                      <Users className="w-10 h-10 text-slate-600 mx-auto" />
+                      <div>
+                        <p className="text-xs font-bold text-slate-300">No connected friends yet</p>
+                        <p className="text-[11px] text-slate-500 mt-0.5">Send a friend request to a student's handle to start chatting.</p>
+                      </div>
                       <button
                         onClick={() => setDmSubTab('search')}
-                        className="px-3 py-1.5 rounded-xl bg-indigo-600 text-white text-xs font-bold"
+                        className="px-3.5 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold transition-all"
                       >
-                        Find Students by Username
+                        + Find & Add Student Handle
                       </button>
                     </div>
                   )}
@@ -373,7 +373,19 @@ export default function InboxPage() {
                       </div>
                     ))
                   ) : (
-                    <p className="text-xs text-slate-500 italic py-2">No pending incoming friend requests.</p>
+                    <p className="text-xs text-slate-500 italic py-2">No incoming friend requests.</p>
+                  )}
+
+                  {pendingOutgoingRequests.length > 0 && (
+                    <div className="pt-3 border-t border-slate-800 space-y-2">
+                      <h4 className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Sent Requests (Pending)</h4>
+                      {pendingOutgoingRequests.map((r) => (
+                        <div key={r.id} className="p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs flex justify-between items-center">
+                          <span className="text-indigo-300 font-bold">@{r.receiver_username}</span>
+                          <span className="text-[10px] text-amber-400 font-medium">Pending Acceptance</span>
+                        </div>
+                      ))}
+                    </div>
                   )}
                 </div>
               )}
@@ -382,7 +394,7 @@ export default function InboxPage() {
               {dmSubTab === 'search' && (
                 <div className="space-y-4 overflow-y-auto flex-1">
                   <div className="space-y-2">
-                    <label className="block text-xs font-bold text-slate-300">Send Friend Request</label>
+                    <label className="block text-xs font-bold text-slate-300">Send Friend Request to Student Handle</label>
                     <div className="flex gap-2">
                       <div className="relative flex-1">
                         <AtSign className="w-4 h-4 text-slate-500 absolute left-3 top-2.5" />
@@ -390,7 +402,7 @@ export default function InboxPage() {
                           type="text"
                           value={searchHandle}
                           onChange={(e) => setSearchHandle(e.target.value)}
-                          placeholder="enter_username"
+                          placeholder="enter_username_handle"
                           className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-9 pr-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-indigo-500 font-mono"
                         />
                       </div>
@@ -414,30 +426,14 @@ export default function InboxPage() {
                     )}
                   </div>
 
-                  {/* Campus Directory Suggestions */}
-                  <div className="space-y-2 pt-2 border-t border-slate-800">
-                    <h4 className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Suggested Campus Students</h4>
-                    <div className="space-y-2">
-                      {MOCK_CAMPUS_DIRECTORY.map((user) => (
-                        <div key={user.username} className="p-2.5 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <div className={`w-8 h-8 rounded-full bg-gradient-to-tr ${user.avatar_gradient} flex items-center justify-center font-bold text-white text-[11px]`}>
-                              {user.username.slice(0, 2).toUpperCase()}
-                            </div>
-                            <div>
-                              <span className="block text-xs font-bold text-indigo-300">@{user.username}</span>
-                              <span className="text-[10px] text-slate-400">{user.full_name} ({user.department})</span>
-                            </div>
-                          </div>
-                          <button
-                            onClick={() => handleSendRequestSubmit(user.username)}
-                            className="px-2.5 py-1 rounded-lg bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-300 border border-indigo-500/30 text-[11px] font-bold transition-all"
-                          >
-                            + Request
-                          </button>
-                        </div>
-                      ))}
+                  <div className="p-3 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 text-xs text-indigo-300 space-y-1">
+                    <div className="font-bold flex items-center gap-1.5">
+                      <ShieldCheck className="w-4 h-4 text-indigo-400" />
+                      How 24h Direct Messages Work
                     </div>
+                    <p className="text-[11px] text-indigo-300/80 leading-relaxed">
+                      Share your handle (<span className="font-mono font-bold">@{myUsername}</span>) with classmates. Once they accept your friend request, you can send direct messages that automatically vanish after 24 hours.
+                    </p>
                   </div>
                 </div>
               )}
@@ -467,7 +463,7 @@ export default function InboxPage() {
                             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" title="Online" />
                           </h3>
                           <span className="text-[11px] text-slate-400">
-                            {activeFriend.full_name} • {activeFriend.department} ({activeFriend.batch})
+                            {activeFriend.full_name}
                           </span>
                         </div>
                       </div>

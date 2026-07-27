@@ -1,53 +1,14 @@
 import { FriendContact, FriendRequest, DirectMessage } from './types';
 
 const STORAGE_KEYS = {
-  USERNAME: 'unsaid_user_username',
-  FRIEND_REQUESTS: 'unsaid_friend_requests_v1',
-  FRIENDS: 'unsaid_friends_list_v1',
-  DIRECT_MESSAGES: 'unsaid_direct_messages_v1',
+  USERNAME: 'unsaid_prod_user_username',
+  FRIEND_REQUESTS: 'unsaid_prod_friend_requests_v2',
+  FRIENDS: 'unsaid_prod_friends_list_v2',
+  DIRECT_MESSAGES: 'unsaid_prod_direct_messages_v2',
 };
 
 // 24 HOURS IN MILLISECONDS
 export const MESSAGE_TTL_MS = 24 * 60 * 60 * 1000;
-
-// Campus directory of searchable students with usernames
-export const MOCK_CAMPUS_DIRECTORY: FriendContact[] = [
-  {
-    username: 'priya_ece',
-    full_name: 'Priya Sharma',
-    department: 'ECE',
-    batch: "'26",
-    avatar_gradient: 'from-pink-500 to-rose-600',
-  },
-  {
-    username: 'rahul_cse',
-    full_name: 'Rahul Kumar',
-    department: 'CSE',
-    batch: "'26",
-    avatar_gradient: 'from-indigo-600 to-blue-600',
-  },
-  {
-    username: 'aarti_tech',
-    full_name: 'Aarti Singh',
-    department: 'IT',
-    batch: "'25",
-    avatar_gradient: 'from-purple-600 to-pink-600',
-  },
-  {
-    username: 'vikram_mech',
-    full_name: 'Vikram Patel',
-    department: 'ME',
-    batch: "'27",
-    avatar_gradient: 'from-amber-500 to-orange-600',
-  },
-  {
-    username: 'sneha_civil',
-    full_name: 'Sneha Verma',
-    department: 'CE',
-    batch: "'26",
-    avatar_gradient: 'from-emerald-500 to-teal-600',
-  },
-];
 
 // Helper to format 24h countdown
 export function getRemainingTimeFormatted(expiresAtIso: string): string {
@@ -75,81 +36,52 @@ export function getConversationKey(userA: string, userB: string): string {
 // ---------------- USERNAME LOGIC ----------------
 export function getSavedUsername(): string {
   if (typeof window === 'undefined') return 'student_lnj';
-  return localStorage.getItem(STORAGE_KEYS.USERNAME) || 'student_lnj';
+  const saved = localStorage.getItem(STORAGE_KEYS.USERNAME);
+  if (!saved) {
+    const randomHandle = `student_${Math.floor(1000 + Math.random() * 9000)}`;
+    localStorage.setItem(STORAGE_KEYS.USERNAME, randomHandle);
+    return randomHandle;
+  }
+  return saved;
 }
 
 export function saveUsername(username: string): string {
   const clean = username.trim().toLowerCase().replace(/[^a-z0-9_]/g, '');
-  if (typeof window !== 'undefined') {
+  if (typeof window !== 'undefined' && clean) {
     localStorage.setItem(STORAGE_KEYS.USERNAME, clean);
   }
   return clean;
 }
 
-// ---------------- INITIALIZE DEMO STATE ----------------
-export function initializeDemoChatData(myUsername: string) {
+// ---------------- INITIALIZE CLEAN PRODUCTION STATE ----------------
+export function initializeChatData(myUsername: string) {
   if (typeof window === 'undefined') return;
+
+  // Clean up legacy v1 demo keys if present
+  try {
+    localStorage.removeItem('unsaid_friend_requests_v1');
+    localStorage.removeItem('unsaid_friends_list_v1');
+    localStorage.removeItem('unsaid_direct_messages_v1');
+  } catch {}
 
   // 1. Initial Username if not set
   if (!localStorage.getItem(STORAGE_KEYS.USERNAME)) {
     localStorage.setItem(STORAGE_KEYS.USERNAME, myUsername);
   }
 
-  // 2. Initial Friends list if empty
+  // 2. Initial Friends list if empty (clean empty array for real live users)
   if (!localStorage.getItem(STORAGE_KEYS.FRIENDS)) {
-    const defaultFriends: FriendContact[] = [
-      {
-        username: 'rahul_cse',
-        full_name: 'Rahul Kumar',
-        department: 'CSE',
-        batch: "'26",
-        avatar_gradient: 'from-indigo-600 to-blue-600',
-        status: 'accepted',
-      },
-    ];
-    localStorage.setItem(STORAGE_KEYS.FRIENDS, JSON.stringify(defaultFriends));
+    localStorage.setItem(STORAGE_KEYS.FRIENDS, JSON.stringify([]));
   }
 
-  // 3. Initial Incoming Friend Request if empty
+  // 3. Initial Friend Requests if empty (clean empty array for real live users)
   if (!localStorage.getItem(STORAGE_KEYS.FRIEND_REQUESTS)) {
-    const defaultRequests: FriendRequest[] = [
-      {
-        id: 'req-demo-1',
-        sender_username: 'priya_ece',
-        sender_name: 'Priya Sharma',
-        receiver_username: myUsername,
-        status: 'pending',
-        created_at: new Date(Date.now() - 1000 * 60 * 30).toISOString(),
-      },
-    ];
-    localStorage.setItem(STORAGE_KEYS.FRIEND_REQUESTS, JSON.stringify(defaultRequests));
+    localStorage.setItem(STORAGE_KEYS.FRIEND_REQUESTS, JSON.stringify([]));
   }
 
-  // 4. Initial 24h Volatile Messages if empty
+  // 4. Initial Direct Messages if empty (clean empty array for real live users)
   if (!localStorage.getItem(STORAGE_KEYS.DIRECT_MESSAGES)) {
-    const convKey = getConversationKey(myUsername, 'rahul_cse');
-    const now = Date.now();
-    const initialMessages: DirectMessage[] = [
-      {
-        id: 'dm-1',
-        conversation_key: convKey,
-        sender_username: 'rahul_cse',
-        receiver_username: myUsername,
-        content: 'Hey! Saw your post on the LNJPIT feed earlier 👀',
-        created_at: new Date(now - 1000 * 60 * 120).toISOString(),
-        expires_at: new Date(now - 1000 * 60 * 120 + MESSAGE_TTL_MS).toISOString(),
-      },
-      {
-        id: 'dm-2',
-        conversation_key: convKey,
-        sender_username: myUsername,
-        receiver_username: 'rahul_cse',
-        content: 'Haha thanks! Remember this chat auto-deletes after 24 hours ⏱️',
-        created_at: new Date(now - 1000 * 60 * 60).toISOString(),
-        expires_at: new Date(now - 1000 * 60 * 60 + MESSAGE_TTL_MS).toISOString(),
-      },
-    ];
-    localStorage.setItem(STORAGE_KEYS.DIRECT_MESSAGES, JSON.stringify(initialMessages));
+    localStorage.setItem(STORAGE_KEYS.DIRECT_MESSAGES, JSON.stringify([]));
   }
 }
 
@@ -167,7 +99,7 @@ export function getFriendRequests(): FriendRequest[] {
 export function sendFriendRequest(senderUsername: string, senderName: string, targetUsername: string): { success: boolean; message: string } {
   const cleanTarget = targetUsername.trim().toLowerCase().replace(/^@/, '');
   if (!cleanTarget) {
-    return { success: false, message: 'Please enter a valid username.' };
+    return { success: false, message: 'Please enter a valid student handle.' };
   }
 
   if (senderUsername.toLowerCase() === cleanTarget) {
@@ -183,23 +115,21 @@ export function sendFriendRequest(senderUsername: string, senderName: string, ta
   );
 
   if (existing) {
-    return { success: false, message: 'Friend request already pending!' };
+    return { success: false, message: 'Friend request already sent and pending!' };
   }
 
   // Check if already friends
   const friends = getFriendsList();
   if (friends.some((f) => f.username.toLowerCase() === cleanTarget)) {
-    return { success: false, message: 'You are already friends with this student!' };
+    return { success: false, message: 'You are already connected with this student!' };
   }
-
-  const targetDir = MOCK_CAMPUS_DIRECTORY.find((d) => d.username.toLowerCase() === cleanTarget);
 
   const newRequest: FriendRequest = {
     id: `req-${Date.now()}`,
     sender_username: senderUsername,
-    sender_name: senderName,
+    sender_name: senderName || `@${senderUsername}`,
     receiver_username: cleanTarget,
-    receiver_name: targetDir ? targetDir.full_name : `@${cleanTarget}`,
+    receiver_name: `@${cleanTarget}`,
     status: 'pending',
     created_at: new Date().toISOString(),
   };
@@ -220,14 +150,21 @@ export function acceptFriendRequest(requestId: string): FriendContact | null {
 
   // Add to friends list
   const friends = getFriendsList();
-  const foundInDir = MOCK_CAMPUS_DIRECTORY.find((d) => d.username.toLowerCase() === req.sender_username.toLowerCase());
+  const gradients = [
+    'from-indigo-600 to-purple-600',
+    'from-pink-500 to-rose-600',
+    'from-purple-600 to-pink-600',
+    'from-emerald-500 to-teal-600',
+    'from-amber-500 to-orange-600',
+  ];
+  const randomGradient = gradients[Math.floor(Math.random() * gradients.length)];
 
   const newFriend: FriendContact = {
     username: req.sender_username,
-    full_name: req.sender_name || (foundInDir ? foundInDir.full_name : `@${req.sender_username}`),
-    department: foundInDir?.department || 'LNJPIT',
-    batch: foundInDir?.batch || "'26",
-    avatar_gradient: foundInDir?.avatar_gradient || 'from-indigo-600 to-purple-600',
+    full_name: req.sender_name || `@${req.sender_username}`,
+    department: 'LNJPIT Student',
+    batch: 'Verified',
+    avatar_gradient: randomGradient,
     status: 'accepted',
   };
 
