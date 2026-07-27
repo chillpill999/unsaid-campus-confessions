@@ -2,13 +2,22 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Navbar } from '@/components/navbar';
 import { MobileNav } from '@/components/mobile-nav';
 import { Settings, Moon, Sun, Shield, UserX, Trash2, LogOut, Check } from 'lucide-react';
 
 export default function SettingsPage() {
+  const router = useRouter();
   const [theme, setTheme] = useState<'dark' | 'light' | 'system'>('dark');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
+  const handleSignOut = async () => {
+    const { createClient } = await import('@/lib/supabase/client');
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    router.push('/login');
+  };
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col pb-20 md:pb-8">
@@ -86,13 +95,13 @@ export default function SettingsPage() {
           </h3>
 
           <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
-            <Link
-              href="/login"
+            <button
+              onClick={handleSignOut}
               className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 text-xs font-semibold border border-slate-800 flex items-center justify-center gap-2 transition-colors"
             >
               <LogOut className="w-4 h-4" />
               Sign Out
-            </Link>
+            </button>
 
             <button
               onClick={() => setShowDeleteConfirm(true)}
@@ -120,12 +129,12 @@ export default function SettingsPage() {
               >
                 Cancel
               </button>
-              <Link
-                href="/login"
+              <button
+                onClick={handleSignOut}
                 className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-semibold shadow-md"
               >
                 Confirm Delete
-              </Link>
+              </button>
             </div>
           </div>
         </div>

@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { Flag, Check, X, RefreshCw, AlertCircle } from 'lucide-react';
 import { ReportItem } from '@/lib/types';
 import { formatTimeAgo } from '@/lib/utils';
-import { createClient } from '@/lib/supabase/client';
+import { adminFetchReports, adminUpdateReportStatus } from '@/lib/actions/admin';
 
 export default function AdminReportsPage() {
   const [reports, setReports] = useState<ReportItem[]>([]);
@@ -13,19 +13,10 @@ export default function AdminReportsPage() {
   const fetchLiveReports = async () => {
     setIsLoading(true);
     try {
-      const supabase = createClient();
-      const { data, error } = await supabase
-        .from('reports')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (!error && data) {
-        setReports(data as ReportItem[]);
-      } else {
-        setReports([]);
-      }
+      const data = await adminFetchReports();
+      setReports(data as ReportItem[]);
     } catch (err) {
-      console.error('Failed to load reports from Supabase:', err);
+      console.error('Failed to load reports:', err);
     } finally {
       setIsLoading(false);
     }
@@ -33,19 +24,10 @@ export default function AdminReportsPage() {
 
   const handleAction = async (id: string, newStatus: 'actioned' | 'dismissed') => {
     try {
-      const supabase = createClient();
-      const { error } = await supabase
-        .from('reports')
-        .update({ status: newStatus })
-        .eq('id', id);
-
-      if (error) {
-        alert('Failed to update report: ' + error.message);
-      } else {
-        setReports((prev) =>
-          prev.map((r) => (r.id === id ? { ...r, status: newStatus } : r))
-        );
-      }
+      await adminUpdateReportStatus(id, newStatus);
+      setReports((prev) =>
+        prev.map((r) => (r.id === id ? { ...r, status: newStatus } : r))
+      );
     } catch (err: any) {
       alert('Error updating report: ' + err.message);
     }

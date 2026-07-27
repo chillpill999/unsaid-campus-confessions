@@ -8,16 +8,6 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { confession_code, reason } = body;
 
-    // Rate Limit Check (Max 10 per hour)
-    const rateLimit = checkRateLimit(`reveal:${confession_code}`, 10, 60 * 60 * 1000);
-    if (!rateLimit.success) {
-      return NextResponse.json(
-        { error: 'Rate limit exceeded. Too many identity reveal attempts.' },
-        { status: 429 }
-      );
-    }
-
-    // 1. Reason Validation (Requirement #6)
     if (!reason || typeof reason !== 'string' || !reason.trim()) {
       return NextResponse.json(
         { error: 'A valid, non-empty reason is required for identity access.' },
@@ -25,9 +15,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // 2. Demo Mode Isolation Handler (Requirement #1)
     if (isDemoModeActive()) {
-      // Look up fictional mock identity for demo evaluation
       const mockIdentity = MOCK_REVEALED_IDENTITIES[confession_code] || {
         internal_ref: 'REF-STU-102938',
         google_name: 'Jordan Lee (Demo Student)',
@@ -48,7 +36,6 @@ export async function POST(req: NextRequest) {
         },
       };
 
-      // Create local audit record in mock logs
       MOCK_AUDIT_LOGS.unshift({
         id: `log-${Date.now()}`,
         admin_id: 'usr-demo-admin-999',
@@ -66,8 +53,6 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // 3. Production Supabase Verification (Requirement #5)
-    // Server-side imports for Supabase production execution
     const { createClient } = await import('@/lib/supabase/server');
     const { createAdminClient } = await import('@/lib/supabase/admin');
 
@@ -78,7 +63,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized session.' }, { status: 401 });
     }
 
-    // Verify role === 'admin' in database
     const { data: profile } = await supabase
       .from('profiles')
       .select('role')
@@ -92,10 +76,17 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Create trusted admin client
+    // Rate limit by admin ID (not by confession_code)
+    const rateLimit = checkRateLimit(`reveal:admin:${user.id}`, 20, 60 * 60 * 1000);
+    if (!rateLimit.success) {
+      return NextResponse.json(
+        { error: 'Rate limit exceeded. Too many identity reveal attempts.' },
+        { status: 429 }
+      );
+    }
+
     const adminSupabase = createAdminClient();
 
-    // Fetch Target Confession
     const { data: confession, error: confError } = await adminSupabase
       .from('confessions')
       .select('id, author_id, public_code')
@@ -106,15 +97,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Confession not found.' }, { status: 404 });
     }
 
-    // Record Audit Log (Requirement #7 - Append-Only)
-    await adminSupabase.from('identity_access_logs').insert({
-      admin_id: user.id,
-      target_user_id: confession.author_id,
-      confession_id: confession.id,
-      reason: reason.trim(),
-    });
-
-    // Fetch Auth User Details securely
+    // Fetch all data BEFORE writing audit log
     const { data: targetAuth } = await adminSupabase.auth.admin.getUserById(confession.author_id);
     const { data: targetProfile } = await adminSupabase
       .from('profiles')
@@ -122,7 +105,6 @@ export async function POST(req: NextRequest) {
       .eq('id', confession.author_id)
       .single();
 
-    // Fetch Activity Stats
     const { count: confessionsCount } = await adminSupabase
       .from('confessions')
       .select('id', { count: 'exact' })
@@ -138,7 +120,22 @@ export async function POST(req: NextRequest) {
       .select('id', { count: 'exact' })
       .eq('reported_user_id', confession.author_id);
 
-    // Build Public Safe Identity Payload (WITHOUT exposing Supabase auth.users UUID)
+    // Audit log as final step (fail-closed: if insert fails, identity was still fetched but not returned)
+    const { error: auditError } = await adminSupabase.from('identity_access_logs').insert({
+      admin_id: user.id,
+      target_user_id: confession.author_id,
+      confession_id: confession.id,
+      reason: reason.trim(),
+    });
+
+    if (auditError) {
+      console.error('[IDENTITY-REVEAL] Audit log insert failed:', auditError);
+      return NextResponse.json(
+        { error: 'Failed to record audit log. Operation cancelled.' },
+        { status: 500 }
+      );
+    }
+
     const revealedPayload = {
       internal_ref: `REF-${confession.author_id.slice(0, 8)}`,
       google_name: targetAuth?.user?.user_metadata?.full_name || 'Authenticated Student',
@@ -165,8 +162,9 @@ export async function POST(req: NextRequest) {
       audit_recorded: true,
     });
   } catch (err: any) {
+    console.error('[IDENTITY-REVEAL] Unexpected error:', err);
     return NextResponse.json(
-      { error: err.message || 'Internal Server Error' },
+      { error: 'An internal server error occurred.' },
       { status: 500 }
     );
   }

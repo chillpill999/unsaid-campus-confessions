@@ -4,13 +4,12 @@ import { cookies } from 'next/headers';
 export function createClient() {
   const cookieStore = cookies();
 
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL && !process.env.NEXT_PUBLIC_SUPABASE_URL.includes('demo-project')
-    ? process.env.NEXT_PUBLIC_SUPABASE_URL
-    : 'https://prkecywvrficjylboior.supabase.co';
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY && !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY.includes('placeholder')
-    ? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-    : 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBya2VjeXd2cmZpY2p5bGJvaW9yIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTE3NjAwMDAsImV4cCI6MjA2NzMzNjAwMH0.placeholder';
+  if (!url || !key) {
+    throw new Error('Supabase server client credentials are missing. Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY.');
+  }
 
   return createServerClient(
     url,
@@ -24,14 +23,12 @@ export function createClient() {
           try {
             cookieStore.set({ name, value, ...options });
           } catch (error) {
-            // Handled in middleware/server action contexts
           }
         },
         remove(name: string, options: CookieOptions) {
           try {
             cookieStore.set({ name, value: '', ...options });
           } catch (error) {
-            // Handled in middleware/server action contexts
           }
         },
       },

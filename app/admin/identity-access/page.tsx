@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { History, ShieldCheck, RefreshCw, AlertCircle } from 'lucide-react';
 import { IdentityAccessLog } from '@/lib/types';
 import { formatTimeAgo } from '@/lib/utils';
-import { createClient } from '@/lib/supabase/client';
+import { adminFetchAuditLogs } from '@/lib/actions/admin';
 
 export default function AdminIdentityAccessPage() {
   const [logs, setLogs] = useState<IdentityAccessLog[]>([]);
@@ -13,19 +13,10 @@ export default function AdminIdentityAccessPage() {
   const fetchLiveAuditLogs = async () => {
     setIsLoading(true);
     try {
-      const supabase = createClient();
-      const { data, error } = await supabase
-        .from('identity_access_logs')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (!error && data) {
-        setLogs(data as IdentityAccessLog[]);
-      } else {
-        setLogs([]);
-      }
+      const data = await adminFetchAuditLogs();
+      setLogs(data as IdentityAccessLog[]);
     } catch (err) {
-      console.error('Failed to load audit logs from Supabase:', err);
+      console.error('Failed to load audit logs:', err);
     } finally {
       setIsLoading(false);
     }

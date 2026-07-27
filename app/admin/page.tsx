@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Users, FileText, MessageSquare, Flag, ShieldAlert, ArrowRight, RefreshCw } from 'lucide-react';
-import { createClient } from '@/lib/supabase/client';
+import { adminFetchStats } from '@/lib/actions/admin';
 
 export default function AdminOverviewPage() {
   const [stats, setStats] = useState({
@@ -17,42 +17,10 @@ export default function AdminOverviewPage() {
   const fetchRealtimeStats = async () => {
     setIsLoading(true);
     try {
-      const supabase = createClient();
-      const todayStart = new Date();
-      todayStart.setHours(0, 0, 0, 0);
-      const todayISO = todayStart.toISOString();
-
-      // 1. Fetch Total Students Count
-      const { count: studentsCount } = await supabase
-        .from('profiles')
-        .select('id', { count: 'exact', head: true });
-
-      // 2. Fetch Confessions Today Count
-      const { count: confessionsCount } = await supabase
-        .from('confessions')
-        .select('id', { count: 'exact', head: true })
-        .gte('created_at', todayISO);
-
-      // 3. Fetch Comments Today Count
-      const { count: commentsCount } = await supabase
-        .from('comments')
-        .select('id', { count: 'exact', head: true })
-        .gte('created_at', todayISO);
-
-      // 4. Fetch Pending Reports Count
-      const { count: reportsCount } = await supabase
-        .from('reports')
-        .select('id', { count: 'exact', head: true })
-        .eq('status', 'pending');
-
-      setStats({
-        activeStudents: studentsCount || 0,
-        confessionsToday: confessionsCount || 0,
-        commentsToday: commentsCount || 0,
-        reportsPending: reportsCount || 0,
-      });
+      const data = await adminFetchStats();
+      setStats(data);
     } catch (err) {
-      console.error('Error fetching admin realtime stats:', err);
+      console.error('Error fetching admin stats:', err);
     } finally {
       setIsLoading(false);
     }
@@ -60,12 +28,7 @@ export default function AdminOverviewPage() {
 
   useEffect(() => {
     fetchRealtimeStats();
-
-    // Auto-refresh stats every 15 seconds for live real-time updates
-    const interval = setInterval(() => {
-      fetchRealtimeStats();
-    }, 15000);
-
+    const interval = setInterval(fetchRealtimeStats, 15000);
     return () => clearInterval(interval);
   }, []);
 
@@ -87,7 +50,6 @@ export default function AdminOverviewPage() {
         </button>
       </div>
 
-      {/* Aggregate Metrics Grid */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         <div className="glass-card p-4 space-y-1">
           <span className="text-[11px] font-semibold text-slate-400 flex items-center gap-1">
@@ -126,7 +88,6 @@ export default function AdminOverviewPage() {
         </div>
       </div>
 
-      {/* Quick Action Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <Link
           href="/admin/reports"

@@ -20,7 +20,7 @@ interface NavbarProps {
   isAdmin?: boolean;
 }
 
-export function Navbar({ onOpenComposer, isAdmin = true }: NavbarProps) {
+export function Navbar({ onOpenComposer, isAdmin = false }: NavbarProps) {
   const pathname = usePathname();
 
   const navItems = [

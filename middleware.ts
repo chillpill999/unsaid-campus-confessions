@@ -1,7 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { createServerClient, type CookieOptions } from '@supabase/ssr';
 
-// ALL routes that require a valid Supabase session
 const PROTECTED_PREFIXES = [
   '/feed',
   '/trending',
@@ -19,27 +18,27 @@ function isProtectedPath(pathname: string): boolean {
   return PROTECTED_PREFIXES.some((prefix) => pathname === prefix || pathname.startsWith(prefix + '/'));
 }
 
-// Real Supabase credentials (anon key is public, safe to include)
-const SUPABASE_URL = 'https://prkecywvrficjylboior.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBya2VjeXd2cmZpY2p5bGJvaW9yIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODUxMzYzNTMsImV4cCI6MjEwMDcxMjM1M30.Rl-77UJekLrfDJgUzKBVrro8AyYFW6vWOXNHQ4hoVDg';
+function isAdminPath(pathname: string): boolean {
+  return pathname === '/admin' || pathname.startsWith('/admin/');
+}
 
 export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
 
-  // Only run auth checks on protected routes
   if (!isProtectedPath(pathname)) {
     return NextResponse.next();
   }
 
-  // Build the login redirect URL (fail-closed default)
   const loginUrl = new URL('/login', request.url);
   loginUrl.searchParams.set('redirect', pathname);
 
-  // Use real credentials — env vars take priority, hardcoded fallback ensures it always works
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || SUPABASE_URL;
-  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || SUPABASE_ANON_KEY;
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-  // Create Supabase server client
+  if (!supabaseUrl || !supabaseAnonKey) {
+    return NextResponse.redirect(loginUrl);
+  }
+
   let response = NextResponse.next({
     request: { headers: request.headers },
   });
@@ -69,15 +68,33 @@ export async function middleware(request: NextRequest) {
 
     const { data: { user }, error } = await supabase.auth.getUser();
 
-    // FAIL-CLOSED: No user OR any error → redirect to login
     if (!user || error) {
       return NextResponse.redirect(loginUrl);
     }
 
-    // User is authenticated — allow through
+    // Check account status for all protected routes
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('account_status, role')
+      .eq('id', user.id)
+      .single();
+
+    if (profile && (profile.account_status === 'banned' || profile.account_status === 'suspended')) {
+      const statusUrl = new URL('/login', request.url);
+      statusUrl.searchParams.set('error', 'account-' + profile.account_status);
+      return NextResponse.redirect(statusUrl);
+    }
+
+    // For admin routes, verify admin role
+    if (isAdminPath(pathname)) {
+      if (!profile || profile.role !== 'admin') {
+        const feedUrl = new URL('/feed', request.url);
+        return NextResponse.redirect(feedUrl);
+      }
+    }
+
     return response;
   } catch (err) {
-    // ANY exception → FAIL-CLOSED, redirect to login
     console.error('[MIDDLEWARE] Auth check exception — blocking access:', err);
     return NextResponse.redirect(loginUrl);
   }

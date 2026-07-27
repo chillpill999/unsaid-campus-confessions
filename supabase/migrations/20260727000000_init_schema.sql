@@ -266,3 +266,51 @@ CREATE POLICY "Manage Own Notifications" ON notifications FOR ALL USING (auth.ui
 
 -- Reports: Student creates report
 CREATE POLICY "Insert Report" ON reports FOR INSERT WITH CHECK (auth.uid() = reporter_id);
+
+CREATE POLICY "Admin Select Reports" ON reports FOR SELECT USING (
+  auth.uid() IN (SELECT id FROM profiles WHERE role IN ('admin', 'moderator'))
+);
+
+CREATE POLICY "Admin Update Reports" ON reports FOR UPDATE USING (
+  auth.uid() IN (SELECT id FROM profiles WHERE role IN ('admin', 'moderator'))
+);
+
+CREATE POLICY "Select Comments" ON comments FOR SELECT USING (true);
+
+CREATE POLICY "Insert Own Comment" ON comments FOR INSERT WITH CHECK (auth.uid() = author_id);
+
+CREATE POLICY "Admin Select Identity Logs" ON identity_access_logs FOR SELECT USING (
+  auth.uid() IN (SELECT id FROM profiles WHERE role = 'admin')
+);
+
+CREATE POLICY "Manage Own Blocks" ON blocks FOR ALL USING (auth.uid() = blocker_id);
+
+CREATE POLICY "Manage Own Mood Vote" ON mood_votes FOR ALL USING (auth.uid() = user_id);
+
+CREATE POLICY "Select Own Conversations" ON anonymous_conversations FOR SELECT USING (
+  auth.uid() IN (creator_id, participant_id)
+);
+
+CREATE POLICY "Insert Conversation" ON anonymous_conversations FOR INSERT WITH CHECK (
+  auth.uid() = creator_id
+);
+
+CREATE POLICY "Select Own Messages" ON anonymous_messages FOR SELECT USING (
+  auth.uid() IN (
+    SELECT creator_id FROM anonymous_conversations WHERE id = conversation_id
+    UNION
+    SELECT participant_id FROM anonymous_conversations WHERE id = conversation_id
+  )
+);
+
+CREATE POLICY "Insert Own Message" ON anonymous_messages FOR INSERT WITH CHECK (
+  auth.uid() IN (
+    SELECT creator_id FROM anonymous_conversations WHERE id = conversation_id
+    UNION
+    SELECT participant_id FROM anonymous_conversations WHERE id = conversation_id
+  )
+);
+
+CREATE POLICY "Admin Select Moderation Actions" ON moderation_actions FOR SELECT USING (
+  auth.uid() IN (SELECT id FROM profiles WHERE role IN ('admin', 'moderator'))
+);

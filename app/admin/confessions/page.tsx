@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { FileText, Eye, Trash2, RefreshCw, AlertCircle } from 'lucide-react';
 import { IdentityRevealDialog } from '@/components/identity-reveal-dialog';
 import { formatTimeAgo } from '@/lib/utils';
-import { createClient } from '@/lib/supabase/client';
+import { adminFetchConfessions, adminDeleteConfession } from '@/lib/actions/admin';
 import { PublicConfession } from '@/lib/types';
 
 export default function AdminConfessionsPage() {
@@ -15,19 +15,10 @@ export default function AdminConfessionsPage() {
   const fetchLiveConfessions = async () => {
     setIsLoading(true);
     try {
-      const supabase = createClient();
-      const { data, error } = await supabase
-        .from('confessions')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (!error && data && data.length > 0) {
-        setConfessions(data as PublicConfession[]);
-      } else {
-        setConfessions([]);
-      }
+      const data = await adminFetchConfessions();
+      setConfessions(data as PublicConfession[]);
     } catch (err) {
-      console.error('Failed to load confessions from Supabase:', err);
+      console.error('Failed to load confessions:', err);
     } finally {
       setIsLoading(false);
     }
@@ -37,14 +28,8 @@ export default function AdminConfessionsPage() {
     if (!confirm(`Are you sure you want to permanently delete confession #${code}?`)) return;
 
     try {
-      const supabase = createClient();
-      const { error } = await supabase.from('confessions').delete().eq('id', id);
-
-      if (error) {
-        alert('Failed to delete confession: ' + error.message);
-      } else {
-        setConfessions((prev) => prev.filter((c) => c.id !== id));
-      }
+      await adminDeleteConfession(id);
+      setConfessions((prev) => prev.filter((c) => c.id !== id));
     } catch (err: any) {
       alert('Error deleting confession: ' + err.message);
     }

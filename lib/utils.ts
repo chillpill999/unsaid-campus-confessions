@@ -12,8 +12,10 @@ export function cn(...inputs: ClassValue[]) {
 export function generatePublicCode(): string {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
   let result = 'CF';
+  const bytes = new Uint8Array(4);
+  crypto.getRandomValues(bytes);
   for (let i = 0; i < 4; i++) {
-    result += chars.charAt(Math.floor(Math.random() * chars.length));
+    result += chars.charAt(bytes[i] % chars.length);
   }
   return result;
 }

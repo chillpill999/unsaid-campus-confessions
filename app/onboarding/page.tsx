@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Lock, ShieldCheck, Sparkles, ArrowRight, Check, Building2, User, BookOpen } from 'lucide-react';
 import { Gender } from '@/lib/types';
+import { createProfile } from '@/lib/actions/profile';
 
 export default function OnboardingPage() {
   const router = useRouter();
@@ -11,10 +12,12 @@ export default function OnboardingPage() {
   const [fullName, setFullName] = useState('');
   const [gender, setGender] = useState<Gender>('Male');
   const [college] = useState('Loknayak Jai Prakash Institute of Technology');
+  const [collegeId] = useState('11111111-1111-1111-1111-111111111111');
   const [batch, setBatch] = useState('2026');
   const [department, setDepartment] = useState('Computer Science & Engineering');
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [showWelcomeModal, setShowWelcomeModal] = useState(false);
+  const [onboardingError, setOnboardingError] = useState('');
 
   const BRANCH_OPTIONS = [
     'Computer Science & Engineering (CSE)',
@@ -25,10 +28,22 @@ export default function OnboardingPage() {
     'Information Technology (IT)',
   ];
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!acceptedTerms || !fullName.trim()) return;
-    setShowWelcomeModal(true);
+    setOnboardingError('');
+
+    try {
+      await createProfile({
+        gender,
+        batch,
+        department,
+        college_id: collegeId,
+      });
+      setShowWelcomeModal(true);
+    } catch (err: any) {
+      setOnboardingError(err.message || 'Failed to create profile. Please try again.');
+    }
   };
 
   const handleEnterFeed = () => {
@@ -134,6 +149,12 @@ export default function OnboardingPage() {
               />
             </div>
           </div>
+
+          {onboardingError && (
+            <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-300 text-xs">
+              {onboardingError}
+            </div>
+          )}
 
           {/* Terms Agreement Checkbox */}
           <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-2">

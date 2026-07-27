@@ -22,10 +22,9 @@ export default function LoginPage() {
       const { createClient } = await import('@/lib/supabase/client');
       const supabase = createClient();
 
-      // Ensure redirect URL matches live deployment or current window origin
-      const origin = typeof window !== 'undefined' && window.location.hostname !== 'localhost'
+      const origin = typeof window !== 'undefined'
         ? window.location.origin
-        : (process.env.NEXT_PUBLIC_APP_URL || 'https://unsaid-campus-confessions.vercel.app');
+        : (process.env.NEXT_PUBLIC_APP_URL || '');
 
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',

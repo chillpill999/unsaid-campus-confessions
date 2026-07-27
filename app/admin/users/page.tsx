@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Users, RefreshCw, AlertCircle } from 'lucide-react';
-import { createClient } from '@/lib/supabase/client';
+import { adminFetchUsers, adminUpdateUserStatus } from '@/lib/actions/admin';
 import { UserProfile } from '@/lib/types';
 
 export default function AdminUsersPage() {
@@ -12,19 +12,10 @@ export default function AdminUsersPage() {
   const fetchLiveUsers = async () => {
     setIsLoading(true);
     try {
-      const supabase = createClient();
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (!error && data) {
-        setUsers(data as UserProfile[]);
-      } else {
-        setUsers([]);
-      }
+      const data = await adminFetchUsers();
+      setUsers(data as UserProfile[]);
     } catch (err) {
-      console.error('Failed to load user accounts from Supabase:', err);
+      console.error('Failed to load user accounts:', err);
     } finally {
       setIsLoading(false);
     }
@@ -32,19 +23,10 @@ export default function AdminUsersPage() {
 
   const handleUpdateStatus = async (id: string, newStatus: UserProfile['account_status']) => {
     try {
-      const supabase = createClient();
-      const { error } = await supabase
-        .from('profiles')
-        .update({ account_status: newStatus })
-        .eq('id', id);
-
-      if (error) {
-        alert('Failed to update account status: ' + error.message);
-      } else {
-        setUsers((prev) =>
-          prev.map((acc) => (acc.id === id ? { ...acc, account_status: newStatus } : acc))
-        );
-      }
+      await adminUpdateUserStatus(id, newStatus);
+      setUsers((prev) =>
+        prev.map((acc) => (acc.id === id ? { ...acc, account_status: newStatus } : acc))
+      );
     } catch (err: any) {
       alert('Error updating user status: ' + err.message);
     }
