@@ -31,7 +31,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [userEmail, setUserEmail] = useState<string | null>(null);
 
   // Default Admin Access Passcode
-  const ADMIN_PASSCODE = process.env.NEXT_PUBLIC_ADMIN_PASSCODE || 'LNJPIT@Admin2026!';
+  const ADMIN_PASSCODE = process.env.NEXT_PUBLIC_ADMIN_PASSCODE || 'T3HEDGH2011';
 
   useEffect(() => {
     async function checkAdminAuth() {
@@ -192,7 +192,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 type="password"
                 value={passwordInput}
                 onChange={(e) => setPasswordInput(e.target.value)}
-                placeholder="Enter admin password (Default: LNJPIT@Admin2026!)"
+                placeholder="Enter admin password..."
                 className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-3 text-xs text-slate-200 focus:outline-none focus:border-amber-500"
                 autoFocus
                 required
