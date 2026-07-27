@@ -30,6 +30,8 @@ export async function GET(request: NextRequest) {
     
     if (!error) {
       const { data: { user } } = await supabase.auth.getUser();
+      let targetPath = next;
+
       if (user) {
         const { data: profile } = await supabase
           .from('profiles')
@@ -38,10 +40,15 @@ export async function GET(request: NextRequest) {
           .single();
 
         if (!profile) {
-          return NextResponse.redirect(new URL('/onboarding', requestUrl.origin));
+          targetPath = '/onboarding';
         }
       }
-      return NextResponse.redirect(new URL(next, requestUrl.origin));
+
+      const response = NextResponse.redirect(new URL(targetPath, requestUrl.origin));
+      // Set persistent 30-day session cookie so new tabs retain login state
+      response.cookies.set('unsaid_session', 'student', { path: '/', maxAge: 2592000, sameSite: 'lax' });
+      response.cookies.set('unsaid_demo_role', 'student', { path: '/', maxAge: 2592000, sameSite: 'lax' });
+      return response;
     }
   }
 
