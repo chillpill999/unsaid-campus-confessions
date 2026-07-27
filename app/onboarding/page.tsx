@@ -2,12 +2,13 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Lock, ShieldCheck, Sparkles, ArrowRight, Check, Building2 } from 'lucide-react';
+import { Lock, ShieldCheck, Sparkles, ArrowRight, Check, Building2, User, BookOpen } from 'lucide-react';
 import { Gender } from '@/lib/types';
 
 export default function OnboardingPage() {
   const router = useRouter();
 
+  const [fullName, setFullName] = useState('');
   const [gender, setGender] = useState<Gender>('Male');
   const [college] = useState('Loknayak Jai Prakash Institute of Technology');
   const [batch, setBatch] = useState('2026');
@@ -15,9 +16,18 @@ export default function OnboardingPage() {
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [showWelcomeModal, setShowWelcomeModal] = useState(false);
 
+  const BRANCH_OPTIONS = [
+    'Computer Science & Engineering (CSE)',
+    'Civil Engineering (CE)',
+    'Mechanical Engineering (ME)',
+    'Electrical & Electronics Engineering (EEE)',
+    'Electronics & Communication Engineering (ECE)',
+    'Information Technology (IT)',
+  ];
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!acceptedTerms) return;
+    if (!acceptedTerms || !fullName.trim()) return;
     setShowWelcomeModal(true);
   };
 
@@ -33,14 +43,33 @@ export default function OnboardingPage() {
           <div className="w-12 h-12 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 flex items-center justify-center mx-auto">
             <Lock className="w-6 h-6" />
           </div>
-          <h1 className="text-2xl font-extrabold text-white font-heading">Campus Profile Setup</h1>
+          <h1 className="text-2xl font-extrabold text-white font-heading">Student Profile Setup</h1>
           <p className="text-xs text-slate-400">
-            Your real identity remains hidden from other students.
+            Your name is verified for account safety but hidden from other students.
           </p>
         </div>
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-5">
+          {/* Full Name */}
+          <div>
+            <label className="block text-xs font-semibold text-slate-300 mb-1.5 flex items-center justify-between">
+              <span>Student Full Name <span className="text-rose-400">*</span></span>
+              <span className="text-[10px] text-slate-500 font-mono">Private to Admins</span>
+            </label>
+            <div className="relative">
+              <User className="w-4 h-4 text-slate-500 absolute left-3.5 top-3" />
+              <input
+                type="text"
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+                placeholder="Enter your real full name (e.g. Rahul Kumar)"
+                className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-10 pr-3.5 py-2.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500"
+                required
+              />
+            </div>
+          </div>
+
           {/* Gender */}
           <div>
             <label className="block text-xs font-semibold text-slate-300 mb-2">
@@ -67,7 +96,7 @@ export default function OnboardingPage() {
             </div>
           </div>
 
-          {/* College (Single Fixed Option) */}
+          {/* College (Fixed) */}
           <div>
             <label className="block text-xs font-semibold text-slate-300 mb-1.5">College / Institution</label>
             <div className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-3 text-xs text-indigo-300 font-bold flex items-center gap-2.5">
@@ -76,10 +105,25 @@ export default function OnboardingPage() {
             </div>
           </div>
 
-          {/* Batch & Dept */}
+          {/* Branch & Batch */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1.5">Batch / Graduation Year</label>
+              <label className="block text-xs font-semibold text-slate-300 mb-1.5">Branch / Department <span className="text-rose-400">*</span></label>
+              <select
+                value={department}
+                onChange={(e) => setDepartment(e.target.value)}
+                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500"
+                required
+              >
+                {BRANCH_OPTIONS.map((branch) => (
+                  <option key={branch} value={branch}>
+                    {branch}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-slate-300 mb-1.5">Batch / Graduation Year <span className="text-rose-400">*</span></label>
               <input
                 type="text"
                 value={batch}
@@ -87,16 +131,6 @@ export default function OnboardingPage() {
                 placeholder="e.g. 2026"
                 className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500"
                 required
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1.5">Department / Branch</label>
-              <input
-                type="text"
-                value={department}
-                onChange={(e) => setDepartment(e.target.value)}
-                placeholder="e.g. Computer Science & Engineering"
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500"
               />
             </div>
           </div>
@@ -120,7 +154,7 @@ export default function OnboardingPage() {
 
           <button
             type="submit"
-            disabled={!acceptedTerms}
+            disabled={!acceptedTerms || !fullName.trim()}
             className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-500 text-white font-bold text-sm shadow-xl shadow-indigo-500/25 disabled:opacity-50 transition-all hover:scale-[1.01]"
           >
             Complete Onboarding & Proceed
