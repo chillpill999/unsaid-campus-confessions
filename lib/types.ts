@@ -70,6 +70,7 @@ export interface PublicComment {
 export interface UserProfile {
   id: string; // internal UUID
   full_name?: string;
+  username?: string; // Instagram-style student handle (e.g. @alex_lnj)
   name?: string;
   branch?: string;
   gender: Gender;
@@ -80,6 +81,36 @@ export interface UserProfile {
   role: UserRole;
   account_status: AccountStatus;
   created_at: string;
+}
+
+export interface FriendContact {
+  username: string;
+  full_name: string;
+  department?: string;
+  batch?: string;
+  avatar_gradient?: string;
+  status?: 'accepted' | 'pending_incoming' | 'pending_outgoing' | 'none';
+}
+
+export interface FriendRequest {
+  id: string;
+  sender_username: string;
+  sender_name: string;
+  receiver_username: string;
+  receiver_name?: string;
+  status: 'pending' | 'accepted' | 'rejected';
+  created_at: string;
+}
+
+export interface DirectMessage {
+  id: string;
+  conversation_key: string; // e.g. "userA_userB"
+  sender_username: string;
+  receiver_username: string;
+  content: string;
+  created_at: string; // ISO string
+  expires_at: string; // ISO string (created_at + 24 hours)
+  is_mine?: boolean;
 }
 
 // ADMIN IDENTITY REVEAL PAYLOAD - EXPOSES REAL IDENTITY ONLY TO AUTHORIZED ADMIN

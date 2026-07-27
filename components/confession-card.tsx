@@ -71,14 +71,14 @@ export function ConfessionCard({
   };
 
   return (
-    <article className="glass-card p-5 sm:p-6 mb-4 relative overflow-hidden group">
+    <article className="glass-card p-4 sm:p-6 mb-3 sm:mb-4 relative overflow-hidden group">
       {/* Featured Accent Border if Confession of the Day */}
       {confession.is_featured && (
         <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-amber-400 via-pink-500 to-indigo-500" />
       )}
 
       {/* Header: Anonymous Badge & Category */}
-      <div className="flex items-center justify-between gap-2 mb-3 text-xs">
+      <div className="flex items-start justify-between gap-2 mb-2 sm:mb-3 text-xs">
         <div className="flex items-center gap-2 flex-wrap">
           {/* Author Badge: Anonymous • Gender */}
           <div className="flex items-center gap-1.5 font-semibold text-slate-300">
@@ -182,7 +182,7 @@ export function ConfessionCard({
       )}
 
       {/* Footer Controls: Reactions, Comments, Bookmarks, Share, Report */}
-      <div className="pt-3 border-t border-slate-900 flex flex-wrap items-center justify-between gap-3">
+      <div className="pt-2 sm:pt-3 border-t border-slate-900 flex flex-wrap items-center justify-between gap-2 sm:gap-3">
         {/* Reaction Bar */}
         <ReactionBar
           confessionId={confession.id}

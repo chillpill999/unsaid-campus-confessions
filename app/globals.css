@@ -33,6 +33,12 @@
     --ring: 239 84% 67%;
 
     --radius: 1rem;
+
+    /* Safe area insets for notched phones */
+    --safe-area-top: env(safe-area-inset-top, 0px);
+    --safe-area-bottom: env(safe-area-inset-bottom, 0px);
+    --safe-area-left: env(safe-area-inset-left, 0px);
+    --safe-area-right: env(safe-area-inset-right, 0px);
   }
 
   .dark {
@@ -70,8 +76,23 @@
   * {
     @apply border-border;
   }
+
+  html {
+    /* Prevent iOS zoom on input focus */
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+    /* Smooth scrolling */
+    scroll-behavior: smooth;
+    /* Prevent overscroll bounce on iOS */
+    overscroll-behavior: none;
+  }
+
   body {
     @apply bg-background text-foreground font-sans antialiased selection:bg-brand-500 selection:text-white min-h-screen transition-colors duration-200;
+    /* Smooth touch scrolling */
+    -webkit-overflow-scrolling: touch;
+    /* Prevent text selection on interactive elements */
+    -webkit-tap-highlight-color: transparent;
   }
 }
 
@@ -92,6 +113,24 @@
   @apply bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white shadow-lg shadow-indigo-500/25;
 }
 
+/* Mobile-optimized touch targets */
+@media (max-width: 640px) {
+  /* Ensure all tappable elements are at least 44x44px (Apple HIG) */
+  button, a, [role="button"], input, select, textarea {
+    min-height: 44px;
+  }
+
+  /* Slightly larger text for mobile readability */
+  .glass-card p, .glass-card span {
+    font-size: max(0.75rem, 12px);
+  }
+}
+
+/* Mobile bottom nav safe area */
+.mobile-nav-safe {
+  padding-bottom: calc(0.5rem + var(--safe-area-bottom));
+}
+
 /* Scrollbar styling */
 ::-webkit-scrollbar {
   width: 6px;
@@ -103,3 +142,27 @@
 ::-webkit-scrollbar-thumb {
   @apply bg-slate-300 dark:bg-slate-800 rounded-full;
 }
+
+/* Hide scrollbar on mobile for cleaner look */
+@media (max-width: 768px) {
+  ::-webkit-scrollbar {
+    display: none;
+  }
+  * {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}
+
+/* Prevent iOS input zoom (inputs below 16px trigger zoom) */
+@media (max-width: 640px) {
+  input[type="text"],
+  input[type="email"],
+  input[type="password"],
+  input[type="search"],
+  textarea,
+  select {
+    font-size: 16px !important;
+  }
+}
+

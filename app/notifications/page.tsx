@@ -60,7 +60,7 @@ export default function NotificationsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col pb-20 md:pb-8">
+    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col pb-24 md:pb-8">
       <Navbar />
 
       <main className="max-w-3xl mx-auto px-4 pt-6 flex-1 w-full space-y-6">

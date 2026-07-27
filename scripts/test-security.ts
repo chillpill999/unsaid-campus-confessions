@@ -241,6 +241,83 @@ async function runComprehensiveSecuritySuite() {
     assert(defaultsToFalse, 'SEC-NAV-01', 'Navbar admin link defaults to hidden (isAdmin = false)');
   }
 
+  // TEST 17: Feed page does NOT query 'confessions' table directly (identity leak risk)
+  const feedPagePath = path.join(process.cwd(), 'app', 'feed', 'page.tsx');
+  if (fs.existsSync(feedPagePath)) {
+    const content = fs.readFileSync(feedPagePath, 'utf8');
+    const queriesConfessionsTable = content.includes(".from('confessions')") || content.includes('.from("confessions")');
+    const queriesPublicView = content.includes('fetchPublicConfessions') || content.includes("from('public_confessions')");
+    assert(!queriesConfessionsTable, 'SEC-FEED-01', 'Feed page does NOT query confessions table directly');
+    assert(queriesPublicView, 'SEC-FEED-02', 'Feed page uses public_confessions view or server action');
+  }
+
+  // TEST 18: Confession composer does NOT set author_id client-side
+  const composerPath = path.join(process.cwd(), 'components', 'confession-composer.tsx');
+  if (fs.existsSync(composerPath)) {
+    const content = fs.readFileSync(composerPath, 'utf8');
+    const noClientAuthorId = !content.includes("author_id: user.id") && !content.includes("author_id: user");
+    const usesServerAction = content.includes('createConfession');
+    assert(usesServerAction, 'SEC-COMPOSE-01', 'Confession composer uses server action for submission');
+    assert(noClientAuthorId, 'SEC-COMPOSE-02', 'Confession composer does NOT set author_id on client side');
+  }
+
+  // TEST 19: Identity reveal does NOT leak auth UUID in internal_ref
+  const revealRoutePathCheck = path.join(process.cwd(), 'app', 'api', 'admin', 'identity-reveal', 'route.ts');
+  if (fs.existsSync(revealRoutePathCheck)) {
+    const content = fs.readFileSync(revealRoutePathCheck, 'utf8');
+    const noUuidLeak = !content.includes("confession.author_id.slice(0, 8)");
+    const usesRandomRef = content.includes('crypto.randomBytes') || content.includes('randomUUID');
+    assert(noUuidLeak, 'SEC-REVEAL-04', 'Identity reveal does NOT expose auth UUID in internal_ref');
+    assert(usesRandomRef, 'SEC-REVEAL-05', 'Identity reveal uses random reference for internal_ref');
+  }
+
+  // TEST 20: Admin users page does NOT expose auth UUID
+  const adminUsersPath = path.join(process.cwd(), 'app', 'admin', 'users', 'page.tsx');
+  if (fs.existsSync(adminUsersPath)) {
+    const content = fs.readFileSync(adminUsersPath, 'utf8');
+    const noUuidLeak = !content.includes('acc.id.slice(0, 8)');
+    assert(noUuidLeak, 'SEC-ADMIN-06', 'Admin users page does NOT expose partial UUID');
+  }
+
+  // TEST 21: Report dialog uses server action
+  const reportDialogPath = path.join(process.cwd(), 'components', 'report-dialog.tsx');
+  if (fs.existsSync(reportDialogPath)) {
+    const content = fs.readFileSync(reportDialogPath, 'utf8');
+    const usesServerAction = content.includes('submitReport');
+    assert(usesServerAction, 'SEC-REPORT-01', 'Report dialog uses server action for submission');
+  }
+
+  // TEST 22: Comment operations use server action
+  const commentSectionPath = path.join(process.cwd(), 'app', 'confession', '[code]', 'page.tsx');
+  if (fs.existsSync(commentSectionPath)) {
+    const content = fs.readFileSync(commentSectionPath, 'utf8');
+    const usesServerAction = content.includes('createComment');
+    assert(usesServerAction, 'SEC-COMMENT-01', 'Comment creation uses server action');
+  }
+
+  // TEST 23: Migration has SELECT policy for confessions
+  if (fs.existsSync(migrationPath)) {
+    const content = fs.readFileSync(migrationPath, 'utf8');
+    const hasSelectPolicy = content.includes('Admin Select Confessions');
+    const hasRevoke = content.includes('REVOKE SELECT ON confessions');
+    assert(hasSelectPolicy, 'SEC-RLS-07', 'Migration has admin-only SELECT policy for confessions');
+    assert(hasRevoke, 'SEC-RLS-08', 'Migration revokes direct SELECT on confessions from anon/authenticated');
+  }
+
+  // TEST 24: Migration has GRANTs for public views
+  if (fs.existsSync(migrationPath)) {
+    const content = fs.readFileSync(migrationPath, 'utf8');
+    const hasViewGrant = content.includes('GRANT SELECT ON public_confessions TO authenticated');
+    assert(hasViewGrant, 'SEC-VIEW-03', 'Migration grants SELECT on public_confessions view to authenticated role');
+  }
+
+  // TEST 25: public_confessions view includes reaction_counts
+  if (fs.existsSync(migrationPath)) {
+    const content = fs.readFileSync(migrationPath, 'utf8');
+    const hasReactionCounts = content.includes('reaction_counts');
+    assert(hasReactionCounts, 'SEC-VIEW-04', 'public_confessions view includes reaction_counts');
+  }
+
   console.log('\n=============================================================');
   console.log(`COMPREHENSIVE SECURITY REPORT: ${passed}/${total} INTEGRATION TESTS PASSED`);
   console.log('=============================================================\n');

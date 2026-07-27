@@ -188,6 +188,10 @@ CREATE INDEX IF NOT EXISTS idx_reactions_confession_id ON reactions(confession_i
 CREATE INDEX IF NOT EXISTS idx_bookmarks_user_id ON bookmarks(user_id);
 CREATE INDEX IF NOT EXISTS idx_reports_status ON reports(status);
 
+-- Grant view access to authenticated users only (not anon)
+GRANT SELECT ON public_confessions TO authenticated;
+GRANT SELECT ON public_comments TO authenticated;
+
 -- SAFE PUBLIC VIEWS (WITHOUT AUTHOR_ID OR IDENTITY METADATA)
 
 -- Safe Public Confessions View
@@ -206,9 +210,15 @@ SELECT
   c.snapshot_gender AS gender,
   c.poll_options,
   c.created_at,
-  (SELECT COUNT(*)::int FROM comments cm WHERE cm.confession_id = c.id AND cm.is_deleted = false) AS comment_count
+  (SELECT COUNT(*)::int FROM comments cm WHERE cm.confession_id = c.id AND cm.is_deleted = false) AS comment_count,
+  jsonb_build_object(
+    'relatable', (SELECT COUNT(*)::int FROM reactions r WHERE r.confession_id = c.id AND r.reaction_type = 'relatable'),
+    'funny', (SELECT COUNT(*)::int FROM reactions r WHERE r.confession_id = c.id AND r.reaction_type = 'funny'),
+    'support', (SELECT COUNT(*)::int FROM reactions r WHERE r.confession_id = c.id AND r.reaction_type = 'support'),
+    'interesting', (SELECT COUNT(*)::int FROM reactions r WHERE r.confession_id = c.id AND r.reaction_type = 'interesting')
+  ) AS reaction_counts
 FROM confessions c
-JOIN categories cat ON c.category_id = cat.id
+LEFT JOIN categories cat ON c.category_id = cat.id
 WHERE c.moderation_status = 'approved' AND c.is_deleted = false;
 
 -- Safe Public Comments View (Thread-Scoped Anonymous Labels)
@@ -255,9 +265,15 @@ ALTER TABLE identity_access_logs ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Read Own Profile" ON profiles FOR SELECT USING (auth.uid() = id);
 CREATE POLICY "Update Own Profile" ON profiles FOR UPDATE USING (auth.uid() = id);
 
--- Confessions: Public read access handled via view; direct table read restricted to author or admin.
+-- Confessions: Public read access handled via view; direct table read restricted.
 CREATE POLICY "Insert Own Confession" ON confessions FOR INSERT WITH CHECK (auth.uid() = author_id);
 CREATE POLICY "Update Own Confession" ON confessions FOR UPDATE USING (auth.uid() = author_id);
+CREATE POLICY "Admin Select Confessions" ON confessions FOR SELECT USING (
+  auth.uid() IN (SELECT id FROM profiles WHERE role = 'admin')
+);
+
+-- Revoke direct table SELECT from all roles to enforce view-only access
+REVOKE SELECT ON confessions FROM anon, authenticated;
 
 -- Bookmarks & Reactions: User restricted
 CREATE POLICY "Manage Own Bookmarks" ON bookmarks FOR ALL USING (auth.uid() = user_id);

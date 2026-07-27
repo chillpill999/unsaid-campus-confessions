@@ -1,16 +1,35 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Navbar } from '@/components/navbar';
 import { MobileNav } from '@/components/mobile-nav';
-import { Settings, Moon, Sun, Shield, UserX, Trash2, LogOut, Check } from 'lucide-react';
+import { Settings, Moon, Sun, Shield, UserX, Trash2, LogOut, Check, AtSign, CheckCircle2 } from 'lucide-react';
+import { getSavedUsername, saveUsername } from '@/lib/friends-chat';
 
 export default function SettingsPage() {
   const router = useRouter();
   const [theme, setTheme] = useState<'dark' | 'light' | 'system'>('dark');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [username, setUsername] = useState('student_lnj');
+  const [usernameInput, setUsernameInput] = useState('');
+  const [saveNotice, setSaveNotice] = useState<string | null>(null);
+
+  useEffect(() => {
+    const saved = getSavedUsername();
+    setUsername(saved);
+    setUsernameInput(saved);
+  }, []);
+
+  const handleSaveUsername = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!usernameInput.trim()) return;
+    const clean = saveUsername(usernameInput);
+    setUsername(clean);
+    setSaveNotice(`Username saved as @${clean}!`);
+    setTimeout(() => setSaveNotice(null), 3000);
+  };
 
   const handleSignOut = async () => {
     const { createClient } = await import('@/lib/supabase/client');
@@ -20,7 +39,7 @@ export default function SettingsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col pb-20 md:pb-8">
+    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col pb-24 md:pb-8 selection:bg-indigo-500 selection:text-white">
       <Navbar />
 
       <main className="max-w-3xl mx-auto px-4 pt-6 flex-1 w-full space-y-6">
@@ -30,8 +49,51 @@ export default function SettingsPage() {
           </div>
           <div>
             <h1 className="text-xl font-bold text-white font-heading">Settings & Preferences</h1>
-            <p className="text-xs text-slate-400">Manage account privacy, theme, blocked users, and data.</p>
+            <p className="text-xs text-slate-400">Manage account privacy, theme, blocked users, and handle.</p>
           </div>
+        </div>
+
+        {/* Username Handle Card */}
+        <div className="glass-card p-6 space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-bold text-white flex items-center gap-2">
+              <AtSign className="w-4 h-4 text-indigo-400" />
+              Student Username Handle (Instagram Direct)
+            </h3>
+            <span className="text-xs font-mono font-bold text-indigo-300 bg-slate-950 px-2 py-0.5 rounded border border-indigo-500/30">
+              @{username}
+            </span>
+          </div>
+          <p className="text-xs text-slate-400 leading-relaxed">
+            Your unique handle allows fellow students to search for you and send friend requests for 24-hour disappearing chats.
+          </p>
+
+          {saveNotice && (
+            <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 text-xs font-semibold flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+              {saveNotice}
+            </div>
+          )}
+
+          <form onSubmit={handleSaveUsername} className="flex gap-2">
+            <div className="relative flex-1">
+              <span className="absolute left-3.5 top-2.5 text-slate-500 text-xs font-mono font-bold">@</span>
+              <input
+                type="text"
+                value={usernameInput}
+                onChange={(e) => setUsernameInput(e.target.value)}
+                placeholder="enter_username"
+                className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-8 pr-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-indigo-500 font-mono"
+                required
+              />
+            </div>
+            <button
+              type="submit"
+              className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold shadow-md shadow-indigo-500/20"
+            >
+              Update Handle
+            </button>
+          </form>
         </div>
 
         {/* Theme Settings */}
@@ -116,8 +178,8 @@ export default function SettingsPage() {
 
       {/* Delete Confirmation Modal */}
       {showDeleteConfirm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-md">
-          <div className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-2xl space-y-4">
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4 bg-slate-950/85 backdrop-blur-md">
+          <div className="w-full sm:max-w-md bg-slate-900 sm:border border-t border-slate-800 sm:rounded-3xl rounded-t-3xl p-5 sm:p-6 shadow-2xl space-y-4">
             <h3 className="text-base font-bold text-white">Delete Account?</h3>
             <p className="text-xs text-slate-400 leading-relaxed">
               This action will delete your authenticated account profile and remove associated personal data according to our privacy policy.

@@ -13,6 +13,7 @@ import { ReportDialog } from '@/components/report-dialog';
 import { EmptyState } from '@/components/empty-state';
 import { MOCK_CONFESSIONS, MOCK_CATEGORIES } from '@/lib/mock-data';
 import { PublicConfession, Category } from '@/lib/types';
+import { fetchPublicConfessions } from '@/lib/actions/feed';
 import { Flame, Sparkles, PlusCircle } from 'lucide-react';
 
 export default function FeedPage() {
@@ -43,17 +44,10 @@ export default function FeedPage() {
         console.error('Failed to parse local confessions:', err);
       }
 
-      // 2. Fetch live confessions from Supabase
+      // 2. Fetch live confessions via secure Server Action (uses public_confessions view, no author_id)
       try {
-        const { createClient } = await import('@/lib/supabase/client');
-        const supabase = createClient();
-        const { data } = await supabase
-          .from('confessions')
-          .select('*')
-          .order('created_at', { ascending: false });
-
+        const data = await fetchPublicConfessions();
         if (data && data.length > 0) {
-          // Deduplicate by public_code or id
           const codeMap = new Map<string, PublicConfession>();
           (data as PublicConfession[]).forEach((c) => codeMap.set(c.public_code, c));
           combined.forEach((c) => codeMap.set(c.public_code, c));
@@ -64,7 +58,7 @@ export default function FeedPage() {
           return;
         }
       } catch (err) {
-        console.warn('Supabase fetch fallback:', err);
+        console.warn('Server action fetch fallback:', err);
       }
 
       // 3. Fallback: Combine local saved + mock confessions
@@ -134,11 +128,11 @@ export default function FeedPage() {
   const featuredConfession = confessions.find((c) => c.is_featured) || confessions[0];
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col pb-20 md:pb-8 selection:bg-indigo-500 selection:text-white">
+    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col pb-24 md:pb-8 selection:bg-indigo-500 selection:text-white">
       <Navbar onOpenComposer={() => setIsComposerOpen(true)} />
 
       {/* Main Container: Responsive 3-Column Desktop Layout */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 flex-1 w-full grid grid-cols-1 md:grid-cols-12 gap-8">
+      <main className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 pt-4 sm:pt-6 flex-1 w-full grid grid-cols-1 md:grid-cols-12 gap-4 md:gap-8">
         
         {/* Left Column (Desktop Navigation & Categories Filter) */}
         <aside className="hidden md:block md:col-span-3 space-y-6 sticky top-22 h-fit">
@@ -180,7 +174,35 @@ export default function FeedPage() {
         </aside>
 
         {/* Center Column: Feed Content */}
-        <section className="md:col-span-6 space-y-4">
+        <section className="md:col-span-6 space-y-3 sm:space-y-4">
+          {/* Mobile Categories: Horizontal Scrollable Pill Bar */}
+          <div className="md:hidden overflow-x-auto -mx-3 px-3 pb-1 scrollbar-none">
+            <div className="flex items-center gap-2 min-w-max">
+              <button
+                onClick={() => setSelectedCategorySlug(null)}
+                className={`whitespace-nowrap px-3.5 py-2 rounded-full text-xs font-semibold transition-all shrink-0 ${
+                  selectedCategorySlug === null
+                    ? 'bg-indigo-600 text-white shadow-md shadow-indigo-500/20'
+                    : 'bg-slate-900 text-slate-300 border border-slate-800'
+                }`}
+              >
+                All
+              </button>
+              {MOCK_CATEGORIES.map((cat) => (
+                <button
+                  key={cat.id}
+                  onClick={() => setSelectedCategorySlug(cat.slug)}
+                  className={`whitespace-nowrap px-3.5 py-2 rounded-full text-xs font-medium transition-all shrink-0 ${
+                    selectedCategorySlug === cat.slug
+                      ? 'bg-indigo-600 text-white shadow-md shadow-indigo-500/20'
+                      : 'bg-slate-900 text-slate-400 border border-slate-800'
+                  }`}
+                >
+                  {cat.name}
+                </button>
+              ))}
+            </div>
+          </div>
           
           {/* Think About You Toast Notification */}
           {thinkAboutYouNotice && (

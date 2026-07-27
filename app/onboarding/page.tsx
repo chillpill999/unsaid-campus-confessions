@@ -185,8 +185,8 @@ export default function OnboardingPage() {
 
       {/* Section 64: First-Time Welcome Modal */}
       {showWelcomeModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-md animate-fade-in">
-          <div className="w-full max-w-lg bg-slate-900 border border-slate-800 rounded-3xl p-8 shadow-2xl space-y-6 text-center">
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4 bg-slate-950/85 backdrop-blur-md animate-fade-in">
+          <div className="w-full sm:max-w-lg bg-slate-900 sm:border border-t border-slate-800 sm:rounded-3xl rounded-t-3xl p-6 sm:p-8 shadow-2xl space-y-6 text-center max-h-[92vh] overflow-y-auto">
             <div className="w-16 h-16 rounded-3xl bg-gradient-to-tr from-indigo-600 via-purple-600 to-pink-500 text-white flex items-center justify-center mx-auto shadow-xl shadow-indigo-500/30">
               <Sparkles className="w-8 h-8" />
             </div>

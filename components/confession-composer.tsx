@@ -5,6 +5,7 @@ import { X, Lock, Sparkles, AlertCircle, Plus, Trash2, CheckCircle2 } from 'luci
 import { Category, Gender, PublicConfession } from '@/lib/types';
 import { generatePublicCode } from '@/lib/utils';
 import { MOCK_CATEGORIES } from '@/lib/mock-data';
+import { createConfession } from '@/lib/actions/confessions';
 
 interface ConfessionComposerProps {
   isOpen: boolean;
@@ -127,29 +128,30 @@ export function ConfessionComposer({
       console.error('Failed to save to local storage:', err);
     }
 
-    // 2. Try inserting into Supabase database if session exists
+    // 2. Submit via secure Server Action (author_id derived server-side from auth.uid())
     try {
-      const { createClient } = await import('@/lib/supabase/client');
-      const supabase = createClient();
-      const { data: { user } } = await supabase.auth.getUser();
-
-      if (user) {
-        await supabase.from('confessions').insert({
-          public_code: newCode,
-          content: content.trim(),
-          category_name: selectedCategory.name,
-          category_slug: selectedCategory.slug,
-          category_icon: selectedCategory.icon,
-          gender: userGender,
-          recipient_gender: recipientGender || null,
-          target_batch: targetBatch || null,
-          target_department: targetDepartment || null,
-          author_id: user.id,
-          created_at: new Date().toISOString(),
-        });
-      }
-    } catch (supabaseErr) {
-      console.warn('Supabase insert fallback:', supabaseErr);
+      await createConfession({
+        content: content.trim(),
+        category_slug: selectedCategory.slug,
+        category_name: selectedCategory.name,
+        category_icon: selectedCategory.icon,
+        gender: userGender,
+        recipient_gender: recipientGender || null,
+        target_batch: targetBatch || null,
+        target_department: targetDepartment || null,
+        poll_data: hasPoll && pollQuestion.trim()
+          ? {
+              question: pollQuestion.trim(),
+              total_votes: 0,
+              options: pollOptions
+                .filter((o) => o.trim())
+                .map((text, idx) => ({ id: `opt-${idx}`, text: text.trim(), votes: 0 })),
+            }
+          : null,
+      });
+    } catch (serverErr) {
+      console.warn('Server action insert fallback:', serverErr);
+      // Still allow local persistence even if server action fails
     }
 
     setIsSubmitting(false);
@@ -165,8 +167,8 @@ export function ConfessionComposer({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-fade-in">
-      <div className="w-full max-w-xl bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4 bg-slate-950/80 backdrop-blur-md animate-fade-in">
+      <div className="w-full sm:max-w-xl bg-slate-900 sm:border border-t border-slate-800 sm:rounded-3xl rounded-t-3xl shadow-2xl overflow-hidden flex flex-col max-h-[95vh] sm:max-h-[90vh]">
         {/* Modal Header */}
         <div className="px-6 py-4 border-b border-slate-800 flex items-center justify-between">
           <div>

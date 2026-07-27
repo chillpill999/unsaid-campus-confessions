@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import crypto from 'crypto';
 import { isDemoModeActive } from '@/lib/demo-mode';
 import { checkRateLimit } from '@/lib/rate-limit';
 import { MOCK_REVEALED_IDENTITIES, MOCK_AUDIT_LOGS } from '@/lib/mock-data';
@@ -137,7 +138,7 @@ export async function POST(req: NextRequest) {
     }
 
     const revealedPayload = {
-      internal_ref: `REF-${confession.author_id.slice(0, 8)}`,
+      internal_ref: `REF-STU-${Buffer.from(crypto.randomBytes(4)).toString('hex').toUpperCase()}`,
       google_name: targetAuth?.user?.user_metadata?.full_name || 'Authenticated Student',
       google_email: targetAuth?.user?.email || 'verified@student.edu',
       google_avatar_url: targetAuth?.user?.user_metadata?.avatar_url,

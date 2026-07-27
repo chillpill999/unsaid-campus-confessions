@@ -73,7 +73,7 @@ export default function AdminUsersPage() {
             <div key={acc.id} className="glass-card p-5 space-y-3">
               <div className="flex items-center justify-between text-xs">
                 <div className="font-mono text-slate-300 font-bold">
-                  Internal Ref: REF-STU-{acc.id.slice(0, 8)}
+                  Internal Reference
                 </div>
                 <span className={`px-2.5 py-0.5 rounded text-[11px] font-bold uppercase ${
                   acc.account_status === 'active' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' :

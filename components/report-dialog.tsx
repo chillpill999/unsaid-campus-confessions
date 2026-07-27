@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { X, Flag, AlertTriangle, CheckCircle2 } from 'lucide-react';
+import { submitReport } from '@/lib/actions/reports';
 
 interface ReportDialogProps {
   isOpen: boolean;
@@ -32,22 +33,39 @@ export function ReportDialog({
   const [reason, setReason] = useState(REPORT_REASONS[0]);
   const [details, setDetails] = useState('');
   const [submitted, setSubmitted] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   if (!isOpen) return null;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSubmitted(true);
-    setTimeout(() => {
-      setSubmitted(false);
-      onClose();
-      setDetails('');
-    }, 1500);
+    setIsSubmitting(true);
+    setErrorMsg('');
+
+    try {
+      await submitReport({
+        confession_code: targetCode,
+        reason,
+        details: details.trim() || undefined,
+      });
+      setSubmitted(true);
+      setTimeout(() => {
+        setSubmitted(false);
+        onClose();
+        setDetails('');
+        setErrorMsg('');
+      }, 1500);
+    } catch (err: any) {
+      setErrorMsg(err.message || 'Failed to submit report');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md">
-      <div className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-2xl space-y-4">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4 bg-slate-950/80 backdrop-blur-md">
+      <div className="w-full sm:max-w-md bg-slate-900 sm:border border-t border-slate-800 sm:rounded-3xl rounded-t-3xl p-5 sm:p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Flag className="w-5 h-5 text-rose-400" />
@@ -95,6 +113,12 @@ export function ReportDialog({
               />
             </div>
 
+            {errorMsg && (
+              <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-300 text-xs">
+                {errorMsg}
+              </div>
+            )}
+
             <div className="pt-2 flex justify-end gap-2">
               <button
                 type="button"
@@ -105,9 +129,10 @@ export function ReportDialog({
               </button>
               <button
                 type="submit"
-                className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-semibold shadow-md shadow-rose-500/20"
+                disabled={isSubmitting}
+                className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-semibold shadow-md shadow-rose-500/20 disabled:opacity-50"
               >
-                Submit Report
+                {isSubmitting ? 'Submitting...' : 'Submit Report'}
               </button>
             </div>
           </form>
