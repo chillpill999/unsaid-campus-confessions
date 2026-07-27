@@ -46,7 +46,7 @@ export async function middleware(request: NextRequest) {
 
   const pathname = request.nextUrl.pathname;
 
-  // Protected student routes
+  // Protected student and admin routes
   const protectedRoutes = [
     '/feed',
     '/trending',
@@ -62,11 +62,8 @@ export async function middleware(request: NextRequest) {
   const isProtectedRoute = protectedRoutes.some((route) => pathname.startsWith(route));
   const isAdminRoute = pathname.startsWith('/admin');
 
-  // Check Demo Mode flag in cookie or header for local dev fallback
-  const demoRoleCookie = request.cookies.get('unsaid_demo_role')?.value;
-  const isDemoAllowed = process.env.NODE_ENV !== 'production' && Boolean(demoRoleCookie);
-
-  if ((isProtectedRoute || isAdminRoute) && !user && !isDemoAllowed) {
+  // STRICT REQUIREMENT: If user is not authenticated via Supabase session, REDIRECT TO LOGIN IMMEDIATELY
+  if ((isProtectedRoute || isAdminRoute) && !user) {
     const loginUrl = new URL('/login', request.url);
     loginUrl.searchParams.set('redirect', pathname);
     return NextResponse.redirect(loginUrl);
@@ -77,15 +74,25 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
+    '/feed',
     '/feed/:path*',
+    '/trending',
     '/trending/:path*',
+    '/search',
     '/search/:path*',
+    '/saved',
     '/saved/:path*',
+    '/notifications',
     '/notifications/:path*',
+    '/inbox',
     '/inbox/:path*',
+    '/profile',
     '/profile/:path*',
+    '/settings',
     '/settings/:path*',
+    '/onboarding',
     '/onboarding/:path*',
+    '/admin',
     '/admin/:path*',
   ],
 };

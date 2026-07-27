@@ -30,8 +30,6 @@ export default function FeedPage() {
   // Client-Side Authentication Guard
   useEffect(() => {
     async function verifyAuth() {
-      if (isDemoModeActive() && localStorage.getItem('unsaid_demo_role')) return;
-
       try {
         const { createClient } = await import('@/lib/supabase/client');
         const supabase = createClient();
