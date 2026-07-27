@@ -135,7 +135,12 @@ export default function LandingPage() {
       {/* Footer */}
       <footer className="mt-auto border-t border-slate-900 py-8 px-4 text-center text-xs text-slate-500">
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div>© 2026 ConfessionLnjpit Campus Platform. All rights reserved.</div>
+          <div className="space-y-1 sm:text-left text-center">
+            <div>© 2026 ConfessionLnjpit Campus Platform. All rights reserved.</div>
+            <div className="text-[11px] text-pink-400/90 font-medium flex items-center justify-center sm:justify-start gap-1">
+              Made With <Heart className="w-3 h-3 text-pink-500 fill-pink-500 inline" /> of Hothlali Members
+            </div>
+          </div>
           <div className="flex items-center gap-6">
             <Link href="/guidelines" className="hover:text-slate-300">Community Guidelines</Link>
             <Link href="/privacy" className="hover:text-slate-300">Privacy Policy</Link>
