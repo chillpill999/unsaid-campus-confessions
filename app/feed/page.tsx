@@ -18,7 +18,7 @@ import { Flame, Sparkles, PlusCircle } from 'lucide-react';
 export default function FeedPage() {
   const router = useRouter();
   const [isAuthVerified, setIsAuthVerified] = useState(false);
-  const [confessions, setConfessions] = useState<PublicConfession[]>(MOCK_CONFESSIONS);
+  const [confessions, setConfessions] = useState<PublicConfession[]>([]);
   const [activeTab, setActiveTab] = useState<'for-you' | 'latest' | 'trending'>('latest');
   const [selectedCategorySlug, setSelectedCategorySlug] = useState<string | null>(null);
 
@@ -26,6 +26,58 @@ export default function FeedPage() {
   const [isComposerOpen, setIsComposerOpen] = useState(false);
   const [reportingCode, setReportingCode] = useState<string | null>(null);
   const [thinkAboutYouNotice, setThinkAboutYouNotice] = useState<string | null>(null);
+
+  // Load persistent confessions on load & keep across page reloads
+  useEffect(() => {
+    async function loadConfessions() {
+      let combined: PublicConfession[] = [];
+
+      // 1. Load locally stored user confessions
+      try {
+        const localSavedStr = localStorage.getItem('unsaid_persistent_confessions');
+        if (localSavedStr) {
+          const localSaved: PublicConfession[] = JSON.parse(localSavedStr);
+          combined = [...localSaved];
+        }
+      } catch (err) {
+        console.error('Failed to parse local confessions:', err);
+      }
+
+      // 2. Fetch live confessions from Supabase
+      try {
+        const { createClient } = await import('@/lib/supabase/client');
+        const supabase = createClient();
+        const { data } = await supabase
+          .from('confessions')
+          .select('*')
+          .order('created_at', { ascending: false });
+
+        if (data && data.length > 0) {
+          // Deduplicate by public_code or id
+          const codeMap = new Map<string, PublicConfession>();
+          (data as PublicConfession[]).forEach((c) => codeMap.set(c.public_code, c));
+          combined.forEach((c) => codeMap.set(c.public_code, c));
+          MOCK_CONFESSIONS.forEach((c) => {
+            if (!codeMap.has(c.public_code)) codeMap.set(c.public_code, c);
+          });
+          setConfessions(Array.from(codeMap.values()));
+          return;
+        }
+      } catch (err) {
+        console.warn('Supabase fetch fallback:', err);
+      }
+
+      // 3. Fallback: Combine local saved + mock confessions
+      const codeMap = new Map<string, PublicConfession>();
+      combined.forEach((c) => codeMap.set(c.public_code, c));
+      MOCK_CONFESSIONS.forEach((c) => {
+        if (!codeMap.has(c.public_code)) codeMap.set(c.public_code, c);
+      });
+      setConfessions(Array.from(codeMap.values()));
+    }
+
+    loadConfessions();
+  }, []);
 
   // STRICT Client-Side Authentication Guard — blocks rendering until verified
   useEffect(() => {
@@ -67,7 +119,11 @@ export default function FeedPage() {
   });
 
   const handlePostSuccess = (newConfession: PublicConfession) => {
-    setConfessions([newConfession, ...confessions]);
+    setConfessions((prev) => {
+      const exists = prev.some((c) => c.public_code === newConfession.public_code);
+      if (exists) return prev;
+      return [newConfession, ...prev];
+    });
   };
 
   const handleThinkAboutYou = (code: string) => {
