@@ -35,3 +35,28 @@ export async function createProfile(data: {
 
   return { success: true, existing: false };
 }
+
+export async function getProfile() {
+  try {
+    const supabase = createClient();
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return null;
+    }
+
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', user.id)
+      .single();
+
+    if (error || !data) {
+      return null;
+    }
+
+    return data;
+  } catch (err) {
+    return null;
+  }
+}

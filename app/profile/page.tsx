@@ -10,7 +10,7 @@ import { MOCK_DEMO_USER_PROFILE, MOCK_CONFESSIONS } from '@/lib/mock-data';
 import { getSavedUsername, saveUsername } from '@/lib/friends-chat';
 
 export default function ProfilePage() {
-  const profile = MOCK_DEMO_USER_PROFILE;
+  const [profile, setProfile] = useState(MOCK_DEMO_USER_PROFILE);
   const [activeTab, setActiveTab] = useState<'my-confessions' | 'saved'>('my-confessions');
   const [username, setUsername] = useState<string>('student_lnj');
   const [isEditingUsername, setIsEditingUsername] = useState(false);
@@ -20,6 +20,44 @@ export default function ProfilePage() {
     const saved = getSavedUsername();
     setUsername(saved);
     setUsernameInput(saved);
+
+    async function loadUserProfile() {
+      if (typeof window === 'undefined') return;
+      
+      // 1. Try to load local profile
+      const uid = localStorage.getItem('unsaid_uid');
+      if (uid) {
+        const localProf = localStorage.getItem(`unsaid_profile_${uid}`);
+        if (localProf) {
+          try {
+            const parsed = JSON.parse(localProf);
+            setProfile((prev) => ({
+              ...prev,
+              full_name: parsed.fullName || prev.full_name,
+              gender: parsed.gender || prev.gender,
+              department: parsed.department || prev.department,
+              batch: parsed.batch || prev.batch,
+            }));
+          } catch (e) {}
+        }
+      }
+
+      // 2. Fetch from Supabase for fresh data
+      try {
+        const { getProfile } = await import('@/lib/actions/profile');
+        const dbProfile = await getProfile();
+        if (dbProfile) {
+          setProfile((prev) => ({
+            ...prev,
+            full_name: 'Student User',
+            gender: dbProfile.gender,
+            department: dbProfile.department,
+            batch: dbProfile.batch,
+          }));
+        }
+      } catch (err) {}
+    }
+    loadUserProfile();
   }, []);
 
   const handleSaveUsername = (e: React.FormEvent) => {

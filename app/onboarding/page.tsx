@@ -1,10 +1,9 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Lock, ShieldCheck, Sparkles, ArrowRight, Check, Building2, User, BookOpen } from 'lucide-react';
 import { Gender } from '@/lib/types';
-import { createProfile } from '@/lib/actions/profile';
 
 export default function OnboardingPage() {
   const router = useRouter();
@@ -12,7 +11,6 @@ export default function OnboardingPage() {
   const [fullName, setFullName] = useState('');
   const [gender, setGender] = useState<Gender>('Male');
   const [college] = useState('Loknayak Jai Prakash Institute of Technology');
-  const [collegeId] = useState('11111111-1111-1111-1111-111111111111');
   const [batch, setBatch] = useState('2026');
   const [department, setDepartment] = useState('Computer Science & Engineering');
   const [acceptedTerms, setAcceptedTerms] = useState(false);
@@ -28,21 +26,92 @@ export default function OnboardingPage() {
     'Information Technology (IT)',
   ];
 
+  // Auto-skip onboarding if user already completed it on this device/browser
+  useEffect(() => {
+    async function checkExistingProfile() {
+      if (typeof window === 'undefined') return;
+
+      // 1. Check local storage first
+      const uid = localStorage.getItem('unsaid_uid');
+      if (uid) {
+        const existing = localStorage.getItem(`unsaid_profile_${uid}`);
+        if (existing) {
+          router.replace('/feed');
+          return;
+        }
+      }
+
+      // 2. Check Supabase DB for existing profile
+      try {
+        const { getProfile } = await import('@/lib/actions/profile');
+        const dbProfile = await getProfile();
+        if (dbProfile) {
+          const user_id = dbProfile.id;
+          const profileObj = {
+            fullName: 'Student User',
+            gender: dbProfile.gender,
+            department: dbProfile.department,
+            batch: dbProfile.batch,
+            college: 'Loknayak Jai Prakash Institute of Technology',
+            completedAt: Date.now()
+          };
+          localStorage.setItem('unsaid_uid', user_id);
+          localStorage.setItem(`unsaid_profile_${user_id}`, JSON.stringify(profileObj));
+          localStorage.setItem('unsaid_gender', dbProfile.gender);
+          localStorage.setItem('unsaid_department', dbProfile.department);
+          localStorage.setItem('unsaid_batch', dbProfile.batch);
+          
+          router.replace('/feed');
+        }
+      } catch (err) {
+        console.error('Error checking existing profile:', err);
+      }
+    }
+    
+    checkExistingProfile();
+  }, [router]);
+
+  const getUID = (): string => {
+    if (typeof window === 'undefined') return '';
+    let uid = localStorage.getItem('unsaid_uid');
+    if (!uid) {
+      uid = 'uid_' + Math.random().toString(36).slice(2) + Date.now().toString(36);
+      localStorage.setItem('unsaid_uid', uid);
+      document.cookie = `unsaid_uid=${uid}; path=/; max-age=2592000; SameSite=Lax`;
+    }
+    return uid;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!acceptedTerms || !fullName.trim()) return;
     setOnboardingError('');
 
     try {
-      await createProfile({
-        gender,
-        batch,
-        department,
-        college_id: collegeId,
-      });
+      // Save profile data locally under stable user ID
+      const uid = getUID();
+      const profile = { fullName, gender, department, batch, college, completedAt: Date.now() };
+      localStorage.setItem(`unsaid_profile_${uid}`, JSON.stringify(profile));
+      localStorage.setItem('unsaid_gender', gender);
+      localStorage.setItem('unsaid_department', department);
+      localStorage.setItem('unsaid_batch', batch);
+
+      // Also try to persist to Supabase if session exists
+      try {
+        const { createProfile } = await import('@/lib/actions/profile');
+        await createProfile({
+          gender,
+          batch,
+          department,
+          college_id: '11111111-1111-1111-1111-111111111111',
+        });
+      } catch (_) {
+        // Supabase profile creation is optional — local save is the source of truth
+      }
+
       setShowWelcomeModal(true);
     } catch (err: any) {
-      setOnboardingError(err.message || 'Failed to create profile. Please try again.');
+      setOnboardingError(err.message || 'Failed to save profile. Please try again.');
     }
   };
 
@@ -60,7 +129,7 @@ export default function OnboardingPage() {
           </div>
           <h1 className="text-2xl font-extrabold text-white font-heading">Student Profile Setup</h1>
           <p className="text-xs text-slate-400">
-            Your name is verified for account safety but hidden from other students.
+            Your name is verified for account safety but hidden from other students. You only do this once.
           </p>
         </div>
 
@@ -131,9 +200,7 @@ export default function OnboardingPage() {
                 required
               >
                 {BRANCH_OPTIONS.map((branch) => (
-                  <option key={branch} value={branch}>
-                    {branch}
-                  </option>
+                  <option key={branch} value={branch}>{branch}</option>
                 ))}
               </select>
             </div>
@@ -156,7 +223,7 @@ export default function OnboardingPage() {
             </div>
           )}
 
-          {/* Terms Agreement Checkbox */}
+          {/* Terms Agreement */}
           <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-2">
             <label className="flex items-start gap-3 cursor-pointer">
               <input
@@ -183,7 +250,7 @@ export default function OnboardingPage() {
         </form>
       </div>
 
-      {/* Section 64: First-Time Welcome Modal */}
+      {/* Welcome Modal */}
       {showWelcomeModal && (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4 bg-slate-950/85 backdrop-blur-md animate-fade-in">
           <div className="w-full sm:max-w-lg bg-slate-900 sm:border border-t border-slate-800 sm:rounded-3xl rounded-t-3xl p-6 sm:p-8 shadow-2xl space-y-6 text-center max-h-[92vh] overflow-y-auto">
