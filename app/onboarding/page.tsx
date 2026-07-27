@@ -1,0 +1,178 @@
+'use client';
+
+import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { Lock, ShieldCheck, Sparkles, ArrowRight, Check } from 'lucide-react';
+import { Gender } from '@/lib/types';
+
+export default function OnboardingPage() {
+  const router = useRouter();
+
+  const [gender, setGender] = useState<Gender>('Male');
+  const [college, setCollege] = useState('Stanford University');
+  const [batch, setBatch] = useState('2026');
+  const [department, setDepartment] = useState('Computer Science');
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
+  const [showWelcomeModal, setShowWelcomeModal] = useState(false);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!acceptedTerms) return;
+    setShowWelcomeModal(true);
+  };
+
+  const handleEnterFeed = () => {
+    router.push('/feed');
+  };
+
+  return (
+    <div className="min-h-screen bg-slate-950 text-slate-100 flex items-center justify-center p-4 selection:bg-indigo-500 selection:text-white">
+      <div className="w-full max-w-xl bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl space-y-6">
+        {/* Header */}
+        <div className="space-y-2 text-center">
+          <div className="w-12 h-12 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 flex items-center justify-center mx-auto">
+            <Lock className="w-6 h-6" />
+          </div>
+          <h1 className="text-2xl font-extrabold text-white font-heading">Campus Profile Setup</h1>
+          <p className="text-xs text-slate-400">
+            Your real identity remains hidden from other students.
+          </p>
+        </div>
+
+        {/* Form */}
+        <form onSubmit={handleSubmit} className="space-y-5">
+          {/* Gender */}
+          <div>
+            <label className="block text-xs font-semibold text-slate-300 mb-2">
+              Gender Presentation <span className="text-indigo-400">*</span>
+            </label>
+            <p className="text-[11px] text-slate-400 mb-2">
+              Displayed alongside your anonymous posts (e.g. <span className="text-indigo-300 font-semibold">Anonymous • Male</span>).
+            </p>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              {(['Male', 'Female', 'Non-binary', 'Prefer not to say'] as Gender[]).map((g) => (
+                <button
+                  key={g}
+                  type="button"
+                  onClick={() => setGender(g)}
+                  className={`p-3 rounded-xl text-xs font-semibold border transition-all ${
+                    gender === g
+                      ? 'bg-indigo-600 text-white border-indigo-500 shadow-md shadow-indigo-500/20'
+                      : 'bg-slate-950 text-slate-400 border-slate-800 hover:border-slate-700'
+                  }`}
+                >
+                  {g}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* College */}
+          <div>
+            <label className="block text-xs font-semibold text-slate-300 mb-1.5">College / University</label>
+            <select
+              value={college}
+              onChange={(e) => setCollege(e.target.value)}
+              className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500"
+            >
+              <option value="Stanford University">Stanford University</option>
+              <option value="Massachusetts Institute of Technology">Massachusetts Institute of Technology (MIT)</option>
+              <option value="University of California, Berkeley">UC Berkeley</option>
+            </select>
+          </div>
+
+          {/* Batch & Dept */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-semibold text-slate-300 mb-1.5">Batch / Graduation Year</label>
+              <input
+                type="text"
+                value={batch}
+                onChange={(e) => setBatch(e.target.value)}
+                placeholder="e.g. 2026"
+                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500"
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-slate-300 mb-1.5">Department / Branch (Optional)</label>
+              <input
+                type="text"
+                value={department}
+                onChange={(e) => setDepartment(e.target.value)}
+                placeholder="e.g. Computer Science"
+                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500"
+              />
+            </div>
+          </div>
+
+          {/* Terms Agreement Checkbox */}
+          <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-2">
+            <label className="flex items-start gap-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={acceptedTerms}
+                onChange={(e) => setAcceptedTerms(e.target.checked)}
+                className="mt-0.5 w-4 h-4 rounded border-slate-800 bg-slate-900 text-indigo-600 focus:ring-indigo-500"
+                required
+              />
+              <span className="text-xs text-slate-300 leading-relaxed">
+                I accept the <strong className="text-white">Community Guidelines</strong> and understand that{' '}
+                <strong className="text-indigo-300">my posts are anonymous to other students, not to platform administrators.</strong>
+              </span>
+            </label>
+          </div>
+
+          <button
+            type="submit"
+            disabled={!acceptedTerms}
+            className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-500 text-white font-bold text-sm shadow-xl shadow-indigo-500/25 disabled:opacity-50 transition-all hover:scale-[1.01]"
+          >
+            Complete Onboarding & Proceed
+          </button>
+        </form>
+      </div>
+
+      {/* Section 64: First-Time Welcome Modal */}
+      {showWelcomeModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-md animate-fade-in">
+          <div className="w-full max-w-lg bg-slate-900 border border-slate-800 rounded-3xl p-8 shadow-2xl space-y-6 text-center">
+            <div className="w-16 h-16 rounded-3xl bg-gradient-to-tr from-indigo-600 via-purple-600 to-pink-500 text-white flex items-center justify-center mx-auto shadow-xl shadow-indigo-500/30">
+              <Sparkles className="w-8 h-8" />
+            </div>
+
+            <div className="space-y-2">
+              <h2 className="text-xl sm:text-2xl font-extrabold text-white font-heading">
+                Welcome to the side of campus nobody says out loud. 👀
+              </h2>
+              <p className="text-xs text-slate-400">Three core principles to keep our community safe and fun:</p>
+            </div>
+
+            <div className="space-y-3 text-left">
+              <div className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 space-y-0.5">
+                <div className="text-xs font-bold text-indigo-400">1. Stay anonymous.</div>
+                <div className="text-xs text-slate-400">Your identity isn't shown to other students.</div>
+              </div>
+              <div className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 space-y-0.5">
+                <div className="text-xs font-bold text-purple-400">2. Keep it respectful.</div>
+                <div className="text-xs text-slate-400">Confessions are for expression, not harassment or bullying.</div>
+              </div>
+              <div className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 space-y-0.5">
+                <div className="text-xs font-bold text-pink-400">3. Have fun.</div>
+                <div className="text-xs text-slate-400">Crushes, hostel chaos, random thoughts—this is your campus wall.</div>
+              </div>
+            </div>
+
+            <button
+              onClick={handleEnterFeed}
+              className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold text-sm shadow-lg shadow-indigo-500/25 flex items-center justify-center gap-2 hover:scale-[1.01]"
+            >
+              <span>Enter the Feed</span>
+              <ArrowRight className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
