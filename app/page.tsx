@@ -133,29 +133,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Why Anonymous & Privacy Disclosure Section */}
-      <section className="py-16 px-4 border-t border-slate-900">
-        <div className="max-w-4xl mx-auto glass-card p-8 sm:p-10 space-y-6">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400 flex items-center justify-center">
-              <ShieldCheck className="w-5 h-5" />
-            </div>
-            <div>
-              <h2 className="text-lg font-bold text-white">Privacy Disclosure & Anonymity Model</h2>
-              <p className="text-xs text-slate-400">Clear rules for a healthy community.</p>
-            </div>
-          </div>
 
-          <div className="text-xs sm:text-sm text-slate-300 space-y-3 leading-relaxed border-l-2 border-amber-500/50 pl-4 py-1">
-            <p>
-              <strong className="text-white">Your posts are anonymous to other students, not to platform administrators.</strong>
-            </p>
-            <p>
-              Your Google account is used to authenticate your account. Your name and email are never shown publicly. Authorized administrators may identify the account associated with anonymous activity when necessary for moderation, safety, abuse prevention, or enforcement of community rules.
-            </p>
-          </div>
-        </div>
-      </section>
 
       {/* Footer */}
       <footer className="mt-auto border-t border-slate-900 py-8 px-4 text-center text-xs text-slate-500">
