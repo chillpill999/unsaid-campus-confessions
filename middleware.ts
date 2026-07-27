@@ -19,6 +19,10 @@ function isProtectedPath(pathname: string): boolean {
   return PROTECTED_PREFIXES.some((prefix) => pathname === prefix || pathname.startsWith(prefix + '/'));
 }
 
+// Real Supabase credentials (anon key is public, safe to include)
+const SUPABASE_URL = 'https://prkecywvrficjylboior.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBya2VjeXd2cmZpY2p5bGJvaW9yIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODUxMzYzNTMsImV4cCI6MjEwMDcxMjM1M30.Rl-77UJekLrfDJgUzKBVrro8AyYFW6vWOXNHQ4hoVDg';
+
 export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
 
@@ -27,25 +31,13 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // Build the login redirect URL upfront (fail-closed default)
+  // Build the login redirect URL (fail-closed default)
   const loginUrl = new URL('/login', request.url);
   loginUrl.searchParams.set('redirect', pathname);
 
-  // Resolve Supabase credentials — MUST be real, not placeholders
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
-  if (
-    !supabaseUrl ||
-    !supabaseAnonKey ||
-    supabaseUrl.includes('demo-project') ||
-    supabaseAnonKey.includes('placeholder') ||
-    supabaseAnonKey.includes('demo')
-  ) {
-    // No valid Supabase credentials → BLOCK ACCESS, redirect to login
-    console.error('[MIDDLEWARE] Missing or invalid Supabase credentials — blocking access.');
-    return NextResponse.redirect(loginUrl);
-  }
+  // Use real credentials — env vars take priority, hardcoded fallback ensures it always works
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || SUPABASE_URL;
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || SUPABASE_ANON_KEY;
 
   // Create Supabase server client
   let response = NextResponse.next({
