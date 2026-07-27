@@ -14,7 +14,7 @@ import { EmptyState } from '@/components/empty-state';
 import { MOCK_CONFESSIONS, MOCK_CATEGORIES } from '@/lib/mock-data';
 import { PublicConfession, Category } from '@/lib/types';
 import { fetchPublicConfessions } from '@/lib/actions/feed';
-import { Flame, Sparkles, PlusCircle } from 'lucide-react';
+import { Flame, Sparkles, PlusCircle, Heart } from 'lucide-react';
 
 export default function FeedPage() {
   const router = useRouter();
@@ -186,6 +186,11 @@ export default function FeedPage() {
             <p className="leading-relaxed">
               Your Google account verifies you're a real student. Posts display only <strong className="text-indigo-300">Anonymous • Gender</strong>.
             </p>
+            <div className="pt-2.5 mt-2 border-t border-slate-800/80 text-[11px] text-pink-400 font-semibold flex items-center gap-1.5">
+              <span>Made with</span>
+              <Heart className="w-3.5 h-3.5 text-pink-500 fill-pink-500 inline" />
+              <span>of Hothlali Members</span>
+            </div>
           </div>
         </aside>
 
@@ -300,6 +305,15 @@ export default function FeedPage() {
         </aside>
 
       </main>
+
+      {/* Global Footer */}
+      <footer className="py-6 border-t border-slate-900 text-center text-xs text-slate-500">
+        <div className="flex items-center justify-center gap-1.5 text-pink-400 font-semibold">
+          <span>Made with</span>
+          <Heart className="w-3.5 h-3.5 text-pink-500 fill-pink-500 inline" />
+          <span>of Hothlali Members</span>
+        </div>
+      </footer>
 
       {/* Confession Composer Modal */}
       <ConfessionComposer
