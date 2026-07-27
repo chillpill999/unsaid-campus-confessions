@@ -2,16 +2,16 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Lock, ShieldCheck, Sparkles, ArrowRight, Check } from 'lucide-react';
+import { Lock, ShieldCheck, Sparkles, ArrowRight, Check, Building2 } from 'lucide-react';
 import { Gender } from '@/lib/types';
 
 export default function OnboardingPage() {
   const router = useRouter();
 
   const [gender, setGender] = useState<Gender>('Male');
-  const [college, setCollege] = useState('Stanford University');
+  const [college] = useState('Loknayak Jai Prakash Institute of Technology');
   const [batch, setBatch] = useState('2026');
-  const [department, setDepartment] = useState('Computer Science');
+  const [department, setDepartment] = useState('Computer Science & Engineering');
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [showWelcomeModal, setShowWelcomeModal] = useState(false);
 
@@ -67,18 +67,13 @@ export default function OnboardingPage() {
             </div>
           </div>
 
-          {/* College */}
+          {/* College (Single Fixed Option) */}
           <div>
-            <label className="block text-xs font-semibold text-slate-300 mb-1.5">College / University</label>
-            <select
-              value={college}
-              onChange={(e) => setCollege(e.target.value)}
-              className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500"
-            >
-              <option value="Stanford University">Stanford University</option>
-              <option value="Massachusetts Institute of Technology">Massachusetts Institute of Technology (MIT)</option>
-              <option value="University of California, Berkeley">UC Berkeley</option>
-            </select>
+            <label className="block text-xs font-semibold text-slate-300 mb-1.5">College / Institution</label>
+            <div className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-3 text-xs text-indigo-300 font-bold flex items-center gap-2.5">
+              <Building2 className="w-4 h-4 text-indigo-400 shrink-0" />
+              <span>Loknayak Jai Prakash Institute of Technology</span>
+            </div>
           </div>
 
           {/* Batch & Dept */}
@@ -95,12 +90,12 @@ export default function OnboardingPage() {
               />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1.5">Department / Branch (Optional)</label>
+              <label className="block text-xs font-semibold text-slate-300 mb-1.5">Department / Branch</label>
               <input
                 type="text"
                 value={department}
                 onChange={(e) => setDepartment(e.target.value)}
-                placeholder="e.g. Computer Science"
+                placeholder="e.g. Computer Science & Engineering"
                 className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500"
               />
             </div>
@@ -143,7 +138,7 @@ export default function OnboardingPage() {
 
             <div className="space-y-2">
               <h2 className="text-xl sm:text-2xl font-extrabold text-white font-heading">
-                Welcome to the side of campus nobody says out loud. 👀
+                Welcome to the side of LNJPIT nobody says out loud. 👀
               </h2>
               <p className="text-xs text-slate-400">Three core principles to keep our community safe and fun:</p>
             </div>
@@ -167,7 +162,7 @@ export default function OnboardingPage() {
               onClick={handleEnterFeed}
               className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold text-sm shadow-lg shadow-indigo-500/25 flex items-center justify-center gap-2 hover:scale-[1.01]"
             >
-              <span>Enter the Feed</span>
+              <span>Enter the LNJPIT Feed</span>
               <ArrowRight className="w-4 h-4" />
             </button>
           </div>

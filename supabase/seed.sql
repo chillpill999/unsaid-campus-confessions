@@ -1,11 +1,9 @@
 -- Supabase Seed Data for Unsaid
 -- Seed File: seed.sql
 
--- Insert Sample Colleges
+-- Insert Primary College
 INSERT INTO colleges (id, name, short_name, email_domain, location) VALUES
-('11111111-1111-1111-1111-111111111111', 'Stanford University', 'Stanford', 'stanford.edu', 'Stanford, CA'),
-('22222222-2222-2222-2222-222222222222', 'Massachusetts Institute of Technology', 'MIT', 'mit.edu', 'Cambridge, MA'),
-('33333333-3333-3333-3333-333333333333', 'University of California, Berkeley', 'UC Berkeley', 'berkeley.edu', 'Berkeley, CA')
+('11111111-1111-1111-1111-111111111111', 'Loknayak Jai Prakash Institute of Technology', 'LNJPIT', 'lnjpit.ac.in', 'Chhapra, Bihar')
 ON CONFLICT (email_domain) DO NOTHING;
 
 -- Insert Categories
