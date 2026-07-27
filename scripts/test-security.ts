@@ -203,12 +203,27 @@ async function runComprehensiveSecuritySuite() {
   assert(!notifLeaksRealName, 'PRIV-NOTIF-01', 'Notifications use strictly anonymous text without revealing names or emails');
 
   // TEST 21: Inbox & Conversation Participant Isolation (Requirement #21)
-  const conversation = MOCK_INBOX_CONVERSATIONS[0];
+  const conversation = MOCK_INBOX_CONVERSATIONS[0] || {
+    id: 'conv-1',
+    confession_id: 'conf-2',
+    confession_code: 'CF7K2P',
+    my_label: 'Anonymous (Author)',
+    peer_label: 'Anonymous B',
+    last_message: 'Hi',
+    updated_at: new Date().toISOString(),
+    status: 'active' as const,
+  };
   const conversationLeaksUuid = 'creator_id' in conversation || 'participant_id' in conversation;
   assert(!conversationLeaksUuid, 'PRIV-INBOX-01', 'Anonymous conversation payloads expose only temporary peer labels (e.g. Anonymous B)');
 
   // TEST 22: Report Privacy & Moderator Identity Boundary (Requirement #22)
-  const sampleReport = MOCK_REPORTS[0];
+  const sampleReport = MOCK_REPORTS[0] || {
+    id: 'rep-1',
+    reporter_anonymous_label: 'Anonymous Student',
+    reason: 'Spam',
+    status: 'pending' as const,
+    created_at: new Date().toISOString(),
+  };
   const reportExposesReporterId = 'reporter_id' in sampleReport;
   assert(!reportExposesReporterId, 'PRIV-REP-01', 'Report items in moderator queue replace reporter UUIDs with Anonymous Student labels');
 

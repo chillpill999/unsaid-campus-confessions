@@ -157,15 +157,15 @@ export default function FeedPage() {
             <div className="space-y-2 text-xs">
               <Link href="/trending" className="block p-2.5 rounded-xl bg-slate-950 hover:bg-slate-900 border border-slate-800 transition-colors">
                 <span className="font-bold text-slate-200 block">🔥 Library Confessions</span>
-                <span className="text-[11px] text-slate-500">142 reactions this week</span>
+                <span className="text-[11px] text-slate-500">Live community feed</span>
               </Link>
               <Link href="/trending" className="block p-2.5 rounded-xl bg-slate-950 hover:bg-slate-900 border border-slate-800 transition-colors">
                 <span className="font-bold text-slate-200 block">👀 Campus Crushes</span>
-                <span className="text-[11px] text-slate-500">89 signals sent</span>
+                <span className="text-[11px] text-slate-500">Anonymous signals</span>
               </Link>
               <Link href="/trending" className="block p-2.5 rounded-xl bg-slate-950 hover:bg-slate-900 border border-slate-800 transition-colors">
                 <span className="font-bold text-slate-200 block">😂 Hostel Stories</span>
-                <span className="text-[11px] text-slate-500">310 laughs</span>
+                <span className="text-[11px] text-slate-500">Campus humor</span>
               </Link>
             </div>
           </div>
