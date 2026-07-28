@@ -261,8 +261,9 @@ ALTER TABLE anonymous_messages ENABLE ROW LEVEL SECURITY;
 ALTER TABLE moderation_actions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE identity_access_logs ENABLE ROW LEVEL SECURITY;
 
--- Profiles: Users can read their own profile. Admins can view profiles.
+-- Profiles: Users can read, insert, and update their own profile.
 CREATE POLICY "Read Own Profile" ON profiles FOR SELECT USING (auth.uid() = id);
+CREATE POLICY "Insert Own Profile" ON profiles FOR INSERT WITH CHECK (auth.uid() = id);
 CREATE POLICY "Update Own Profile" ON profiles FOR UPDATE USING (auth.uid() = id);
 
 -- Confessions: Public read access handled via view; direct table read restricted.

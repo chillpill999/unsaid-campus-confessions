@@ -4,10 +4,12 @@ import { createClient } from '@/lib/supabase/server';
 
 export async function fetchPublicConfessions() {
   const supabase = createClient();
-  const { data: { user }, error: authError } = await supabase.auth.getUser();
-
-  if (authError || !user) {
-    throw new Error('Unauthorized');
+  let user: any = null;
+  try {
+    const { data } = await supabase.auth.getUser();
+    user = data?.user;
+  } catch (err) {
+    // Ignore and proceed with guest access
   }
 
   const { data: confessions, error } = await supabase
@@ -16,6 +18,7 @@ export async function fetchPublicConfessions() {
     .order('created_at', { ascending: false });
 
   if (error) {
+    console.error('Failed to fetch confessions:', error);
     throw new Error('Failed to fetch confessions');
   }
 
@@ -23,37 +26,45 @@ export async function fetchPublicConfessions() {
 
   let userReactions: Record<string, string> = {};
   let userBookmarks: Set<string> = new Set();
+  const reactionCountsMap = new Map<string, { relatable: number; funny: number; support: number; interesting: number }>();
 
   if (confessionIds.length > 0) {
-    const { data: reactions } = await supabase
+    // 1. Fetch authenticated user's reactions/bookmarks if logged in
+    if (user) {
+      const { data: reactions } = await supabase
+        .from('reactions')
+        .select('confession_id, reaction_type')
+        .in('confession_id', confessionIds)
+        .eq('user_id', user.id);
+
+      for (const r of (reactions || [])) {
+        userReactions[r.confession_id] = r.reaction_type;
+      }
+
+      const { data: bookmarks } = await supabase
+        .from('bookmarks')
+        .select('confession_id')
+        .in('confession_id', confessionIds)
+        .eq('user_id', user.id);
+
+      for (const b of (bookmarks || [])) {
+        userBookmarks.add(b.confession_id);
+      }
+    }
+
+    // 2. Fetch real reaction counts for all confessions in view
+    const { data: reactionCounts } = await supabase
       .from('reactions')
       .select('confession_id, reaction_type')
-      .in('confession_id', confessionIds)
-      .eq('user_id', user.id);
+      .in('confession_id', confessionIds);
 
-    for (const r of (reactions || [])) {
-      userReactions[r.confession_id] = r.reaction_type;
+    for (const r of (reactionCounts || [])) {
+      const counts = reactionCountsMap.get(r.confession_id) || { relatable: 0, funny: 0, support: 0, interesting: 0 };
+      if (r.reaction_type in counts) {
+        counts[r.reaction_type as keyof typeof counts]++;
+      }
+      reactionCountsMap.set(r.confession_id, counts);
     }
-
-    const { data: bookmarks } = await supabase
-      .from('bookmarks')
-      .select('confession_id')
-      .in('confession_id', confessionIds)
-      .eq('user_id', user.id);
-
-    for (const b of (bookmarks || [])) {
-      userBookmarks.add(b.confession_id);
-    }
-  }
-
-  const confessionMap = new Map<string, any>();
-  const { data: reactionCounts } = await supabase
-    .from('reactions')
-    .select('confession_id, reaction_type');
-
-  for (const r of (reactionCounts || [])) {
-    const existing = confessionMap.get(r.confession_id) || {};
-    confessionMap.set(r.confession_id, existing);
   }
 
   return (confessions || []).map((c: any) => ({
@@ -70,11 +81,11 @@ export async function fetchPublicConfessions() {
     gender: c.gender,
     poll_data: c.poll_options,
     created_at: c.created_at,
-    reaction_counts: { relatable: 0, funny: 0, support: 0, interesting: 0 },
+    reaction_counts: reactionCountsMap.get(c.id) || { relatable: 0, funny: 0, support: 0, interesting: 0 },
     comment_count: c.comment_count || 0,
     user_reaction: userReactions[c.id] || null,
     is_bookmarked: userBookmarks.has(c.id),
-    is_mine: false,
+    is_mine: user ? c.author_id === user.id : false,
     can_edit: false,
   }));
 }

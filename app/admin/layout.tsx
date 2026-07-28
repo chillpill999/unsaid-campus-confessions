@@ -24,14 +24,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   useEffect(() => {
     async function checkAdminAuth() {
       try {
-        if (typeof window !== 'undefined') {
-          const localRole = localStorage.getItem('unsaid_session') || localStorage.getItem('unsaid_demo_role');
-          if (localRole === 'admin' || document.cookie.includes('unsaid_session=admin')) {
-            setIsAuthorizedAdmin(true);
-            return;
-          }
-        }
-
         const { createClient } = await import('@/lib/supabase/client');
         const supabase = createClient();
         const { data: { user } } = await supabase.auth.getUser();
@@ -49,13 +41,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
         setIsAuthorizedAdmin(profile?.role === 'admin');
       } catch (err) {
-        if (typeof window !== 'undefined') {
-          const localRole = localStorage.getItem('unsaid_session') || localStorage.getItem('unsaid_demo_role');
-          if (localRole === 'admin' || document.cookie.includes('unsaid_session=admin')) {
-            setIsAuthorizedAdmin(true);
-            return;
-          }
-        }
         setIsAuthorizedAdmin(false);
       }
     }
@@ -111,14 +96,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col selection:bg-amber-500 selection:text-slate-950">
       <header className="border-b border-amber-500/30 bg-slate-900/90 backdrop-blur-md sticky top-0 z-40">
-        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-14 sm:h-16 flex items-center justify-between">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-xl bg-amber-500/20 border border-amber-500/40 text-amber-400 flex items-center justify-center">
               <ShieldAlert className="w-5 h-5" />
             </div>
             <div>
               <span className="font-heading font-extrabold text-lg text-white">ConfessionLnjpit Admin Portal</span>
-              <span className="hidden sm:inline-block ml-2 text-[10px] uppercase font-bold text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/30">
+              <span className="ml-2 text-[10px] uppercase font-bold text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/30">
                 Audited & Restricted
               </span>
             </div>
@@ -136,32 +121,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </div>
       </header>
 
-      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 pt-4 sm:pt-6 flex-1 w-full flex flex-col md:grid md:grid-cols-12 gap-4 sm:gap-6">
-        {/* Mobile: Horizontal scrollable nav / Desktop: Vertical sidebar */}
-        <aside className="md:col-span-3 md:space-y-2 md:sticky md:top-20 md:h-fit">
-          <div className="md:hidden overflow-x-auto -mx-3 px-3 pb-2">
-            <div className="flex items-center gap-2 min-w-max">
-              {adminNav.map((item) => {
-                const Icon = item.icon;
-                const isActive = pathname === item.href;
-                return (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap shrink-0 ${
-                      isActive
-                        ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40 shadow-sm'
-                        : 'text-slate-400 bg-slate-900 border border-slate-800'
-                    }`}
-                  >
-                    <Icon className="w-3.5 h-3.5 text-amber-400" />
-                    {item.label}
-                  </Link>
-                );
-              })}
-            </div>
-          </div>
-          <div className="hidden md:block space-y-2">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 flex-1 w-full grid grid-cols-1 md:grid-cols-12 gap-6">
+        <aside className="md:col-span-3 space-y-2">
           {adminNav.map((item) => {
             const Icon = item.icon;
             const isActive = pathname === item.href;
@@ -180,10 +141,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               </Link>
             );
           })}
-          </div>
         </aside>
 
-        <section className="md:col-span-9 space-y-4 sm:space-y-6 flex-1">
+        <section className="md:col-span-9 space-y-6">
           {children}
         </section>
       </div>

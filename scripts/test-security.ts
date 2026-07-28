@@ -318,6 +318,33 @@ async function runComprehensiveSecuritySuite() {
     assert(hasReactionCounts, 'SEC-VIEW-04', 'public_confessions view includes reaction_counts');
   }
 
+  // TEST 26: Profiles table has INSERT policy (required for onboarding)
+  if (fs.existsSync(migrationPath)) {
+    const content = fs.readFileSync(migrationPath, 'utf8');
+    const hasProfileInsert = content.includes('Insert Own Profile');
+    assert(hasProfileInsert, 'SEC-RLS-09', 'Migration has profiles INSERT policy');
+  }
+
+  // TEST 27: Auth callback uses route handler client with proper cookie handling
+  const callbackRoutePath = path.join(process.cwd(), 'app', 'auth', 'callback', 'route.ts');
+  if (fs.existsSync(callbackRoutePath)) {
+    const content = fs.readFileSync(callbackRoutePath, 'utf8');
+    const usesRouteHandlerClient = content.includes('createRouteHandlerClient');
+    const usesSetSession = content.includes('setSession');
+    assert(usesRouteHandlerClient, 'SEC-CALLBACK-02', 'Auth callback uses route handler client for cookie persistence');
+    assert(usesSetSession, 'SEC-CALLBACK-03', 'Auth callback uses setSession to persist auth cookies on final response');
+  }
+
+  // TEST 28: server.ts exports createRouteHandlerClient for route handlers
+  const serverClientPath = path.join(process.cwd(), 'lib', 'supabase', 'server.ts');
+  if (fs.existsSync(serverClientPath)) {
+    const content = fs.readFileSync(serverClientPath, 'utf8');
+    const hasRouteHandlerClient = content.includes('createRouteHandlerClient');
+    const usesRequestResponse = content.includes('req.cookies') && content.includes('res.cookies');
+    assert(hasRouteHandlerClient, 'SEC-SERVER-01', 'server.ts exports createRouteHandlerClient function');
+    assert(usesRequestResponse, 'SEC-SERVER-02', 'createRouteHandlerClient uses req.cookies for read and res.cookies for write');
+  }
+
   console.log('\n=============================================================');
   console.log(`COMPREHENSIVE SECURITY REPORT: ${passed}/${total} INTEGRATION TESTS PASSED`);
   console.log('=============================================================\n');

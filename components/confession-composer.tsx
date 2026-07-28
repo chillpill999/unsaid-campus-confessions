@@ -34,6 +34,7 @@ export function ConfessionComposer({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [successNotice, setSuccessNotice] = useState(false);
   const [draftRestoredNotice, setDraftRestoredNotice] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
 
   // Restore Draft from Local Storage
   useEffect(() => {
@@ -88,6 +89,7 @@ export function ConfessionComposer({
     if (!content.trim() || content.length > 1000) return;
 
     setIsSubmitting(true);
+    setErrorMsg('');
 
     const selectedCategory = MOCK_CATEGORIES.find((c) => c.id === categoryId) || MOCK_CATEGORIES[0];
     const newCode = generatePublicCode();
@@ -118,17 +120,7 @@ export function ConfessionComposer({
         : null,
     };
 
-    // 1. Persist to Local Storage to ensure NEVER lost on reload
-    try {
-      const existingStr = localStorage.getItem('unsaid_persistent_confessions') || '[]';
-      const existing: PublicConfession[] = JSON.parse(existingStr);
-      const updated = [newConfession, ...existing];
-      localStorage.setItem('unsaid_persistent_confessions', JSON.stringify(updated));
-    } catch (err) {
-      console.error('Failed to save to local storage:', err);
-    }
-
-    // 2. Submit via secure Server Action (author_id derived server-side from auth.uid())
+    // 1. Submit via secure Server Action
     try {
       await createConfession({
         content: content.trim(),
@@ -149,9 +141,21 @@ export function ConfessionComposer({
             }
           : null,
       });
-    } catch (serverErr) {
-      console.warn('Server action insert fallback:', serverErr);
-      // Still allow local persistence even if server action fails
+    } catch (serverErr: any) {
+      console.error('Server action insert failed:', serverErr);
+      setErrorMsg(serverErr.message || 'We could not publish your confession. Please make sure you are logged in.');
+      setIsSubmitting(false);
+      return;
+    }
+
+    // 2. Persist to Local Storage to ensure NEVER lost on reload
+    try {
+      const existingStr = localStorage.getItem('unsaid_persistent_confessions') || '[]';
+      const existing: PublicConfession[] = JSON.parse(existingStr);
+      const updated = [newConfession, ...existing];
+      localStorage.setItem('unsaid_persistent_confessions', JSON.stringify(updated));
+    } catch (err) {
+      console.error('Failed to save to local storage:', err);
     }
 
     setIsSubmitting(false);
@@ -182,21 +186,34 @@ export function ConfessionComposer({
           </div>
           <button
             onClick={onClose}
-            className="w-8 h-8 rounded-full bg-slate-800 text-slate-400 hover:text-white flex items-center justify-center transition-colors"
+            className="p-1 rounded-lg bg-slate-950 border border-slate-800 text-slate-400 hover:text-white transition-colors"
           >
-            <X className="w-4 h-4" />
+            <X className="w-5 h-5" />
           </button>
         </div>
 
-        {/* Draft Restored Banner */}
+        {/* Notices */}
         {draftRestoredNotice && (
-          <div className="bg-indigo-500/10 border-b border-indigo-500/20 px-6 py-2 text-xs font-semibold text-indigo-300 flex items-center gap-2">
-            <CheckCircle2 className="w-3.5 h-3.5" />
-            Draft restored automatically.
+          <div className="bg-indigo-500/10 border-b border-indigo-500/20 px-6 py-2 text-indigo-300 text-[11px] font-semibold flex items-center gap-1.5 animate-slide-down">
+            <Lock className="w-3.5 h-3.5" />
+            Restored draft from autosave
           </div>
         )}
 
-        {/* Modal Body */}
+        {successNotice && (
+          <div className="bg-emerald-500/10 border-b border-emerald-500/20 px-6 py-2.5 text-emerald-400 text-xs font-bold flex items-center gap-2 animate-slide-down">
+            <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+            Confession submitted successfully! Synced across all users.
+          </div>
+        )}
+
+        {errorMsg && (
+          <div className="bg-rose-500/10 border-b border-rose-500/20 px-6 py-2.5 text-rose-300 text-xs font-semibold flex items-center gap-2 animate-slide-down">
+            <AlertCircle className="w-4 h-4 text-rose-400 shrink-0" />
+            {errorMsg}
+          </div>
+        )}
+
         <form onSubmit={handleSubmit} className="p-6 overflow-y-auto space-y-5 flex-1">
           {/* Confession Text Area */}
           <div className="space-y-1.5">
@@ -239,73 +256,116 @@ export function ConfessionComposer({
             </div>
           </div>
 
-          {/* Target Audience Optional Filters */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 border-t border-slate-800/80">
-            <div>
-              <label className="block text-[11px] font-semibold text-slate-400 mb-1">Target Gender</label>
-              <select
-                value={recipientGender}
-                onChange={(e) => setRecipientGender(e.target.value as Gender)}
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-300 focus:outline-none focus:border-indigo-500"
-              >
-                <option value="">Everyone on Campus</option>
-                <option value="Male">To Male</option>
-                <option value="Female">To Female</option>
-                <option value="Non-binary">To Non-binary</option>
-              </select>
-            </div>
+          {/* Target Filter Options */}
+          <div className="p-4 rounded-2xl bg-slate-950 border border-slate-850 space-y-3">
+            <label className="block text-xs font-extrabold text-indigo-400">Specify Target (Optional)</label>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div>
+                <label className="block text-[10px] text-slate-500 font-bold mb-1">RECIPIENT GENDER</label>
+                <select
+                  value={recipientGender}
+                  onChange={(e) => setRecipientGender(e.target.value as Gender)}
+                  className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-[11px] text-slate-300 focus:outline-none"
+                >
+                  <option value="">Any</option>
+                  <option value="Male">Male</option>
+                  <option value="Female">Female</option>
+                  <option value="Non-binary">Non-binary</option>
+                </select>
+              </div>
 
-            <div>
-              <label className="block text-[11px] font-semibold text-slate-400 mb-1">Target Batch</label>
-              <select
-                value={targetBatch}
-                onChange={(e) => setTargetBatch(e.target.value)}
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-300 focus:outline-none focus:border-indigo-500"
-              >
-                <option value="">All Batches</option>
-                <option value="2023">Batch '23</option>
-                <option value="2024">Batch '24</option>
-                <option value="2025">Batch '25</option>
-                <option value="2026">Batch '26</option>
-                <option value="2027">Batch '27</option>
-              </select>
-            </div>
+              <div>
+                <label className="block text-[10px] text-slate-500 font-bold mb-1">TARGET BATCH</label>
+                <input
+                  type="text"
+                  placeholder="e.g. 2026"
+                  value={targetBatch}
+                  onChange={(e) => setTargetBatch(e.target.value)}
+                  className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-[11px] text-slate-300 focus:outline-none placeholder-slate-600"
+                />
+              </div>
 
-            <div>
-              <label className="block text-[11px] font-semibold text-slate-400 mb-1">Target Branch</label>
+              <div>
+                <label className="block text-[10px] text-slate-500 font-bold mb-1">TARGET BRANCH</label>
+                <input
+                  type="text"
+                  placeholder="e.g. CSE"
+                  value={targetDepartment}
+                  onChange={(e) => setTargetDepartment(e.target.value)}
+                  className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-[11px] text-slate-300 focus:outline-none placeholder-slate-600"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Interactive Poll */}
+          <div className="p-4 rounded-2xl bg-slate-950 border border-slate-850 space-y-4">
+            <label className="flex items-center gap-2.5 cursor-pointer">
               <input
-                type="text"
-                value={targetDepartment}
-                onChange={(e) => setTargetDepartment(e.target.value)}
-                placeholder="e.g. CSE, EEE, Mech"
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-300 focus:outline-none focus:border-indigo-500 placeholder-slate-600"
+                type="checkbox"
+                checked={hasPoll}
+                onChange={(e) => setHasPoll(e.target.checked)}
+                className="w-4 h-4 rounded border-slate-800 bg-slate-900 text-indigo-600 focus:ring-indigo-500"
               />
-            </div>
+              <span className="text-xs font-extrabold text-purple-400">Attach Interactive Poll</span>
+            </label>
+
+            {hasPoll && (
+              <div className="space-y-3 animate-fade-in">
+                <input
+                  type="text"
+                  placeholder="Ask a question..."
+                  value={pollQuestion}
+                  onChange={(e) => setPollQuestion(e.target.value)}
+                  className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-slate-200 focus:outline-none placeholder-slate-600"
+                  required
+                />
+                
+                <div className="space-y-2">
+                  {pollOptions.map((opt, idx) => (
+                    <div key={idx} className="flex items-center gap-2">
+                      <input
+                        type="text"
+                        placeholder={`Option ${idx + 1}`}
+                        value={opt}
+                        onChange={(e) => handlePollOptionChange(idx, e.target.value)}
+                        className="flex-1 bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-300 focus:outline-none"
+                        required
+                      />
+                      {pollOptions.length > 2 && (
+                        <button
+                          type="button"
+                          onClick={() => handleRemovePollOption(idx)}
+                          className="p-2 text-slate-500 hover:text-rose-400"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      )}
+                    </div>
+                  ))}
+
+                  {pollOptions.length < 4 && (
+                    <button
+                      type="button"
+                      onClick={handleAddPollOption}
+                      className="text-[11px] text-indigo-400 hover:text-indigo-300 font-bold flex items-center gap-1 mt-1"
+                    >
+                      <Plus className="w-3.5 h-3.5" /> Add Option
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
 
-          {/* Submit Button & Notices */}
-          <div className="pt-3 border-t border-slate-800 flex items-center justify-between">
-            <div className="text-[11px] text-slate-500 flex items-center gap-1">
-              <Lock className="w-3.5 h-3.5 text-indigo-400" />
-              <span>Identity Encrypted & Sealed</span>
-            </div>
-
-            <button
-              type="submit"
-              disabled={isSubmitting || !content.trim()}
-              className="px-6 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white font-bold text-xs shadow-lg shadow-indigo-500/20 transition-all"
-            >
-              {isSubmitting ? 'Publishing...' : 'Publish Confession'}
-            </button>
-          </div>
-
-          {/* Success Notice */}
-          {successNotice && (
-            <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 text-xs font-semibold flex items-center gap-2 animate-fade-in">
-              <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-              Confession published successfully! Saved permanently.
-            </div>
-          )}
+          {/* Submit Button */}
+          <button
+            type="submit"
+            disabled={isSubmitting || !content.trim()}
+            className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-500 hover:scale-[1.01] active:scale-[0.99] text-white font-bold text-sm shadow-xl shadow-indigo-500/25 flex items-center justify-center gap-2 disabled:opacity-50 transition-all"
+          >
+            <span>{isSubmitting ? 'Publishing confession...' : 'Publish Confession'}</span>
+          </button>
         </form>
       </div>
     </div>
