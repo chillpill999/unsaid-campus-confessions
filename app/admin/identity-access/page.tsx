@@ -30,11 +30,11 @@ export default function AdminIdentityAccessPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-extrabold text-white font-heading flex items-center gap-2">
-            <History className="w-5 h-5 text-amber-400" />
+          <h1 className="text-xl font-black text-slate-950 font-heading tracking-tight flex items-center gap-2">
+            <History className="w-5 h-5 text-[#FF6B00]" />
             Identity Access Audit Logs
           </h1>
-          <p className="text-xs text-slate-400">
+          <p className="text-xs text-slate-600">
             Append-only record of all identity reveal actions taken by administrators. Cannot be edited or deleted.
           </p>
         </div>
@@ -43,47 +43,47 @@ export default function AdminIdentityAccessPage() {
           <button
             onClick={fetchLiveAuditLogs}
             disabled={isLoading}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-xs font-semibold text-slate-300 border border-slate-800 transition-colors disabled:opacity-50"
+            className="flex items-center gap-1.5 px-4 py-2 rounded-2xl bg-white hover:bg-slate-100 text-xs font-bold text-slate-700 border border-slate-200 transition-all shadow-sm disabled:opacity-50"
           >
-            <RefreshCw className={`w-3.5 h-3.5 text-amber-400 ${isLoading ? 'animate-spin' : ''}`} />
+            <RefreshCw className={`w-3.5 h-3.5 text-[#FF6B00] ${isLoading ? 'animate-spin' : ''}`} />
             Refresh Logs
           </button>
 
-          <div className="text-[11px] font-mono text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-full border border-emerald-500/20 flex items-center gap-1">
+          <div className="text-[11px] font-mono font-bold text-emerald-700 bg-emerald-500/10 px-3 py-1.5 rounded-full border border-emerald-500/20 flex items-center gap-1">
             <ShieldCheck className="w-3.5 h-3.5" /> Immutable Log
           </div>
         </div>
       </div>
 
       {isLoading ? (
-        <div className="glass-card p-8 text-center text-xs text-slate-400">
+        <div className="bg-white p-8 rounded-[24px] border border-slate-200 text-center text-xs text-slate-500 font-medium shadow-sm">
           Loading audit logs...
         </div>
       ) : logs.length === 0 ? (
-        <div className="glass-card p-8 text-center space-y-2 border-slate-800">
-          <AlertCircle className="w-8 h-8 text-slate-500 mx-auto" />
-          <p className="text-xs text-slate-300 font-semibold">No identity reveals recorded yet</p>
+        <div className="bg-white p-8 rounded-[28px] border border-slate-200 text-center space-y-2 shadow-sm">
+          <AlertCircle className="w-8 h-8 text-slate-400 mx-auto" />
+          <p className="text-xs text-slate-900 font-bold font-heading">No identity reveals recorded yet</p>
           <p className="text-[11px] text-slate-500">Every admin identity reveal action will automatically record an immutable audit log here.</p>
         </div>
       ) : (
         <div className="space-y-3">
           {logs.map((log) => (
-            <div key={log.id} className="glass-card p-5 space-y-2 border-amber-500/20">
-              <div className="flex items-center justify-between text-xs">
+            <div key={log.id} className="bg-white p-5 rounded-[24px] border border-amber-200 shadow-md space-y-2">
+              <div className="flex items-center justify-between text-xs font-mono">
                 <div className="flex items-center gap-2">
-                  <span className="font-bold text-amber-300">{log.admin_name || 'Admin'}</span>
-                  <span className="text-slate-500">•</span>
-                  <span className="font-mono text-indigo-400 font-bold">Target: {log.target_internal_ref}</span>
+                  <span className="font-bold text-[#FF6B00] font-sans">{log.admin_name || 'Admin'}</span>
+                  <span className="text-slate-400">•</span>
+                  <span className="font-bold text-slate-900">Target: {log.target_internal_ref}</span>
                 </div>
-                <span className="font-mono text-slate-500">{formatTimeAgo(log.created_at)}</span>
+                <span className="text-slate-500">{formatTimeAgo(log.created_at)}</span>
               </div>
 
-              <div className="text-xs text-slate-300 pt-1">
-                <span className="text-slate-400 block mb-1">
-                  Reason for Reveal: <strong className="text-white">{log.reason}</strong>
+              <div className="text-xs text-slate-900 font-sans pt-1">
+                <span className="text-slate-600 block mb-1">
+                  Reason for Reveal: <strong className="text-slate-950 font-bold">{log.reason}</strong>
                 </span>
                 {log.confession_code && (
-                  <span className="font-mono text-indigo-300 text-[11px]">
+                  <span className="font-mono text-[#FF6B00] font-bold text-[11px]">
                     Associated Confession Code: #{log.confession_code}
                   </span>
                 )}
