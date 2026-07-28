@@ -60,3 +60,36 @@ export async function getProfile() {
     return null;
   }
 }
+
+export async function createVerifiedStudentAccount() {
+  try {
+    const { createAdminClient } = await import('@/lib/supabase/admin');
+    const adminClient = createAdminClient();
+
+    const rand = Math.random().toString(36).slice(2) + Date.now().toString(36).slice(-4);
+    const email = `student_${rand}@unsaid.campus`;
+    const password = `StudentPass_${rand}!`;
+
+    const { data: { user }, error } = await adminClient.auth.admin.createUser({
+      email,
+      password,
+      email_confirm: true,
+    });
+
+    if (error || !user) {
+      throw new Error(error?.message || 'Failed to create verified student account');
+    }
+
+    return {
+      success: true,
+      email,
+      password,
+    };
+  } catch (err: any) {
+    console.error('Failed to create verified student account:', err);
+    return {
+      success: false,
+      error: err.message,
+    };
+  }
+}

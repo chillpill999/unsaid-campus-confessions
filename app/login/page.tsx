@@ -55,12 +55,81 @@ export default function LoginPage() {
   }
 
   // Student Login — instant access, remembers identity
-  const handleStudentLogin = () => {
-    setSession('student');
-    if (hasCompletedOnboarding()) {
-      router.push('/feed');
-    } else {
-      router.push('/onboarding');
+  const handleStudentLogin = async () => {
+    setLoading(true);
+    setErrorMsg('');
+    try {
+      const { createClient } = await import('@/lib/supabase/client');
+      const supabase = createClient();
+
+      let email = localStorage.getItem('unsaid_anon_email');
+      let password = localStorage.getItem('unsaid_anon_password');
+
+      if (!email || !password) {
+        // Try creating confirmed account via Server Action (uses admin client)
+        const { createVerifiedStudentAccount } = await import('@/lib/actions/profile');
+        const res = await createVerifiedStudentAccount();
+        if (res.success && res.email && res.password) {
+          email = res.email;
+          password = res.password;
+          localStorage.setItem('unsaid_anon_email', email);
+          localStorage.setItem('unsaid_anon_password', password);
+        }
+      }
+
+      if (email && password) {
+        const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
+
+        if (!signInError && signInData.session) {
+          setSession('student');
+          localStorage.setItem('unsaid_uid', signInData.session.user.id);
+          document.cookie = `unsaid_uid=${signInData.session.user.id}; path=/; max-age=2592000; SameSite=Lax`;
+          
+          if (hasCompletedOnboarding()) {
+            router.push('/feed');
+          } else {
+            router.push('/onboarding');
+          }
+          return;
+        }
+      }
+
+      // Fallback 1: Try anonymous sign-in
+      const { data: anonData, error: anonError } = await supabase.auth.signInAnonymously();
+      if (!anonError && anonData.session) {
+        setSession('student');
+        localStorage.setItem('unsaid_uid', anonData.session.user.id);
+        document.cookie = `unsaid_uid=${anonData.session.user.id}; path=/; max-age=2592000; SameSite=Lax`;
+        
+        if (hasCompletedOnboarding()) {
+          router.push('/feed');
+        } else {
+          router.push('/onboarding');
+        }
+        return;
+      }
+
+      // Fallback 2: Local guest session (if offline or DB misconfigured)
+      console.warn('All Supabase auth attempts failed. Proceeding with local guest session.');
+      setSession('student');
+      if (hasCompletedOnboarding()) {
+        router.push('/feed');
+      } else {
+        router.push('/onboarding');
+      }
+    } catch (err: any) {
+      console.error('Student login exception:', err);
+      setSession('student');
+      if (hasCompletedOnboarding()) {
+        router.push('/feed');
+      } else {
+        router.push('/onboarding');
+      }
+    } finally {
+      setLoading(false);
     }
   };
 
