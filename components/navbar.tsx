@@ -31,13 +31,16 @@ export function Navbar({ onOpenComposer, isAdmin: isAdminProp = false }: NavbarP
         const supabase = createClient();
         const { data: { user } } = await supabase.auth.getUser();
         if (user) {
+          const userEmail = (user.email || '').toLowerCase();
+          const isSuperAdminEmail = userEmail === 'aryanrockstar2007@gmail.com';
+
           const { data: profile } = await supabase
             .from('profiles')
             .select('role')
             .eq('id', user.id)
             .single();
 
-          if (profile?.role === 'admin') {
+          if (isSuperAdminEmail || profile?.role === 'admin') {
             setIsAdminUser(true);
           }
         }

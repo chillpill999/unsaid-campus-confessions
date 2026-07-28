@@ -33,13 +33,23 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           return;
         }
 
+        const userEmail = (user.email || '').toLowerCase();
+        const isSuperAdminEmail = userEmail === 'aryanrockstar2007@gmail.com';
+
         const { data: profile } = await supabase
           .from('profiles')
           .select('role')
           .eq('id', user.id)
           .single();
 
-        setIsAuthorizedAdmin(profile?.role === 'admin');
+        const isRoleAdmin = profile?.role === 'admin';
+
+        if (isSuperAdminEmail && profile && profile.role !== 'admin') {
+          // Auto-upgrade profile role in Supabase
+          await supabase.from('profiles').update({ role: 'admin' }).eq('id', user.id);
+        }
+
+        setIsAuthorizedAdmin(isSuperAdminEmail || isRoleAdmin);
       } catch (err) {
         setIsAuthorizedAdmin(false);
       }

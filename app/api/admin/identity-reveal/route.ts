@@ -24,13 +24,16 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized session.' }, { status: 401 });
     }
 
+    const userEmail = (user.email || '').toLowerCase();
+    const isSuperAdminEmail = userEmail === 'aryanrockstar2007@gmail.com';
+
     const { data: profile } = await supabase
       .from('profiles')
       .select('role')
       .eq('id', user.id)
       .single();
 
-    if (!profile || profile.role !== 'admin') {
+    if (!isSuperAdminEmail && (!profile || profile.role !== 'admin')) {
       return NextResponse.json(
         { error: 'Forbidden: Identity Reveal is restricted strictly to administrators.' },
         { status: 403 }
