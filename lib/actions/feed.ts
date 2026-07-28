@@ -2,7 +2,7 @@
 
 import { createClient } from '@/lib/supabase/server';
 
-export async function fetchPublicConfessions() {
+export async function fetchPublicConfessions(limit: number = 20, cursor?: string) {
   const supabase = createClient();
   let user: any = null;
   try {
@@ -12,17 +12,26 @@ export async function fetchPublicConfessions() {
     // Ignore and proceed with guest access
   }
 
-  const { data: confessions, error } = await supabase
+  let query = supabase
     .from('public_confessions')
     .select('*')
-    .order('created_at', { ascending: false });
+    .order('created_at', { ascending: false })
+    .limit(limit + 1);
+
+  if (cursor) {
+    query = query.lt('created_at', cursor);
+  }
+
+  const { data: rawConfessions, error } = await query;
 
   if (error) {
     console.error('Failed to fetch confessions:', error);
     throw new Error('Failed to fetch confessions');
   }
 
-  const confessionIds = (confessions || []).map((c: any) => c.id);
+  const hasMore = (rawConfessions || []).length > limit;
+  const confessions = hasMore ? (rawConfessions || []).slice(0, limit) : (rawConfessions || []);
+  const confessionIds = confessions.map((c: any) => c.id);
 
   let userReactions: Record<string, string> = {};
   let userBookmarks: Set<string> = new Set();
@@ -67,7 +76,7 @@ export async function fetchPublicConfessions() {
     }
   }
 
-  return (confessions || []).map((c: any) => ({
+  const result = (confessions || []).map((c: any) => ({
     id: c.id,
     public_code: c.public_code,
     content: c.content,
@@ -88,6 +97,16 @@ export async function fetchPublicConfessions() {
     is_mine: user ? c.author_id === user.id : false,
     can_edit: false,
   }));
+
+  return result;
+}
+
+export async function fetchPublicConfessionsPaginated(limit: number = 20, cursor?: string) {
+  const confessions = await fetchPublicConfessions(limit, cursor);
+  const hasMore = confessions.length === limit;
+  const nextCursor = confessions.length > 0 ? confessions[confessions.length - 1].created_at : null;
+
+  return { confessions, nextCursor, hasMore };
 }
 
 export async function toggleReaction(confessionId: string, reactionType: string) {

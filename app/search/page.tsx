@@ -1,19 +1,43 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Navbar } from '@/components/navbar';
 import { MobileNav } from '@/components/mobile-nav';
 import { ConfessionCard } from '@/components/confession-card';
 import { EmptyState } from '@/components/empty-state';
 import { Search, Filter, Hash } from 'lucide-react';
-import { MOCK_CONFESSIONS } from '@/lib/mock-data';
 import { PublicConfession } from '@/lib/types';
+import { fetchPublicConfessions } from '@/lib/actions/feed';
 
 export default function SearchPage() {
   const [query, setQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [confessions, setConfessions] = useState<PublicConfession[]>([]);
 
-  const filtered = MOCK_CONFESSIONS.filter((c) => {
+  useEffect(() => {
+    async function loadSearchCatalog() {
+      try {
+        const res = await fetch('/api/confessions?limit=100');
+        const json = await res.json();
+        if (json && json.success && json.confessions) {
+          setConfessions(json.confessions);
+          return;
+        }
+      } catch (err) {
+        console.warn('Search fetch note:', err);
+      }
+
+      try {
+        const serverData = await fetchPublicConfessions(100);
+        if (serverData) setConfessions(serverData as PublicConfession[]);
+      } catch (err) {
+        console.error('Failed search fetch:', err);
+      }
+    }
+
+    loadSearchCatalog();
+  }, []);
+
+  const filtered = confessions.filter((c) => {
     const q = query.trim().toLowerCase();
     if (!q) return true;
     const matchCode = c.public_code.toLowerCase().includes(q) || `#${c.public_code.toLowerCase()}`.includes(q);

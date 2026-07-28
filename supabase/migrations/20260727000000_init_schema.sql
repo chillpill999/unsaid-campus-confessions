@@ -331,3 +331,11 @@ CREATE POLICY "Insert Own Message" ON anonymous_messages FOR INSERT WITH CHECK (
 CREATE POLICY "Admin Select Moderation Actions" ON moderation_actions FOR SELECT USING (
   auth.uid() IN (SELECT id FROM profiles WHERE role IN ('admin', 'moderator'))
 );
+
+-- Performance Indexes for Historical Scale & Cursor Pagination
+CREATE INDEX IF NOT EXISTS idx_confessions_created_at_id ON confessions(created_at DESC, id DESC);
+CREATE INDEX IF NOT EXISTS idx_confessions_public_code ON confessions(public_code);
+CREATE INDEX IF NOT EXISTS idx_confessions_moderation_is_deleted ON confessions(moderation_status, is_deleted);
+CREATE INDEX IF NOT EXISTS idx_comments_confession_created ON comments(confession_id, created_at ASC);
+CREATE INDEX IF NOT EXISTS idx_reactions_confession_type ON reactions(confession_id, reaction_type);
+

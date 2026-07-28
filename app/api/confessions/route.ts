@@ -4,18 +4,31 @@ import { generatePublicCode } from '@/lib/utils';
 import { PublicConfession } from '@/lib/types';
 import { broadcastConfessionEvent } from '@/lib/realtime/broadcast';
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
     const supabase = createServerClient();
+    const { searchParams } = new URL(req.url);
+    const limit = parseInt(searchParams.get('limit') || '20', 10);
+    const cursor = searchParams.get('cursor');
 
-    // 1. Query safe public_confessions view
-    const { data: viewData, error: viewError } = await supabase
+    // 1. Query safe public_confessions view with cursor pagination
+    let query = supabase
       .from('public_confessions')
       .select('*')
-      .order('created_at', { ascending: false });
+      .order('created_at', { ascending: false })
+      .limit(limit + 1);
+
+    if (cursor) {
+      query = query.lt('created_at', cursor);
+    }
+
+    const { data: viewData, error: viewError } = await query;
 
     if (!viewError && viewData) {
-      const confessions: PublicConfession[] = viewData.map((row: any) => ({
+      const hasMore = viewData.length > limit;
+      const pageRows = hasMore ? viewData.slice(0, limit) : viewData;
+
+      const confessions: PublicConfession[] = pageRows.map((row: any) => ({
         id: row.id,
         public_code: row.public_code || row.id.slice(0, 6).toUpperCase(),
         content: row.content,
@@ -33,19 +46,31 @@ export async function GET() {
         poll_data: row.poll_options || null,
       }));
 
-      return NextResponse.json({ success: true, confessions });
+      const nextCursor = confessions.length > 0 ? confessions[confessions.length - 1].created_at : null;
+
+      return NextResponse.json({ success: true, confessions, nextCursor, hasMore });
     }
 
     // 2. Fallback query directly from confessions table if view not cached in PostgREST
-    const { data: rawData, error: rawError } = await supabase
+    let rawQuery = supabase
       .from('confessions')
       .select('*')
       .eq('moderation_status', 'approved')
       .eq('is_deleted', false)
-      .order('created_at', { ascending: false });
+      .order('created_at', { ascending: false })
+      .limit(limit + 1);
+
+    if (cursor) {
+      rawQuery = rawQuery.lt('created_at', cursor);
+    }
+
+    const { data: rawData, error: rawError } = await rawQuery;
 
     if (!rawError && rawData) {
-      const confessions: PublicConfession[] = rawData.map((row: any) => ({
+      const hasMore = rawData.length > limit;
+      const pageRows = hasMore ? rawData.slice(0, limit) : rawData;
+
+      const confessions: PublicConfession[] = pageRows.map((row: any) => ({
         id: row.id,
         public_code: row.public_code || row.id.slice(0, 6).toUpperCase(),
         content: row.content,
@@ -63,7 +88,9 @@ export async function GET() {
         poll_data: row.poll_options || null,
       }));
 
-      return NextResponse.json({ success: true, confessions });
+      const nextCursor = confessions.length > 0 ? confessions[confessions.length - 1].created_at : null;
+
+      return NextResponse.json({ success: true, confessions, nextCursor, hasMore });
     }
 
     // 3. Schema drift or table missing (PGRST205)

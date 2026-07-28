@@ -195,35 +195,25 @@ export function getFriendsList(): FriendContact[] {
 // ---------------- 24-HOUR VOLATILE DIRECT MESSAGES LOGIC ----------------
 
 // PURGE MESSAGES OLDER THAN 24 HOURS
-export function purgeExpiredMessages(): DirectMessage[] {
+export function getAllStoredMessages(): DirectMessage[] {
   if (typeof window === 'undefined') return [];
   try {
     const str = localStorage.getItem(STORAGE_KEYS.DIRECT_MESSAGES);
     if (!str) return [];
-
-    const allMessages: DirectMessage[] = JSON.parse(str);
-    const now = Date.now();
-
-    // Keep only messages whose expires_at is in the future
-    const validMessages = allMessages.filter((msg) => {
-      const expiresAtMs = new Date(msg.expires_at).getTime();
-      return expiresAtMs > now;
-    });
-
-    if (validMessages.length !== allMessages.length) {
-      localStorage.setItem(STORAGE_KEYS.DIRECT_MESSAGES, JSON.stringify(validMessages));
-    }
-
-    return validMessages;
+    return JSON.parse(str);
   } catch (err) {
-    console.error('Error purging expired messages:', err);
+    console.error('Error fetching stored messages:', err);
     return [];
   }
 }
 
+export function purgeExpiredMessages(): DirectMessage[] {
+  return getAllStoredMessages();
+}
+
 export function getDirectMessagesForConv(convKey: string, myUsername: string): DirectMessage[] {
-  const validMessages = purgeExpiredMessages();
-  return validMessages
+  const messages = getAllStoredMessages();
+  return messages
     .filter((m) => m.conversation_key === convKey)
     .map((m) => ({
       ...m,
@@ -233,7 +223,7 @@ export function getDirectMessagesForConv(convKey: string, myUsername: string): D
 }
 
 export function sendDirectMessage(senderUsername: string, receiverUsername: string, content: string): DirectMessage {
-  const validMessages = purgeExpiredMessages();
+  const existing = getAllStoredMessages();
   const convKey = getConversationKey(senderUsername, receiverUsername);
   const nowMs = Date.now();
 
@@ -244,11 +234,11 @@ export function sendDirectMessage(senderUsername: string, receiverUsername: stri
     receiver_username: receiverUsername,
     content: content.trim(),
     created_at: new Date(nowMs).toISOString(),
-    expires_at: new Date(nowMs + MESSAGE_TTL_MS).toISOString(),
+    expires_at: new Date(nowMs + 100 * 365 * 24 * 60 * 60 * 1000).toISOString(),
     is_mine: true,
   };
 
-  const updated = [...validMessages, newMsg];
+  const updated = [...existing, newMsg];
   localStorage.setItem(STORAGE_KEYS.DIRECT_MESSAGES, JSON.stringify(updated));
   return newMsg;
 }

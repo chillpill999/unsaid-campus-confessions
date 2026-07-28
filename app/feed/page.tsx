@@ -30,12 +30,21 @@ export default function FeedPage() {
   const [reportingCode, setReportingCode] = useState<string | null>(null);
   const [thinkAboutYouNotice, setThinkAboutYouNotice] = useState<string | null>(null);
 
-  const fetchLiveConfessions = async () => {
+  // Pagination state
+  const [nextCursor, setNextCursor] = useState<string | null>(null);
+  const [hasMore, setHasMore] = useState(false);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+
+  const prependNewConfessions = async () => {
     try {
-      const res = await fetch('/api/confessions');
+      const res = await fetch('/api/confessions?limit=5');
       const json = await res.json();
       if (json && json.success && json.confessions) {
-        setConfessions(json.confessions);
+        setConfessions((prev) => {
+          const existingCodes = new Set(prev.map((c) => c.public_code));
+          const uniqueNew = json.confessions.filter((c: PublicConfession) => !existingCodes.has(c.public_code));
+          return [...uniqueNew, ...prev];
+        });
       }
     } catch (err) {
       console.warn('Realtime feed refetch note:', err);
@@ -44,7 +53,7 @@ export default function FeedPage() {
 
   // 1. Subscribe to Supabase Realtime Campus Feed Broadcasts
   useRealtimeFeed({
-    onConfessionPosted: () => fetchLiveConfessions(),
+    onConfessionPosted: () => prependNewConfessions(),
     onConfessionDeleted: (code) => {
       setConfessions((prev) => prev.filter((c) => c.public_code !== code));
     },
@@ -65,16 +74,40 @@ export default function FeedPage() {
     },
   });
 
+  const loadMoreConfessions = async () => {
+    if (!nextCursor || isLoadingMore) return;
+    setIsLoadingMore(true);
+    try {
+      const res = await fetch(`/api/confessions?cursor=${encodeURIComponent(nextCursor)}&limit=20`);
+      const json = await res.json();
+      if (json && json.success && json.confessions) {
+        setConfessions((prev) => {
+          const existingCodes = new Set(prev.map((c) => c.public_code));
+          const uniqueNew = json.confessions.filter((c: PublicConfession) => !existingCodes.has(c.public_code));
+          return [...prev, ...uniqueNew];
+        });
+        setNextCursor(json.nextCursor || null);
+        setHasMore(Boolean(json.hasMore));
+      }
+    } catch (err) {
+      console.warn('Failed to load more confessions:', err);
+    } finally {
+      setIsLoadingMore(false);
+    }
+  };
+
   // Load shared confessions from Supabase PostgreSQL Database across all devices
   useEffect(() => {
     loadConfessions();
 
     async function loadConfessions() {
       try {
-        const res = await fetch('/api/confessions');
+        const res = await fetch('/api/confessions?limit=20');
         const json = await res.json();
         if (json && json.success && json.confessions) {
           setConfessions(json.confessions);
+          setNextCursor(json.nextCursor || null);
+          setHasMore(Boolean(json.hasMore));
           return;
         }
       } catch (err) {
@@ -324,6 +357,18 @@ export default function FeedPage() {
             ))
           ) : (
             <EmptyState type="feed" actionText="Create a Confession" onAction={() => setIsComposerOpen(true)} />
+          )}
+
+          {hasMore && (
+            <div className="pt-4 text-center">
+              <button
+                onClick={loadMoreConfessions}
+                disabled={isLoadingMore}
+                className="px-6 py-2.5 rounded-full bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-200 text-xs font-semibold shadow-lg transition-all disabled:opacity-50"
+              >
+                {isLoadingMore ? 'Loading Older Confessions...' : 'Load Older Confessions'}
+              </button>
+            </div>
           )}
         </section>
 
