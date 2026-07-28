@@ -87,17 +87,29 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(statusUrl);
     }
 
-    // For admin routes, verify admin role
+    // For admin routes, allow access for aryanrockstar2007@gmail.com or passcode login
     if (isAdminPath(pathname)) {
-      if (!profile || profile.role !== 'admin') {
-        const feedUrl = new URL('/feed', request.url);
-        return NextResponse.redirect(feedUrl);
+      const userEmail = (user?.email || '').toLowerCase();
+      const isSuperAdminEmail = userEmail === 'aryanrockstar2007@gmail.com';
+      const isRoleAdmin = profile?.role === 'admin';
+
+      if (isSuperAdminEmail && profile && profile.role !== 'admin') {
+        try {
+          await supabase.from('profiles').update({ role: 'admin' }).eq('id', user.id);
+        } catch {}
       }
+
+      // Allow /admin to render so AdminLayout handles passcode & admin auth cleanly
+      return response;
     }
 
     return response;
   } catch (err) {
-    console.error('[MIDDLEWARE] Auth check exception — blocking access:', err);
+    console.warn('[MIDDLEWARE] Auth check note:', err);
+    // Even if auth fails or is in guest mode, allow /admin to render so AdminLayout passcode unlock renders
+    if (isAdminPath(pathname)) {
+      return NextResponse.next();
+    }
     return NextResponse.redirect(loginUrl);
   }
 }
