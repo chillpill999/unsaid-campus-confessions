@@ -3,62 +3,55 @@
 import React from 'react';
 import Link from 'next/link';
 import { Navbar } from '@/components/navbar';
-import { ShieldCheck, Heart, Lock, AlertTriangle, ArrowLeft } from 'lucide-react';
+import { MobileNav } from '@/components/mobile-nav';
+import { ShieldCheck, Heart, ArrowLeft, CheckCircle2 } from 'lucide-react';
 
 export default function GuidelinesPage() {
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col pb-12">
+    <div className="min-h-screen bg-[#F4F3EF] text-slate-900 flex flex-col pb-24 md:pb-8 selection:bg-[#FF6B00] selection:text-white">
       <Navbar />
 
-      <main className="max-w-4xl mx-auto px-4 pt-8 flex-1 w-full space-y-8">
-        <Link href="/feed" className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-400 hover:text-white">
-          <ArrowLeft className="w-4 h-4" />
-          Back to Feed
-        </Link>
-
-        <div className="space-y-3">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 text-xs font-semibold">
-            <ShieldCheck className="w-4 h-4 text-indigo-400" />
-            <span>Community Rules</span>
+      <main className="max-w-3xl mx-auto px-4 pt-6 flex-1 w-full space-y-6">
+        <div className="flex items-center gap-3">
+          <Link href="/feed" className="p-2 rounded-2xl bg-white border border-slate-200 text-slate-600 hover:text-slate-950">
+            <ArrowLeft className="w-5 h-5" />
+          </Link>
+          <div>
+            <h1 className="text-2xl font-black text-slate-950 font-heading">Community Guidelines</h1>
+            <p className="text-xs text-slate-600">Strict rules to keep LNJPIT confessions safe, fun, and authentic.</p>
           </div>
-          <h1 className="text-3xl font-extrabold text-white font-heading">Community Guidelines</h1>
-          <p className="text-sm text-slate-400">
-            Express yourself, don't expose others. Anonymity protects expression — it doesn't remove accountability.
-          </p>
         </div>
 
-        <div className="space-y-4 text-xs sm:text-sm text-slate-300">
-          <div className="glass-card p-6 space-y-2">
-            <h3 className="text-base font-bold text-white flex items-center gap-2">
-              <Lock className="w-4 h-4 text-indigo-400" />
-              1. Keep Personal Information Secret (No Doxxing)
-            </h3>
-            <p className="leading-relaxed text-slate-400">
-              Never post real names, phone numbers, email addresses, student IDs, room numbers, addresses, social media handles, or private chat screenshots.
-            </p>
-          </div>
+        <div className="rounded-[28px] bg-white border border-slate-200/80 p-6 sm:p-8 shadow-xl space-y-6">
+          <div className="space-y-4">
+            <div className="flex items-start gap-3 p-4 rounded-2xl bg-[#F4F3EF] border border-slate-200">
+              <CheckCircle2 className="w-5 h-5 text-[#FF6B00] shrink-0 mt-0.5" />
+              <div>
+                <h3 className="text-sm font-bold text-slate-950">Respect Student Privacy</h3>
+                <p className="text-xs text-slate-600 mt-0.5">Do not post phone numbers, personal addresses, private social handles, or sensitive personal photos.</p>
+              </div>
+            </div>
 
-          <div className="glass-card p-6 space-y-2">
-            <h3 className="text-base font-bold text-white flex items-center gap-2">
-              <AlertTriangle className="w-4 h-4 text-amber-400" />
-              2. Zero Tolerance for Harassment & Targeted Humiliation
-            </h3>
-            <p className="leading-relaxed text-slate-400">
-              Confessions are for sharing thoughts, crushes, and campus stories — not for bullying specific individuals or spreading targeted rumors.
-            </p>
-          </div>
+            <div className="flex items-start gap-3 p-4 rounded-2xl bg-[#F4F3EF] border border-slate-200">
+              <CheckCircle2 className="w-5 h-5 text-[#FF6B00] shrink-0 mt-0.5" />
+              <div>
+                <h3 className="text-sm font-bold text-slate-950">Zero Bullying & Harassment</h3>
+                <p className="text-xs text-slate-600 mt-0.5">Hate speech, targeted harassment, slurs, and physical threats will result in instant account suspension.</p>
+              </div>
+            </div>
 
-          <div className="glass-card p-6 space-y-2">
-            <h3 className="text-base font-bold text-white flex items-center gap-2">
-              <Heart className="w-4 h-4 text-pink-400" />
-              3. Have Fun & Support Each Other
-            </h3>
-            <p className="leading-relaxed text-slate-400">
-              Campus life is stressful. Use reactions (❤️ 😂 🫂 👀) to encourage peers and build an authentic community space.
-            </p>
+            <div className="flex items-start gap-3 p-4 rounded-2xl bg-[#F4F3EF] border border-slate-200">
+              <CheckCircle2 className="w-5 h-5 text-[#FF6B00] shrink-0 mt-0.5" />
+              <div>
+                <h3 className="text-sm font-bold text-slate-950">Authentic Campus Experience</h3>
+                <p className="text-xs text-slate-600 mt-0.5">ConfessionLnjpit is built for authentic student expression — crushes, hostel banter, academic humor, and genuine questions.</p>
+              </div>
+            </div>
           </div>
         </div>
       </main>
+
+      <MobileNav onOpenComposer={() => {}} />
     </div>
   );
 }

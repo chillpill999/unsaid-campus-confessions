@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { Navbar } from '@/components/navbar';
 import { MobileNav } from '@/components/mobile-nav';
 import { ConfessionCard } from '@/components/confession-card';
-import { User, Settings, AtSign, Clock } from 'lucide-react';
+import { User, Settings, AtSign, Clock, ShieldCheck, Heart } from 'lucide-react';
 import { getSavedUsername, saveUsername } from '@/lib/friends-chat';
 import { PublicConfession, UserProfile } from '@/lib/types';
 
@@ -61,174 +61,130 @@ export default function ProfilePage() {
 
   const handleSaveUsername = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!usernameInput.trim()) return;
-    const clean = saveUsername(usernameInput);
+    const clean = usernameInput.trim().toLowerCase().replace(/[^a-z0-9_]/g, '');
+    if (!clean) return;
+    saveUsername(clean);
     setUsername(clean);
     setIsEditingUsername(false);
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col pb-24 md:pb-8 selection:bg-indigo-500 selection:text-white">
+    <div className="min-h-screen bg-[#F4F3EF] text-slate-900 flex flex-col pb-24 md:pb-8 selection:bg-[#FF6B00] selection:text-white">
       <Navbar />
 
       <main className="max-w-4xl mx-auto px-4 pt-6 flex-1 w-full space-y-6">
-        {/* Private Profile Header */}
-        <div className="glass-card p-6 sm:p-8 relative overflow-hidden space-y-6">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-slate-800 pb-6">
+        
+        {/* Profile Card Header */}
+        <div className="rounded-[28px] bg-white border border-slate-200/80 p-6 shadow-xl space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="flex items-center gap-4">
-              <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-indigo-600 via-purple-600 to-pink-500 flex items-center justify-center text-white text-2xl font-bold shadow-xl shadow-indigo-500/25">
-                <User className="w-8 h-8" />
+              <div className="w-16 h-16 rounded-2xl bg-[#FF6B00] flex items-center justify-center font-black text-white text-2xl shadow-lg shadow-[#FF6B00]/25">
+                {(profile.full_name || 'Student').slice(0, 1).toUpperCase()}
               </div>
               <div>
-                <h1 className="text-xl font-bold text-white flex items-center gap-2">
-                  My Private Account
-                  <span className="text-[10px] uppercase font-bold text-indigo-400 bg-indigo-500/10 px-2 py-0.5 rounded border border-indigo-500/20">
-                    Private to You
+                <h1 className="text-xl font-black text-slate-950 font-heading flex items-center gap-2">
+                  {profile.full_name}
+                  <span className="text-xs bg-[#FF6B00]/10 text-[#FF6B00] border border-[#FF6B00]/20 px-2 py-0.5 rounded-full font-mono">
+                    {profile.role}
                   </span>
                 </h1>
-                <div className="flex items-center gap-2 mt-1">
-                  <span className="text-xs font-mono font-bold text-indigo-300 bg-slate-950 px-2.5 py-0.5 rounded-lg border border-indigo-500/30 flex items-center gap-1">
-                    <AtSign className="w-3.5 h-3.5 text-indigo-400" />
-                    {username}
-                  </span>
-                  <button
-                    onClick={() => setIsEditingUsername(true)}
-                    className="text-[11px] text-slate-400 hover:text-indigo-300 underline font-semibold"
-                  >
-                    Edit Handle
-                  </button>
-                </div>
-                <p className="text-xs text-slate-400 mt-1">
-                  {profile.college_name} • {profile.department} ('{profile.batch.slice(-2)})
+                <p className="text-xs text-slate-500 font-mono mt-0.5">
+                  @{username} • {profile.department || 'Engineering'} ({profile.batch || 'LNJPIT'})
                 </p>
               </div>
             </div>
 
-            <div className="flex flex-wrap items-center gap-2">
-              <Link
-                href="/inbox"
-                className="px-4 py-2 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white text-xs font-bold shadow-md flex items-center gap-1.5 transition-all"
-              >
-                <Clock className="w-3.5 h-3.5" />
-                24h Direct Messages
-              </Link>
-              <Link
-                href="/settings"
-                className="px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 text-xs font-semibold border border-slate-800 flex items-center gap-1.5 transition-colors"
-              >
-                <Settings className="w-4 h-4" />
-                Settings
-              </Link>
-            </div>
+            <Link
+              href="/settings"
+              className="px-4 py-2.5 rounded-2xl bg-[#F4F3EF] hover:bg-slate-200 text-slate-800 border border-slate-200 text-xs font-bold transition-all flex items-center justify-center gap-2 font-mono shadow-sm"
+            >
+              <Settings className="w-4 h-4 text-[#FF6B00]" />
+              Account Settings
+            </Link>
           </div>
 
-          {/* Personal Private Stats */}
-          <div className="grid grid-cols-3 gap-3 text-center">
-            <div className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800">
-              <span className="block text-[11px] text-slate-500 uppercase font-semibold">Confessions</span>
-              <span className="text-xl font-extrabold text-white font-mono">
-                {isLoadingProfile ? '...' : stats.confessionsCount}
-              </span>
-            </div>
-            <div className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800">
-              <span className="block text-[11px] text-slate-500 uppercase font-semibold">Reactions Recv</span>
-              <span className="text-xl font-extrabold text-indigo-400 font-mono">
-                {isLoadingProfile ? '...' : stats.reactionsReceived}
-              </span>
-            </div>
-            <div className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800">
-              <span className="block text-[11px] text-slate-500 uppercase font-semibold">24h Volatile Chats</span>
-              <span className="text-xl font-extrabold text-pink-400 font-mono">
-                {isLoadingProfile ? '...' : stats.activeChatsCount}
-              </span>
-            </div>
-          </div>
-        </div>
-
-        {/* Tab Switcher */}
-        <div className="flex items-center gap-2 border-b border-slate-800 pb-2">
-          <button
-            onClick={() => setActiveTab('my-confessions')}
-            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
-              activeTab === 'my-confessions'
-                ? 'bg-indigo-600 text-white shadow-md'
-                : 'text-slate-400 hover:text-slate-200'
-            }`}
-          >
-            My Anonymous Confessions
-          </button>
-        </div>
-
-        {/* Confessions List */}
-        <div className="space-y-4">
-          {isLoadingProfile ? (
-            <div className="glass-card p-8 text-center text-xs text-slate-400">
-              Loading your real activity...
-            </div>
-          ) : myConfessions.length > 0 ? (
-            myConfessions.map((confession) => (
-              <ConfessionCard key={confession.id} confession={confession} />
-            ))
-          ) : (
-            <div className="glass-card p-8 text-center text-xs text-slate-400">
-              You have not posted any confessions yet.
-            </div>
-          )}
-        </div>
-      </main>
-
-      {/* Edit Username Modal */}
-      {isEditingUsername && (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-slate-950/85 backdrop-blur-md">
-          <div className="w-full sm:max-w-md bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-2xl space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-              <h3 className="text-base font-bold text-white flex items-center gap-2">
-                <AtSign className="w-5 h-5 text-indigo-400" />
-                Edit Username Handle
-              </h3>
-              <button onClick={() => setIsEditingUsername(false)} className="text-slate-400 hover:text-white">
-                ✕
-              </button>
-            </div>
-
-            <form onSubmit={handleSaveUsername} className="space-y-4">
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1.5">Username Handle</label>
-                <div className="relative">
-                  <span className="absolute left-3.5 top-2.5 text-slate-500 text-xs font-mono font-bold">@</span>
+          {/* Handle Change Box */}
+          {isEditingUsername ? (
+            <form onSubmit={handleSaveUsername} className="p-4 rounded-2xl bg-[#F4F3EF] border border-slate-200 space-y-3">
+              <label className="block text-xs font-bold text-slate-800">Claim / Change Student Handle</label>
+              <div className="flex gap-2">
+                <div className="relative flex-1">
+                  <AtSign className="w-4 h-4 text-[#FF6B00] absolute left-3 top-2.5" />
                   <input
                     type="text"
                     value={usernameInput}
                     onChange={(e) => setUsernameInput(e.target.value)}
-                    placeholder="alex_lnj"
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-8 pr-3 py-2.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500 font-mono"
+                    className="w-full bg-white border border-slate-200 rounded-xl pl-9 pr-3 py-2 text-xs text-slate-900 focus:outline-none focus:border-[#FF6B00] font-mono"
+                    placeholder="student_handle"
                     required
                   />
                 </div>
-                <p className="text-[11px] text-slate-500 mt-1">
-                  Students can search this handle to send you friend requests for 24h direct chat.
-                </p>
-              </div>
-
-              <div className="flex justify-end gap-2 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setIsEditingUsername(false)}
-                  className="px-4 py-2 rounded-xl bg-slate-950 text-slate-400 text-xs font-semibold border border-slate-800"
-                >
-                  Cancel
-                </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold shadow-md"
+                  className="px-4 py-2 rounded-xl bg-[#FF6B00] text-white font-bold text-xs shadow-md"
                 >
                   Save Handle
                 </button>
+                <button
+                  type="button"
+                  onClick={() => setIsEditingUsername(false)}
+                  className="px-3 py-2 rounded-xl bg-white text-slate-600 text-xs font-bold border border-slate-200"
+                >
+                  Cancel
+                </button>
               </div>
             </form>
+          ) : null}
+
+          {/* User Stats Grid */}
+          <div className="grid grid-cols-3 gap-3 pt-2 border-t border-slate-100 font-mono text-center">
+            <div className="p-3 rounded-2xl bg-[#F4F3EF] border border-slate-200">
+              <span className="block text-xl font-black text-slate-950">{stats.confessionsCount}</span>
+              <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Confessions</span>
+            </div>
+
+            <div className="p-3 rounded-2xl bg-[#F4F3EF] border border-slate-200">
+              <span className="block text-xl font-black text-[#FF6B00]">{stats.reactionsReceived}</span>
+              <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Reactions</span>
+            </div>
+
+            <div className="p-3 rounded-2xl bg-[#F4F3EF] border border-slate-200">
+              <span className="block text-xl font-black text-slate-950">{stats.activeChatsCount}</span>
+              <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Active Signals</span>
+            </div>
           </div>
         </div>
-      )}
+
+        {/* Tab Controls & Confessions List */}
+        <div className="space-y-4">
+          <div className="flex border-b border-slate-200">
+            <button
+              onClick={() => setActiveTab('my-confessions')}
+              className={`px-4 py-2.5 text-xs font-black transition-all border-b-2 font-mono ${
+                activeTab === 'my-confessions'
+                  ? 'border-[#FF6B00] text-[#FF6B00]'
+                  : 'border-transparent text-slate-500 hover:text-slate-900'
+              }`}
+            >
+              My Confessions ({myConfessions.length})
+            </button>
+          </div>
+
+          <div className="space-y-4">
+            {myConfessions.length > 0 ? (
+              myConfessions.map((confession) => (
+                <ConfessionCard key={confession.id} confession={confession} />
+              ))
+            ) : (
+              <div className="rounded-[28px] bg-white border border-slate-200/80 p-8 text-center space-y-2 shadow-sm">
+                <p className="text-xs font-bold text-slate-700">You haven't posted any confessions yet.</p>
+                <p className="text-[11px] text-slate-500 font-mono">Your confessions remain 100% anonymous to other students.</p>
+              </div>
+            )}
+          </div>
+        </div>
+
+      </main>
 
       <MobileNav onOpenComposer={() => {}} />
     </div>

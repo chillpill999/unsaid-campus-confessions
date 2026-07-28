@@ -2,213 +2,135 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { Navbar } from '@/components/navbar';
 import { MobileNav } from '@/components/mobile-nav';
-import { Settings, Moon, Sun, Shield, UserX, Trash2, LogOut, Check, AtSign, CheckCircle2 } from 'lucide-react';
+import { Settings, Shield, User, LogOut, ArrowLeft, CheckCircle2 } from 'lucide-react';
 import { getSavedUsername, saveUsername } from '@/lib/friends-chat';
 
 export default function SettingsPage() {
-  const router = useRouter();
-  const [theme, setTheme] = useState<'dark' | 'light' | 'system'>('dark');
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [userGender, setUserGender] = useState('Male');
   const [username, setUsername] = useState('student_lnj');
   const [usernameInput, setUsernameInput] = useState('');
-  const [saveNotice, setSaveNotice] = useState<string | null>(null);
+  const [notice, setNotice] = useState('');
 
   useEffect(() => {
-    const saved = getSavedUsername();
-    setUsername(saved);
-    setUsernameInput(saved);
+    try {
+      const g = localStorage.getItem('unsaid_user_gender');
+      if (g) setUserGender(g);
+    } catch {}
+
+    const savedHandle = getSavedUsername();
+    setUsername(savedHandle);
+    setUsernameInput(savedHandle);
   }, []);
 
-  const handleSaveUsername = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!usernameInput.trim()) return;
-    const clean = saveUsername(usernameInput);
-    setUsername(clean);
-    setSaveNotice(`Username saved as @${clean}!`);
-    setTimeout(() => setSaveNotice(null), 3000);
+  const handleGenderChange = (newGender: string) => {
+    setUserGender(newGender);
+    try {
+      localStorage.setItem('unsaid_user_gender', newGender);
+      setNotice('Default gender updated for future confessions.');
+      setTimeout(() => setNotice(''), 3000);
+    } catch {}
   };
 
-  const handleSignOut = async () => {
-    if (typeof window !== 'undefined') {
-      document.cookie = 'unsaid_session=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;';
-      document.cookie = 'unsaid_demo_role=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;';
-      localStorage.removeItem('unsaid_session');
-      localStorage.removeItem('unsaid_demo_role');
-    }
-    try {
-      const { createClient } = await import('@/lib/supabase/client');
-      const supabase = createClient();
-      await supabase.auth.signOut();
-    } catch (e) {}
-    router.push('/login');
+  const handleSaveHandle = (e: React.FormEvent) => {
+    e.preventDefault();
+    const clean = usernameInput.trim().toLowerCase().replace(/[^a-z0-9_]/g, '');
+    if (!clean) return;
+    saveUsername(clean);
+    setUsername(clean);
+    setNotice('Student handle saved successfully.');
+    setTimeout(() => setNotice(''), 3000);
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col pb-24 md:pb-8 selection:bg-indigo-500 selection:text-white">
+    <div className="min-h-screen bg-[#F4F3EF] text-slate-900 flex flex-col pb-24 md:pb-8 selection:bg-[#FF6B00] selection:text-white">
       <Navbar />
 
       <main className="max-w-3xl mx-auto px-4 pt-6 flex-1 w-full space-y-6">
-        <div className="flex items-center gap-3 border-b border-slate-800 pb-4">
-          <div className="w-10 h-10 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 flex items-center justify-center">
-            <Settings className="w-5 h-5" />
-          </div>
+        <div className="flex items-center gap-3">
+          <Link href="/profile" className="p-2 rounded-2xl bg-white border border-slate-200 text-slate-600 hover:text-slate-950">
+            <ArrowLeft className="w-5 h-5" />
+          </Link>
           <div>
-            <h1 className="text-xl font-bold text-white font-heading">Settings & Preferences</h1>
-            <p className="text-xs text-slate-400">Manage account privacy, theme, blocked users, and handle.</p>
+            <h1 className="text-2xl font-black text-slate-950 font-heading">Settings & Preferences</h1>
+            <p className="text-xs text-slate-600">Manage your anonymous handle and posting defaults.</p>
           </div>
         </div>
 
-        {/* Username Handle Card */}
-        <div className="glass-card p-6 space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="text-sm font-bold text-white flex items-center gap-2">
-              <AtSign className="w-4 h-4 text-indigo-400" />
-              Student Username Handle (Instagram Direct)
-            </h3>
-            <span className="text-xs font-mono font-bold text-indigo-300 bg-slate-950 px-2 py-0.5 rounded border border-indigo-500/30">
-              @{username}
-            </span>
+        {notice && (
+          <div className="p-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-700 text-xs font-semibold flex items-center gap-2 animate-fade-in">
+            <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+            {notice}
           </div>
-          <p className="text-xs text-slate-400 leading-relaxed">
-            Your unique handle allows fellow students to search for you and send friend requests for 24-hour disappearing chats.
-          </p>
+        )}
 
-          {saveNotice && (
-            <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 text-xs font-semibold flex items-center gap-2">
-              <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-              {saveNotice}
-            </div>
-          )}
-
-          <form onSubmit={handleSaveUsername} className="flex gap-2">
-            <div className="relative flex-1">
-              <span className="absolute left-3.5 top-2.5 text-slate-500 text-xs font-mono font-bold">@</span>
+        <div className="rounded-[28px] bg-white border border-slate-200/80 p-6 shadow-xl space-y-6">
+          
+          {/* Section 1: Handle */}
+          <form onSubmit={handleSaveHandle} className="space-y-3 pb-6 border-b border-slate-100">
+            <h3 className="text-sm font-black text-slate-950 font-heading flex items-center gap-2">
+              <User className="w-4 h-4 text-[#FF6B00]" /> Student Handle
+            </h3>
+            <p className="text-xs text-slate-500">Your handle is used ONLY for 24-hour volatile student direct messages.</p>
+            <div className="flex gap-2">
               <input
                 type="text"
                 value={usernameInput}
                 onChange={(e) => setUsernameInput(e.target.value)}
-                placeholder="enter_username"
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-8 pr-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-indigo-500 font-mono"
+                className="flex-1 bg-[#F4F3EF] border border-slate-200 rounded-2xl px-4 py-2.5 text-xs text-slate-900 focus:outline-none focus:border-[#FF6B00] font-mono"
                 required
               />
-            </div>
-            <button
-              type="submit"
-              className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold shadow-md shadow-indigo-500/20"
-            >
-              Update Handle
-            </button>
-          </form>
-        </div>
-
-        {/* Theme Settings */}
-        <div className="glass-card p-6 space-y-3">
-          <h3 className="text-sm font-bold text-white flex items-center gap-2">
-            <Moon className="w-4 h-4 text-indigo-400" />
-            Appearance & Theme
-          </h3>
-          <div className="grid grid-cols-3 gap-2">
-            {(['dark', 'light', 'system'] as const).map((t) => (
               <button
-                key={t}
-                onClick={() => setTheme(t)}
-                className={`p-3 rounded-xl text-xs font-semibold capitalize border transition-all ${
-                  theme === t
-                    ? 'bg-indigo-600 text-white border-indigo-500 shadow-md shadow-indigo-500/20'
-                    : 'bg-slate-950 text-slate-400 border-slate-800 hover:border-slate-700'
-                }`}
+                type="submit"
+                className="px-5 py-2.5 rounded-2xl bg-[#FF6B00] hover:bg-[#E05E00] text-white font-bold text-xs shadow-md"
               >
-                {t} Mode
+                Save
               </button>
-            ))}
+            </div>
+          </form>
+
+          {/* Section 2: Default Gender */}
+          <div className="space-y-3 pb-6 border-b border-slate-100">
+            <h3 className="text-sm font-black text-slate-950 font-heading flex items-center gap-2">
+              <Shield className="w-4 h-4 text-[#FF6B00]" /> Default Gender Label
+            </h3>
+            <p className="text-xs text-slate-500">Confessions display as <span className="font-mono text-[#FF6B00] font-bold">Anonymous • Gender</span>.</p>
+            <div className="grid grid-cols-3 gap-2">
+              {['Male', 'Female', 'Prefer not to say'].map((g) => (
+                <button
+                  key={g}
+                  type="button"
+                  onClick={() => handleGenderChange(g)}
+                  className={`py-3 rounded-2xl border text-xs font-bold transition-all ${
+                    userGender === g
+                      ? 'bg-[#FF6B00] text-white border-transparent shadow-md'
+                      : 'bg-[#F4F3EF] text-slate-700 border-slate-200 hover:border-slate-300'
+                  }`}
+                >
+                  {g}
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
 
-        {/* Privacy & Safety Links */}
-        <div className="glass-card p-6 space-y-3">
-          <h3 className="text-sm font-bold text-white flex items-center gap-2">
-            <Shield className="w-4 h-4 text-purple-400" />
-            Privacy & Guidelines
-          </h3>
-          <div className="space-y-2 text-xs">
-            <Link href="/privacy" className="block p-3 rounded-xl bg-slate-950 hover:bg-slate-900 border border-slate-800 text-slate-300 font-semibold transition-colors">
-              Privacy Notice & Anonymity Model →
-            </Link>
-            <Link href="/guidelines" className="block p-3 rounded-xl bg-slate-950 hover:bg-slate-900 border border-slate-800 text-slate-300 font-semibold transition-colors">
-              Community Guidelines →
-            </Link>
-          </div>
-        </div>
-
-        {/* Blocked Users */}
-        <div className="glass-card p-6 space-y-3">
-          <h3 className="text-sm font-bold text-white flex items-center gap-2">
-            <UserX className="w-4 h-4 text-rose-400" />
-            Blocked Users
-          </h3>
-          <p className="text-xs text-slate-400">
-            Blocking prevents anonymous messages and hides content. Target identities remain completely hidden.
-          </p>
-          <div className="p-3 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-500 font-mono">
-            No blocked anonymous users.
-          </div>
-        </div>
-
-        {/* Account Actions: Sign Out & Delete Account */}
-        <div className="glass-card p-6 space-y-4 border-rose-500/20">
-          <h3 className="text-sm font-bold text-white flex items-center gap-2">
-            <Trash2 className="w-4 h-4 text-rose-400" />
-            Danger Zone
-          </h3>
-
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
-            <button
-              onClick={handleSignOut}
-              className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 text-xs font-semibold border border-slate-800 flex items-center justify-center gap-2 transition-colors"
+          {/* Section 3: Logout */}
+          <div className="pt-2 flex justify-between items-center">
+            <div>
+              <span className="text-xs font-bold text-slate-950 block">Account Session</span>
+              <span className="text-[11px] text-slate-500 font-mono">Google OAuth Session Active</span>
+            </div>
+            <Link
+              href="/login"
+              className="px-4 py-2.5 rounded-2xl bg-rose-50 text-rose-600 border border-rose-200 font-bold text-xs flex items-center gap-1.5 hover:bg-rose-100 transition-all font-mono"
             >
               <LogOut className="w-4 h-4" />
               Sign Out
-            </button>
-
-            <button
-              onClick={() => setShowDeleteConfirm(true)}
-              className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-rose-600/20 hover:bg-rose-600/30 text-rose-300 border border-rose-500/30 text-xs font-semibold transition-colors flex items-center justify-center gap-2"
-            >
-              <Trash2 className="w-4 h-4" />
-              Delete Account
-            </button>
+            </Link>
           </div>
+
         </div>
       </main>
-
-      {/* Delete Confirmation Modal */}
-      {showDeleteConfirm && (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4 bg-slate-950/85 backdrop-blur-md">
-          <div className="w-full sm:max-w-md bg-slate-900 sm:border border-t border-slate-800 sm:rounded-3xl rounded-t-3xl p-5 sm:p-6 shadow-2xl space-y-4">
-            <h3 className="text-base font-bold text-white">Delete Account?</h3>
-            <p className="text-xs text-slate-400 leading-relaxed">
-              This action will delete your authenticated account profile and remove associated personal data according to our privacy policy.
-            </p>
-            <div className="pt-2 flex justify-end gap-2">
-              <button
-                onClick={() => setShowDeleteConfirm(false)}
-                className="px-4 py-2 rounded-xl bg-slate-950 text-slate-400 text-xs font-semibold border border-slate-800"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleSignOut}
-                className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-semibold shadow-md"
-              >
-                Confirm Delete
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       <MobileNav onOpenComposer={() => {}} />
     </div>

@@ -128,32 +128,32 @@ export default function NotificationsPage() {
   const unreadCount = notifs.filter((n) => !n.is_read).length;
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col pb-24 md:pb-8">
+    <div className="min-h-screen bg-[#F4F3EF] text-slate-900 flex flex-col pb-24 md:pb-8 selection:bg-[#FF6B00] selection:text-white">
       <Navbar />
 
       <main className="max-w-3xl mx-auto px-4 pt-6 flex-1 w-full space-y-6">
-        <div className="flex items-center justify-between border-b border-slate-800 pb-4">
+        <div className="flex items-center justify-between border-b border-slate-200/80 pb-4">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 flex items-center justify-center">
+            <div className="w-10 h-10 rounded-2xl bg-[#FF6B00]/10 border border-[#FF6B00]/20 text-[#FF6B00] flex items-center justify-center">
               <Bell className="w-5 h-5" />
             </div>
             <div>
-              <h1 className="text-xl font-bold text-white font-heading">
+              <h1 className="text-xl font-black text-slate-950 font-heading flex items-center">
                 Notifications
                 {unreadCount > 0 && (
-                  <span className="ml-2 text-xs bg-indigo-500 text-white px-2 py-0.5 rounded-full">
+                  <span className="ml-2 text-xs bg-[#FF6B00] text-white px-2 py-0.5 rounded-full font-mono">
                     {unreadCount}
                   </span>
                 )}
               </h1>
-              <p className="text-xs text-slate-400">Strictly anonymous alerts about your activity.</p>
+              <p className="text-xs text-slate-600 font-sans">Strictly anonymous alerts about your activity.</p>
             </div>
           </div>
 
           {unreadCount > 0 && (
             <button
               onClick={markAllRead}
-              className="flex items-center gap-1 text-xs font-semibold text-indigo-400 hover:text-indigo-300"
+              className="flex items-center gap-1 text-xs font-bold text-[#FF6B00] hover:underline font-mono"
             >
               <CheckCheck className="w-4 h-4" />
               Mark all read
@@ -164,7 +164,7 @@ export default function NotificationsPage() {
         <div className="space-y-3">
           {loading ? (
             <div className="flex items-center justify-center py-16">
-              <Loader2 className="w-6 h-6 animate-spin text-indigo-400" />
+              <Loader2 className="w-6 h-6 animate-spin text-[#FF6B00]" />
             </div>
           ) : notifs.length > 0 ? (
             notifs.map((notif) => {
@@ -177,22 +177,22 @@ export default function NotificationsPage() {
                   onClick={() => !notif.is_read && markRead(notif.id)}
                   className={`flex items-start justify-between p-4 rounded-2xl border transition-all ${
                     !notif.is_read
-                      ? 'bg-slate-900 border-indigo-500/30'
-                      : 'bg-slate-950/60 border-slate-800 hover:border-slate-700'
+                      ? 'bg-white border-[#FF6B00]/40 shadow-md'
+                      : 'bg-white/80 border-slate-200 hover:border-slate-300 shadow-sm'
                   }`}
                 >
                   <div className="flex items-start gap-3">
-                    <div className="mt-0.5 p-2 rounded-xl bg-indigo-500/10 text-indigo-400">
+                    <div className="mt-0.5 p-2 rounded-xl bg-[#FF6B00]/10 text-[#FF6B00]">
                       {notif.type === 'comment' && <MessageSquare className="w-4 h-4" />}
-                      {notif.type === 'think_about_you' && <Eye className="w-4 h-4 text-pink-400" />}
-                      {notif.type === 'reaction' && <Heart className="w-4 h-4 text-rose-400" />}
-                      {notif.type === 'milestone' && <Bell className="w-4 h-4 text-amber-400" />}
+                      {notif.type === 'think_about_you' && <Eye className="w-4 h-4 text-pink-500" />}
+                      {notif.type === 'reaction' && <Heart className="w-4 h-4 text-rose-500" />}
+                      {notif.type === 'milestone' && <Bell className="w-4 h-4 text-amber-500" />}
                       {!['comment', 'think_about_you', 'reaction', 'milestone'].includes(notif.type) && (
                         <Bell className="w-4 h-4" />
                       )}
                     </div>
                     <div>
-                      <p className="text-xs font-semibold text-slate-200">{getNotifText(notif)}</p>
+                      <p className="text-xs font-bold text-slate-900 font-sans">{getNotifText(notif)}</p>
                       <span className="text-[11px] text-slate-500 font-mono">
                         {code ? `Confession #${code} • ` : ''}{formatTimeAgo(notif.created_at)}
                       </span>
@@ -200,7 +200,7 @@ export default function NotificationsPage() {
                   </div>
 
                   {!notif.is_read && (
-                    <span className="w-2 h-2 rounded-full bg-indigo-500 shrink-0 mt-2" />
+                    <span className="w-2.5 h-2.5 rounded-full bg-[#FF6B00] shrink-0 mt-2" />
                   )}
                 </Link>
               );

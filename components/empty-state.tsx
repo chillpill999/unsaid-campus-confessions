@@ -49,18 +49,18 @@ export function EmptyState({ type, title, subtitle, actionText, onAction }: Empt
   const Icon = config.icon;
 
   return (
-    <div className="glass-card p-10 text-center flex flex-col items-center justify-center my-6 space-y-4">
-      <div className="w-14 h-14 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 flex items-center justify-center">
+    <div className="rounded-[28px] bg-white border border-slate-200/80 p-10 text-center flex flex-col items-center justify-center my-6 space-y-4 shadow-xl">
+      <div className="w-14 h-14 rounded-2xl bg-[#FF6B00]/10 border border-[#FF6B00]/20 text-[#FF6B00] flex items-center justify-center">
         <Icon className="w-7 h-7" />
       </div>
       <div className="max-w-md space-y-1">
-        <h3 className="text-base font-bold text-white">{title || config.title}</h3>
-        <p className="text-xs text-slate-400 leading-relaxed">{subtitle || config.subtitle}</p>
+        <h3 className="text-base font-bold text-slate-900 font-heading">{title || config.title}</h3>
+        <p className="text-xs text-slate-500 leading-relaxed font-sans">{subtitle || config.subtitle}</p>
       </div>
       {actionText && onAction && (
         <button
           onClick={onAction}
-          className="mt-2 px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs transition-all shadow-md shadow-indigo-500/20"
+          className="mt-2 px-5 py-2.5 rounded-2xl bg-[#FF6B00] hover:bg-[#E05E00] text-white font-bold text-xs transition-all shadow-md shadow-[#FF6B00]/20 font-mono"
         >
           {actionText}
         </button>

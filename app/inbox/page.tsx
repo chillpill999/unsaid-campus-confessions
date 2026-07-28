@@ -189,29 +189,26 @@ export default function InboxPage() {
   const activeConfessionConv = MOCK_INBOX_CONVERSATIONS.find((c) => c.id === activeConfessionConvId);
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col pb-24 md:pb-8 selection:bg-cyan-500 selection:text-black">
+    <div className="min-h-screen bg-[#F4F3EF] text-slate-900 flex flex-col pb-24 md:pb-8 selection:bg-[#FF6B00] selection:text-white">
       <Navbar />
 
       <main className="max-w-6xl mx-auto px-3 sm:px-4 pt-4 sm:pt-6 flex-1 w-full flex flex-col space-y-4">
         
-        {/* Futuristic Cyber Banner Header */}
-        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-slate-900 via-indigo-950/80 to-slate-900 border border-indigo-500/20 p-5 shadow-2xl backdrop-blur-xl">
-          <div className="absolute top-0 right-0 -mt-12 -mr-12 w-64 h-64 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
-          <div className="absolute bottom-0 left-1/3 -mb-12 w-64 h-64 bg-pink-500/10 rounded-full blur-3xl pointer-events-none" />
-
+        {/* Futuristic Cyber Banner Header - Stitch Warm Light Porcelain Mode */}
+        <div className="relative overflow-hidden rounded-[28px] bg-white border border-slate-200/80 p-5 shadow-xl">
           <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
             
             {/* Title & Pulse Indicator */}
             <div className="space-y-1">
               <div className="flex items-center gap-2">
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-cyan-500/10 border border-cyan-500/30 text-[10px] font-mono text-cyan-300 font-bold uppercase tracking-widest">
-                  <Radio className="w-3 h-3 text-cyan-400 animate-pulse" /> Live Pulse Active
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#FF6B00]/10 border border-[#FF6B00]/20 text-[10px] font-mono text-[#FF6B00] font-bold uppercase tracking-widest">
+                  <Radio className="w-3 h-3 text-[#FF6B00] animate-pulse" /> Live Messenger Active
                 </span>
               </div>
-              <h1 className="text-2xl sm:text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white via-indigo-200 to-cyan-300 font-heading tracking-tight flex items-center gap-2.5">
+              <h1 className="text-2xl sm:text-3xl font-black text-slate-950 font-heading tracking-tight flex items-center gap-2.5">
                 Campus Cyber-Messenger
               </h1>
-              <p className="text-xs text-slate-400 max-w-lg">
+              <p className="text-xs text-slate-600 max-w-lg font-sans">
                 Encrypted 24-hour volatile student messaging & anonymous confession channels.
               </p>
             </div>
@@ -220,19 +217,19 @@ export default function InboxPage() {
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
               
               {/* User Handle Badge */}
-              <div className="flex items-center justify-between gap-3 bg-slate-950/80 backdrop-blur-md px-3.5 py-2 rounded-2xl border border-indigo-500/30 shadow-inner">
+              <div className="flex items-center justify-between gap-3 bg-[#F4F3EF] px-3.5 py-2 rounded-2xl border border-slate-200 shadow-inner">
                 <div className="flex items-center gap-2">
-                  <div className="w-7 h-7 rounded-xl bg-gradient-to-tr from-cyan-500 to-indigo-600 flex items-center justify-center font-bold text-slate-950 text-xs shadow-md">
+                  <div className="w-7 h-7 rounded-xl bg-[#FF6B00] flex items-center justify-center font-bold text-white text-xs shadow-md">
                     @
                   </div>
                   <div className="flex flex-col">
-                    <span className="text-[9px] uppercase font-mono text-slate-400 tracking-wider">Your Handle</span>
-                    <span className="text-xs font-bold font-mono text-cyan-300">@{myUsername}</span>
+                    <span className="text-[9px] uppercase font-mono text-slate-500 tracking-wider">Your Handle</span>
+                    <span className="text-xs font-bold font-mono text-[#FF6B00]">@{myUsername}</span>
                   </div>
                 </div>
                 <button
                   onClick={() => setIsEditingUsername(true)}
-                  className="p-1.5 rounded-lg bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-300 transition-colors border border-indigo-500/20"
+                  className="p-1.5 rounded-lg bg-[#FF6B00]/10 hover:bg-[#FF6B00]/20 text-[#FF6B00] transition-colors border border-[#FF6B00]/20"
                   title="Claim / Change Handle"
                 >
                   <Edit2 className="w-3.5 h-3.5" />
@@ -243,36 +240,36 @@ export default function InboxPage() {
           </div>
 
           {/* Mode Switcher Tabs */}
-          <div className="relative z-10 flex items-center gap-2 pt-4 border-t border-slate-800/80 mt-4">
+          <div className="relative z-10 flex items-center gap-2 pt-4 border-t border-slate-100 mt-4">
             <button
               onClick={() => setInboxMode('direct')}
-              className={`flex-1 sm:flex-initial flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-xs font-black tracking-wide transition-all duration-300 ${
+              className={`flex-1 sm:flex-initial flex items-center justify-center gap-2 px-5 py-2.5 rounded-2xl text-xs font-black tracking-wide transition-all duration-300 ${
                 inboxMode === 'direct'
-                  ? 'bg-gradient-to-r from-cyan-500 via-indigo-600 to-pink-500 text-white shadow-lg shadow-cyan-500/20 border border-cyan-400/40 scale-[1.02]'
-                  : 'bg-slate-950/70 text-slate-400 hover:text-slate-200 border border-slate-800/80'
+                  ? 'bg-[#FF6B00] text-white shadow-lg shadow-[#FF6B00]/20 scale-[1.02]'
+                  : 'bg-[#F4F3EF] text-slate-600 hover:text-slate-950 border border-slate-200'
               }`}
             >
-              <Zap className="w-4 h-4 text-cyan-300 animate-bounce" />
+              <Zap className="w-4 h-4 text-white" />
               <span>Direct DMs (24h Ephemeral ⏱️)</span>
             </button>
 
             <button
               onClick={() => setInboxMode('confession')}
-              className={`flex-1 sm:flex-initial flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-xs font-black tracking-wide transition-all duration-300 ${
+              className={`flex-1 sm:flex-initial flex items-center justify-center gap-2 px-5 py-2.5 rounded-2xl text-xs font-black tracking-wide transition-all duration-300 ${
                 inboxMode === 'confession'
-                  ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-lg shadow-purple-500/20 border border-purple-400/40 scale-[1.02]'
-                  : 'bg-slate-950/70 text-slate-400 hover:text-slate-200 border border-slate-800/80'
+                  ? 'bg-[#121212] text-white shadow-lg shadow-black/20 scale-[1.02]'
+                  : 'bg-[#F4F3EF] text-slate-600 hover:text-slate-950 border border-slate-200'
               }`}
             >
-              <Lock className="w-4 h-4 text-purple-300" />
+              <Lock className="w-4 h-4 text-white" />
               <span>Anonymous Signals</span>
             </button>
           </div>
 
           {/* Toast Notification */}
           {usernameNotice && (
-            <div className="mt-3 p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs font-semibold flex items-center gap-2 animate-fade-in">
-              <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+            <div className="mt-3 p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-700 text-xs font-semibold flex items-center gap-2 animate-fade-in">
+              <CheckCircle2 className="w-4 h-4 text-emerald-600" />
               {usernameNotice}
             </div>
           )}
@@ -283,14 +280,14 @@ export default function InboxPage() {
           <div className="grid grid-cols-1 md:grid-cols-12 gap-4 flex-1" style={{ minHeight: '520px' }}>
             
             {/* Left Sidebar: Contact list & Friends management */}
-            <aside className={`md:col-span-4 rounded-3xl bg-slate-900/60 border border-slate-800 p-4 space-y-4 flex flex-col backdrop-blur-md ${activeFriend && dmSubTab === 'chats' ? 'hidden md:flex' : 'flex'}`}>
+            <aside className={`md:col-span-4 rounded-[28px] bg-white border border-slate-200/80 p-4 space-y-4 flex flex-col shadow-xl ${activeFriend && dmSubTab === 'chats' ? 'hidden md:flex' : 'flex'}`}>
               
               {/* Sub-tabs header */}
-              <div className="grid grid-cols-3 gap-1 bg-slate-950 p-1.5 rounded-2xl border border-slate-800 text-xs font-bold">
+              <div className="grid grid-cols-3 gap-1 bg-[#F4F3EF] p-1.5 rounded-2xl border border-slate-200 text-xs font-bold">
                 <button
                   onClick={() => setDmSubTab('chats')}
                   className={`py-2 rounded-xl transition-all text-center flex items-center justify-center gap-1 ${
-                    dmSubTab === 'chats' ? 'bg-gradient-to-r from-cyan-600 to-indigo-600 text-white shadow-md' : 'text-slate-400 hover:text-slate-200'
+                    dmSubTab === 'chats' ? 'bg-[#FF6B00] text-white shadow-md' : 'text-slate-600 hover:text-slate-950'
                   }`}
                 >
                   Chats ({friends.length})
@@ -298,20 +295,18 @@ export default function InboxPage() {
                 <button
                   onClick={() => setDmSubTab('requests')}
                   className={`py-2 rounded-xl transition-all text-center relative flex items-center justify-center gap-1 ${
-                    dmSubTab === 'requests' ? 'bg-gradient-to-r from-cyan-600 to-indigo-600 text-white shadow-md' : 'text-slate-400 hover:text-slate-200'
+                    dmSubTab === 'requests' ? 'bg-[#FF6B00] text-white shadow-md' : 'text-slate-600 hover:text-slate-950'
                   }`}
                 >
                   Requests
                   {pendingIncomingRequests.length > 0 && (
-                    <span className="ml-1 px-1.5 py-0.2 bg-pink-500 text-white text-[10px] rounded-full font-black animate-pulse">
-                      {pendingIncomingRequests.length}
-                    </span>
+                    <span className="w-2 h-2 rounded-full bg-rose-500 animate-ping inline-block" />
                   )}
                 </button>
                 <button
                   onClick={() => setDmSubTab('search')}
                   className={`py-2 rounded-xl transition-all text-center flex items-center justify-center gap-1 ${
-                    dmSubTab === 'search' ? 'bg-gradient-to-r from-cyan-600 to-indigo-600 text-white shadow-md' : 'text-slate-400 hover:text-slate-200'
+                    dmSubTab === 'search' ? 'bg-[#FF6B00] text-white shadow-md' : 'text-slate-600 hover:text-slate-950'
                   }`}
                 >
                   + Add
@@ -330,44 +325,44 @@ export default function InboxPage() {
                           onClick={() => setActiveFriend(friend)}
                           className={`w-full text-left p-3.5 rounded-2xl border transition-all duration-200 flex items-center gap-3.5 relative overflow-hidden group ${
                             isActive
-                              ? 'bg-gradient-to-r from-indigo-900/60 to-purple-900/40 border-cyan-500/50 text-white shadow-lg shadow-cyan-500/5'
-                              : 'bg-slate-950/80 border-slate-800/80 hover:border-indigo-500/40 hover:bg-slate-900/80 text-slate-300'
+                              ? 'bg-[#FF6B00]/10 border-[#FF6B00] text-slate-950 shadow-sm'
+                              : 'bg-[#F4F3EF] border-slate-200 hover:border-[#FF6B00]/40 text-slate-800'
                           }`}
                         >
                           {isActive && (
-                            <span className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-cyan-400 to-pink-500" />
+                            <span className="absolute left-0 top-0 bottom-0 w-1 bg-[#FF6B00]" />
                           )}
                           <div className="relative shrink-0">
-                            <div className={`w-11 h-11 rounded-2xl bg-gradient-to-tr ${friend.avatar_gradient || 'from-cyan-500 via-indigo-600 to-pink-500'} flex items-center justify-center font-black text-slate-950 text-xs shadow-md group-hover:scale-105 transition-transform`}>
+                            <div className="w-11 h-11 rounded-2xl bg-[#FF6B00] flex items-center justify-center font-black text-white text-xs shadow-md group-hover:scale-105 transition-transform">
                               {friend.username.slice(0, 2).toUpperCase()}
                             </div>
-                            <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-emerald-400 border-2 border-slate-950" title="Active Signal" />
+                            <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-emerald-500 border-2 border-white" title="Active Signal" />
                           </div>
 
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center justify-between text-xs font-bold">
-                              <span className="truncate text-cyan-300 font-mono">@{friend.username}</span>
-                              <span className="text-[10px] text-pink-400 font-mono flex items-center gap-0.5 bg-pink-500/10 px-1.5 py-0.5 rounded-md border border-pink-500/20">
+                              <span className="truncate text-[#FF6B00] font-mono">@{friend.username}</span>
+                              <span className="text-[10px] text-pink-600 font-mono flex items-center gap-0.5 bg-pink-500/10 px-1.5 py-0.5 rounded-md border border-pink-500/20">
                                 <Clock className="w-2.5 h-2.5 inline" /> 24h
                               </span>
                             </div>
-                            <p className="text-[11px] text-slate-400 truncate mt-0.5">{friend.full_name}</p>
+                            <p className="text-[11px] text-slate-600 truncate mt-0.5">{friend.full_name}</p>
                           </div>
                         </button>
                       );
                     })
                   ) : (
                     <div className="py-12 text-center space-y-3 px-2">
-                      <div className="w-14 h-14 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 flex items-center justify-center mx-auto">
+                      <div className="w-14 h-14 rounded-2xl bg-[#FF6B00]/10 border border-[#FF6B00]/20 text-[#FF6B00] flex items-center justify-center mx-auto">
                         <Users className="w-7 h-7" />
                       </div>
                       <div>
-                        <p className="text-xs font-bold text-slate-200">No active student signals</p>
-                        <p className="text-[11px] text-slate-400 mt-1">Connect using student handles to begin ephemeral 24h chats.</p>
+                        <p className="text-xs font-bold text-slate-900">No active student signals</p>
+                        <p className="text-[11px] text-slate-500 mt-1">Connect using student handles to begin ephemeral 24h chats.</p>
                       </div>
                       <button
                         onClick={() => setDmSubTab('search')}
-                        className="px-4 py-2 rounded-xl bg-gradient-to-r from-cyan-500 to-indigo-600 text-slate-950 font-black text-xs transition-all shadow-md hover:brightness-110"
+                        className="px-4 py-2 rounded-xl bg-[#FF6B00] hover:bg-[#E05E00] text-white font-bold text-xs transition-all shadow-md"
                       >
                         + Connect Student Handle
                       </button>
@@ -382,24 +377,24 @@ export default function InboxPage() {
                   <h3 className="text-[11px] font-bold text-slate-400 uppercase tracking-wider font-mono">Incoming Signals</h3>
                   {pendingIncomingRequests.length > 0 ? (
                     pendingIncomingRequests.map((req) => (
-                      <div key={req.id} className="p-3.5 rounded-2xl bg-slate-950 border border-indigo-500/20 space-y-2.5">
+                      <div key={req.id} className="p-3.5 rounded-2xl bg-[#F4F3EF] border border-slate-200 space-y-2.5">
                         <div className="flex items-center justify-between">
                           <div>
-                            <span className="block text-xs font-bold text-cyan-300 font-mono">@{req.sender_username}</span>
-                            <span className="text-[11px] text-slate-400">{req.sender_name}</span>
+                            <span className="block text-xs font-bold text-[#FF6B00] font-mono">@{req.sender_username}</span>
+                            <span className="text-[11px] text-slate-600">{req.sender_name}</span>
                           </div>
                           <span className="text-[10px] text-slate-500 font-mono">{formatTimeAgo(req.created_at)}</span>
                         </div>
                         <div className="flex gap-2 pt-1">
                           <button
                             onClick={() => handleAcceptRequest(req.id)}
-                            className="flex-1 py-1.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 text-slate-950 text-xs font-black flex items-center justify-center gap-1 shadow"
+                            className="flex-1 py-1.5 rounded-xl bg-[#FF6B00] text-white text-xs font-bold flex items-center justify-center gap-1 shadow"
                           >
                             <Check className="w-3.5 h-3.5" /> Accept
                           </button>
                           <button
                             onClick={() => handleRejectRequest(req.id)}
-                            className="py-1.5 px-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-400 text-xs font-bold border border-slate-800"
+                            className="py-1.5 px-3 rounded-xl bg-white hover:bg-slate-100 text-slate-600 text-xs font-bold border border-slate-200"
                           >
                             <X className="w-3.5 h-3.5" />
                           </button>
@@ -411,12 +406,12 @@ export default function InboxPage() {
                   )}
 
                   {pendingOutgoingRequests.length > 0 && (
-                    <div className="pt-3 border-t border-slate-800 space-y-2">
+                    <div className="pt-3 border-t border-slate-100 space-y-2">
                       <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider font-mono">Sent Requests</h4>
                       {pendingOutgoingRequests.map((r) => (
-                        <div key={r.id} className="p-3 rounded-xl bg-slate-950 border border-slate-800 text-xs flex justify-between items-center">
-                          <span className="text-cyan-300 font-bold font-mono">@{r.receiver_username}</span>
-                          <span className="text-[10px] text-amber-400 font-mono bg-amber-400/10 px-2 py-0.5 rounded-full border border-amber-400/20">Awaiting Answer</span>
+                        <div key={r.id} className="p-3 rounded-xl bg-[#F4F3EF] border border-slate-200 text-xs flex justify-between items-center">
+                          <span className="text-[#FF6B00] font-bold font-mono">@{r.receiver_username}</span>
+                          <span className="text-[10px] text-amber-600 font-mono bg-amber-500/10 px-2 py-0.5 rounded-full border border-amber-500/20">Awaiting Answer</span>
                         </div>
                       ))}
                     </div>
@@ -428,22 +423,22 @@ export default function InboxPage() {
               {dmSubTab === 'search' && (
                 <div className="space-y-4 overflow-y-auto flex-1 pr-1">
                   <div className="space-y-2.5">
-                    <label className="block text-xs font-bold text-slate-300">Connect Student Handle</label>
+                    <label className="block text-xs font-bold text-slate-700">Connect Student Handle</label>
                     <div className="flex gap-2">
                       <div className="relative flex-1">
-                        <AtSign className="w-4 h-4 text-cyan-400 absolute left-3 top-2.5" />
+                        <AtSign className="w-4 h-4 text-[#FF6B00] absolute left-3 top-2.5" />
                         <input
                           type="text"
                           value={searchHandle}
                           onChange={(e) => setSearchHandle(e.target.value)}
                           placeholder="student_handle"
-                          className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-9 pr-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-cyan-500 font-mono"
+                          className="w-full bg-[#F4F3EF] border border-slate-200 rounded-xl pl-9 pr-3 py-2 text-xs text-slate-900 focus:outline-none focus:border-[#FF6B00] font-mono"
                         />
                       </div>
                       <button
                         onClick={() => handleSendRequestSubmit(searchHandle)}
                         disabled={!searchHandle.trim()}
-                        className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-cyan-500 to-indigo-600 text-slate-950 font-black text-xs disabled:opacity-50"
+                        className="px-3.5 py-2 rounded-xl bg-[#FF6B00] text-white font-bold text-xs disabled:opacity-50"
                       >
                         Request
                       </button>
@@ -452,21 +447,21 @@ export default function InboxPage() {
                     {searchNotice && (
                       <div className={`p-2.5 rounded-xl text-xs font-medium ${
                         searchNotice.type === 'success'
-                          ? 'bg-emerald-500/10 border border-emerald-500/30 text-emerald-300'
-                          : 'bg-rose-500/10 border border-rose-500/30 text-rose-300'
+                          ? 'bg-emerald-500/10 border border-emerald-500/30 text-emerald-700'
+                          : 'bg-rose-500/10 border border-rose-500/30 text-rose-700'
                       }`}>
                         {searchNotice.text}
                       </div>
                     )}
                   </div>
 
-                  <div className="p-4 rounded-2xl bg-gradient-to-br from-indigo-950/60 to-slate-950 border border-indigo-500/30 text-xs space-y-2">
-                    <div className="font-bold text-cyan-300 flex items-center gap-1.5">
-                      <ShieldCheck className="w-4 h-4 text-cyan-400" />
+                  <div className="p-4 rounded-2xl bg-[#F4F3EF] border border-slate-200 text-xs space-y-2">
+                    <div className="font-bold text-slate-900 flex items-center gap-1.5">
+                      <ShieldCheck className="w-4 h-4 text-[#FF6B00]" />
                       24h Volatile Cyber Protocol
                     </div>
-                    <p className="text-[11px] text-slate-300 leading-relaxed">
-                      Share your handle (<span className="font-mono text-cyan-300 font-bold">@{myUsername}</span>) with friends. Direct messages self-destruct exactly 24 hours after being sent.
+                    <p className="text-[11px] text-slate-600 leading-relaxed">
+                      Share your handle (<span className="font-mono text-[#FF6B00] font-bold">@{myUsername}</span>) with friends. Direct messages self-destruct exactly 24 hours after being sent.
                     </p>
                   </div>
                 </div>
@@ -475,33 +470,33 @@ export default function InboxPage() {
             </aside>
 
             {/* Right Main Cyber Chat Window */}
-            <section className={`md:col-span-8 rounded-3xl bg-slate-900/60 border border-slate-800 p-4 flex flex-col justify-between backdrop-blur-md relative overflow-hidden ${!activeFriend ? 'hidden md:flex' : 'flex'}`}>
+            <section className={`md:col-span-8 rounded-[28px] bg-white border border-slate-200/80 p-4 flex flex-col justify-between shadow-xl relative overflow-hidden ${!activeFriend ? 'hidden md:flex' : 'flex'}`}>
               {activeFriend ? (
                 <>
                   {/* Cyber Chat Header */}
-                  <div className="border-b border-slate-800/80 pb-3 space-y-2.5">
+                  <div className="border-b border-slate-100 pb-3 space-y-2.5">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
                         <button
                           onClick={() => setActiveFriend(null)}
-                          className="md:hidden p-1.5 rounded-xl bg-slate-950 text-slate-400 hover:text-white"
+                          className="md:hidden p-1.5 rounded-xl bg-[#F4F3EF] text-slate-600 hover:text-slate-900"
                         >
                           <ArrowLeft className="w-5 h-5" />
                         </button>
                         
                         <div className="relative">
-                          <div className={`w-11 h-11 rounded-2xl bg-gradient-to-tr ${activeFriend.avatar_gradient || 'from-cyan-500 via-indigo-600 to-pink-500'} flex items-center justify-center font-black text-slate-950 text-sm shadow-lg`}>
+                          <div className="w-11 h-11 rounded-2xl bg-[#FF6B00] flex items-center justify-center font-black text-white text-sm shadow-md">
                             {activeFriend.username.slice(0, 2).toUpperCase()}
                           </div>
-                          <span className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-emerald-400 border-2 border-slate-950 animate-pulse" title="Active Signal" />
+                          <span className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-emerald-500 border-2 border-white animate-pulse" title="Active Signal" />
                         </div>
 
                         <div>
-                          <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                            <span className="font-mono text-cyan-300">@{activeFriend.username}</span>
-                            <span className="text-[10px] font-mono bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 px-2 py-0.5 rounded-full">Connected</span>
+                          <h3 className="text-sm font-bold text-slate-950 flex items-center gap-2">
+                            <span className="font-mono text-[#FF6B00]">@{activeFriend.username}</span>
+                            <span className="text-[10px] font-mono bg-emerald-500/10 text-emerald-700 border border-emerald-500/30 px-2 py-0.5 rounded-full">Connected</span>
                           </h3>
-                          <span className="text-[11px] text-slate-400">
+                          <span className="text-[11px] text-slate-500">
                             {activeFriend.full_name}
                           </span>
                         </div>
@@ -509,12 +504,12 @@ export default function InboxPage() {
                     </div>
 
                     {/* Ephemeral Warning Banner */}
-                    <div className="bg-gradient-to-r from-pink-500/10 via-purple-500/10 to-indigo-500/10 border border-pink-500/30 px-3.5 py-2 rounded-2xl flex items-center justify-between text-[11px] font-semibold text-pink-300">
+                    <div className="bg-pink-500/10 border border-pink-500/20 px-3.5 py-2 rounded-2xl flex items-center justify-between text-[11px] font-semibold text-pink-700">
                       <span className="flex items-center gap-1.5">
-                        <Clock className="w-3.5 h-3.5 text-pink-400 animate-spin" style={{ animationDuration: '6s' }} />
+                        <Clock className="w-3.5 h-3.5 text-pink-600 animate-spin" style={{ animationDuration: '6s' }} />
                         <span>24h Auto-Purge Active</span>
                       </span>
-                      <span className="text-[10px] text-pink-300/80 font-mono bg-pink-500/10 px-2 py-0.5 rounded-lg border border-pink-500/20">
+                      <span className="text-[10px] text-pink-700 font-mono bg-white px-2 py-0.5 rounded-lg border border-pink-200">
                         Self-destruct timer ⏱️
                       </span>
                     </div>
@@ -531,10 +526,10 @@ export default function InboxPage() {
                             className={`flex flex-col ${msg.is_mine ? 'items-end' : 'items-start'} group`}
                           >
                             <div
-                              className={`max-w-[80%] p-4 rounded-3xl text-xs leading-relaxed shadow-xl relative transition-transform duration-200 group-hover:scale-[1.01] ${
+                              className={`max-w-[80%] p-4 rounded-3xl text-xs leading-relaxed shadow-md relative transition-transform duration-200 group-hover:scale-[1.01] ${
                                 msg.is_mine
-                                  ? 'bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 text-white rounded-br-xs border border-pink-400/30'
-                                  : 'bg-slate-950 border border-slate-800 text-slate-200 rounded-bl-xs shadow-inner'
+                                  ? 'bg-[#FF6B00] text-white rounded-br-xs'
+                                  : 'bg-[#F4F3EF] border border-slate-200 text-slate-900 rounded-bl-xs'
                               }`}
                             >
                               <p className="whitespace-pre-wrap font-sans">{msg.content}</p>
@@ -543,7 +538,7 @@ export default function InboxPage() {
                             <div className="flex items-center gap-2 text-[10px] text-slate-500 font-mono mt-1 px-1">
                               <span>{formatTimeAgo(msg.created_at)}</span>
                               <span>•</span>
-                              <span className="text-pink-400 font-bold flex items-center gap-1 bg-pink-500/10 px-2 py-0.5 rounded-full border border-pink-500/20">
+                              <span className="text-pink-600 font-bold flex items-center gap-1 bg-pink-500/10 px-2 py-0.5 rounded-full border border-pink-200">
                                 <Clock className="w-2.5 h-2.5" /> Purges in {remainingText}
                               </span>
                             </div>
@@ -552,11 +547,11 @@ export default function InboxPage() {
                       })
                     ) : (
                       <div className="py-16 text-center space-y-3">
-                        <div className="w-14 h-14 rounded-2xl bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 flex items-center justify-center mx-auto animate-pulse">
+                        <div className="w-14 h-14 rounded-2xl bg-[#FF6B00]/10 border border-[#FF6B00]/20 text-[#FF6B00] flex items-center justify-center mx-auto animate-pulse">
                           <Zap className="w-7 h-7" />
                         </div>
-                        <p className="text-xs font-bold text-slate-200">Start the signal</p>
-                        <p className="text-[11px] text-slate-400 max-w-sm mx-auto">
+                        <p className="text-xs font-bold text-slate-900 font-heading">Start the signal</p>
+                        <p className="text-[11px] text-slate-500 max-w-sm mx-auto">
                           Messages sent here will automatically disappear 24 hours after dispatch.
                         </p>
                       </div>
@@ -566,14 +561,14 @@ export default function InboxPage() {
                   {/* Quick Reaction Pill Bar */}
                   <div className="flex items-center gap-1.5 pt-2 pb-1 overflow-x-auto">
                     <span className="text-[10px] font-mono text-slate-500 uppercase tracking-wider shrink-0 flex items-center gap-1">
-                      <SmilePlus className="w-3 h-3 text-cyan-400" /> Quick:
+                      <SmilePlus className="w-3 h-3 text-[#FF6B00]" /> Quick:
                     </span>
                     {QUICK_REACTION_EMOJIS.map((emoji) => (
                       <button
                         key={emoji}
                         type="button"
                         onClick={() => handleSendDirectMessageSubmit(undefined, emoji)}
-                        className="px-2.5 py-1 rounded-xl bg-slate-950 hover:bg-slate-900 border border-slate-800 text-xs transition-transform active:scale-95 hover:border-cyan-500/40 shrink-0"
+                        className="px-2.5 py-1 rounded-xl bg-[#F4F3EF] hover:bg-slate-200 border border-slate-200 text-xs transition-transform active:scale-95 shrink-0"
                       >
                         {emoji}
                       </button>
@@ -581,18 +576,18 @@ export default function InboxPage() {
                   </div>
 
                   {/* Direct Message Input Bar */}
-                  <form onSubmit={(e) => handleSendDirectMessageSubmit(e)} className="flex gap-2 pt-2 border-t border-slate-800">
+                  <form onSubmit={(e) => handleSendDirectMessageSubmit(e)} className="flex gap-2 pt-2 border-t border-slate-100">
                     <input
                       type="text"
                       placeholder={`Send ephemeral signal to @${activeFriend.username}...`}
                       value={directInputMsg}
                       onChange={(e) => setDirectInputMsg(e.target.value)}
-                      className="flex-1 bg-slate-950 border border-slate-800 rounded-2xl px-4 py-3 text-xs text-slate-100 focus:outline-none focus:border-cyan-500 placeholder-slate-500 font-sans shadow-inner"
+                      className="flex-1 bg-[#F4F3EF] border border-slate-200 rounded-2xl px-4 py-3 text-xs text-slate-900 focus:outline-none focus:border-[#FF6B00] placeholder-slate-500 font-sans shadow-inner"
                     />
                     <button
                       type="submit"
                       disabled={!directInputMsg.trim()}
-                      className="px-5 py-3 rounded-2xl bg-gradient-to-r from-cyan-500 via-indigo-600 to-pink-500 hover:brightness-110 text-slate-950 font-black text-xs disabled:opacity-50 flex items-center gap-1.5 shadow-lg shadow-cyan-500/20 transition-all"
+                      className="px-5 py-3 rounded-2xl bg-[#FF6B00] hover:bg-[#E05E00] text-white font-bold text-xs disabled:opacity-50 flex items-center gap-1.5 shadow-md shadow-[#FF6B00]/20 transition-all"
                     >
                       <Send className="w-3.5 h-3.5" />
                       Send
@@ -601,12 +596,12 @@ export default function InboxPage() {
                 </>
               ) : (
                 <div className="py-24 text-center space-y-4">
-                  <div className="w-16 h-16 rounded-3xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 flex items-center justify-center mx-auto">
-                    <Radio className="w-8 h-8 text-cyan-400 animate-pulse" />
+                  <div className="w-16 h-16 rounded-3xl bg-[#FF6B00]/10 border border-[#FF6B00]/20 text-[#FF6B00] flex items-center justify-center mx-auto">
+                    <Radio className="w-8 h-8 text-[#FF6B00] animate-pulse" />
                   </div>
                   <div>
-                    <h3 className="text-base font-bold text-white">Select a classmate's signal to chat</h3>
-                    <p className="text-xs text-slate-400 mt-1">
+                    <h3 className="text-base font-bold text-slate-950 font-heading">Select a classmate's signal to chat</h3>
+                    <p className="text-xs text-slate-500 mt-1">
                       Messages in direct chats auto-delete after 24 hours.
                     </p>
                   </div>
