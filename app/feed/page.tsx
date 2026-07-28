@@ -28,44 +28,29 @@ export default function FeedPage() {
   const [reportingCode, setReportingCode] = useState<string | null>(null);
   const [thinkAboutYouNotice, setThinkAboutYouNotice] = useState<string | null>(null);
 
-  // Load persistent confessions on load & keep across page reloads
+  // Load shared confessions from Supabase PostgreSQL Database across all devices
   useEffect(() => {
     async function loadConfessions() {
-      let combined: PublicConfession[] = [];
-
-      // 1. Load locally stored user confessions
-      try {
-        const localSavedStr = localStorage.getItem('unsaid_persistent_confessions');
-        if (localSavedStr) {
-          const localSaved: PublicConfession[] = JSON.parse(localSavedStr);
-          combined = [...localSaved];
-        }
-      } catch (err) {
-        console.error('Failed to parse local confessions:', err);
-      }
-
-      // 2. Fetch live confessions via API endpoint for cross-device sync
       try {
         const res = await fetch('/api/confessions');
         const json = await res.json();
-        if (json && json.success && json.confessions && json.confessions.length > 0) {
-          const codeMap = new Map<string, PublicConfession>();
-          (json.confessions as PublicConfession[]).forEach((c) => codeMap.set(c.public_code, c));
-          combined.forEach((c) => codeMap.set(c.public_code, c));
-          setConfessions(Array.from(codeMap.values()));
+        if (json && json.success && json.confessions) {
+          setConfessions(json.confessions);
           return;
         }
       } catch (err) {
-        console.warn('API fetch fallback:', err);
+        console.warn('API fetch fallback to Server Action:', err);
       }
 
-      // 3. Fallback: Combine local saved + mock confessions
-      const codeMap = new Map<string, PublicConfession>();
-      combined.forEach((c) => codeMap.set(c.public_code, c));
-      MOCK_CONFESSIONS.forEach((c) => {
-        if (!codeMap.has(c.public_code)) codeMap.set(c.public_code, c);
-      });
-      setConfessions(Array.from(codeMap.values()));
+      try {
+        const serverData = await fetchPublicConfessions();
+        if (serverData && serverData.length > 0) {
+          setConfessions(serverData as PublicConfession[]);
+          return;
+        }
+      } catch (err) {
+        console.error('Failed to load public confessions:', err);
+      }
     }
 
     loadConfessions();

@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "test:security": "tsx scripts/test-security.ts"
+    "test:security": "tsx scripts/test-security.ts",
+    "test:cross-user": "tsx scripts/test-cross-user.ts"
   },
   "dependencies": {
     "@supabase/ssr": "^0.5.2",

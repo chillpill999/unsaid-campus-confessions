@@ -120,8 +120,8 @@ export function ConfessionComposer({
         : null,
     };
 
-    // 1. Submit to Live API Route (syncs across all devices & Supabase)
-    let publishedConfession = newConfession;
+    // 1. Submit to Live API Route (Inserts into Supabase PostgreSQL DB)
+    let publishedConfession: PublicConfession = newConfession;
     try {
       const response = await fetch('/api/confessions', {
         method: 'POST',
@@ -148,21 +148,20 @@ export function ConfessionComposer({
       });
 
       const res = await response.json();
-      if (res && res.success && res.confession) {
+      if (!res || !res.success) {
+        setErrorMsg(res?.error || 'Failed to publish confession to Supabase database.');
+        setIsSubmitting(false);
+        return;
+      }
+
+      if (res.confession) {
         publishedConfession = { ...res.confession, is_mine: true };
       }
     } catch (apiErr: any) {
-      console.warn('API post fallback to local:', apiErr);
-    }
-
-    // 2. Persist to Local Storage to ensure NEVER lost on reload
-    try {
-      const existingStr = localStorage.getItem('unsaid_persistent_confessions') || '[]';
-      const existing: PublicConfession[] = JSON.parse(existingStr);
-      const updated = [publishedConfession, ...existing];
-      localStorage.setItem('unsaid_persistent_confessions', JSON.stringify(updated));
-    } catch (err) {
-      console.error('Failed to save to local storage:', err);
+      console.error('Database publication error:', apiErr);
+      setErrorMsg(apiErr.message || 'Network error while connecting to Supabase database.');
+      setIsSubmitting(false);
+      return;
     }
 
     setIsSubmitting(false);
@@ -171,7 +170,7 @@ export function ConfessionComposer({
     
     setTimeout(() => {
       setSuccessNotice(false);
-      onPostSuccess(newConfession);
+      onPostSuccess(publishedConfession);
       onClose();
       setContent('');
     }, 1000);
