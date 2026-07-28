@@ -122,7 +122,7 @@ export function ConfessionComposer({
 
     // 1. Submit via secure Server Action
     try {
-      await createConfession({
+      const res = await createConfession({
         content: content.trim(),
         category_slug: selectedCategory.slug,
         category_name: selectedCategory.name,
@@ -141,6 +141,12 @@ export function ConfessionComposer({
             }
           : null,
       });
+
+      if (res && !res.success) {
+        setErrorMsg(res.error || 'Could not publish confession. Please verify your login status.');
+        setIsSubmitting(false);
+        return;
+      }
     } catch (serverErr: any) {
       console.error('Server action insert failed:', serverErr);
       setErrorMsg(serverErr.message || 'We could not publish your confession. Please make sure you are logged in.');

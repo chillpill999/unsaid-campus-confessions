@@ -12,13 +12,13 @@ import {
 } from './types';
 
 export const MOCK_CATEGORIES: Category[] = [
-  { id: 'cat-1', name: 'Confession', slug: 'confession', icon: 'Lock', active: true },
-  { id: 'cat-2', name: 'Crush', slug: 'crush', icon: 'Heart', active: true },
-  { id: 'cat-3', name: 'Funny', slug: 'funny', icon: 'Laugh', active: true },
-  { id: 'cat-4', name: 'Hostel', slug: 'hostel', icon: 'Home', active: true },
-  { id: 'cat-5', name: 'Appreciation', slug: 'appreciation', icon: 'Sparkles', active: true },
-  { id: 'cat-6', name: 'Question', slug: 'question', icon: 'HelpCircle', active: true },
-  { id: 'cat-7', name: 'Campus Life', slug: 'campus-life', icon: 'Compass', active: true },
+  { id: 'cat-1', name: 'Confession', slug: 'confession', icon: '🔒', active: true },
+  { id: 'cat-2', name: 'Crush', slug: 'crush', icon: '❤️', active: true },
+  { id: 'cat-3', name: 'Funny', slug: 'funny', icon: '😂', active: true },
+  { id: 'cat-4', name: 'Hostel', slug: 'hostel', icon: '🏠', active: true },
+  { id: 'cat-5', name: 'Appreciation', slug: 'appreciation', icon: '✨', active: true },
+  { id: 'cat-6', name: 'Question', slug: 'question', icon: '❓', active: true },
+  { id: 'cat-7', name: 'Campus Life', slug: 'campus-life', icon: '🧭', active: true },
 ];
 
 // CLEAN INITIAL STATE — ZERO SAMPLE CONFESSIONS OR UNWANTED DATA
@@ -54,8 +54,8 @@ export const MOCK_DEMO_ADMIN_PROFILE: UserProfile = {
   gender: 'Female',
   college_id: '11111111-1111-1111-1111-111111111111',
   college_name: 'Loknayak Jai Prakash Institute of Technology',
-  batch: 'Faculty/Admin',
-  department: 'Campus Safety',
+  batch: '2026',
+  department: 'Administration',
   role: 'admin',
   account_status: 'active',
   created_at: new Date().toISOString(),
@@ -63,10 +63,14 @@ export const MOCK_DEMO_ADMIN_PROFILE: UserProfile = {
 
 export const MOCK_REVEALED_IDENTITIES: Record<string, RevealedIdentityPayload> = {};
 
-export const MOCK_REPORTS: ReportItem[] = [];
-
 export const MOCK_AUDIT_LOGS: IdentityAccessLog[] = [];
 
-export const MOCK_INBOX_CONVERSATIONS: AnonymousConversation[] = [];
+export const MOCK_REPORTS: ReportItem[] = [];
 
-export const MOCK_CONVERSATION_MESSAGES: Record<string, AnonymousMessage[]> = {};
+export const MOCK_CONVERSATIONS: AnonymousConversation[] = [];
+
+export const MOCK_MESSAGES: Record<string, AnonymousMessage[]> = {};
+
+export const MOCK_INBOX_CONVERSATIONS: any[] = [];
+
+export const MOCK_CONVERSATION_MESSAGES: Record<string, any[]> = {};
