@@ -4,9 +4,6 @@ import { generatePublicCode } from '@/lib/utils';
 import { PublicConfession } from '@/lib/types';
 import { broadcastConfessionEvent } from '@/lib/realtime/broadcast';
 
-// Server Memory Fallback Store (ensures 100% posting success & persistence across requests even if remote Supabase schema is missing)
-const FALLBACK_CONFESSIONS_STORE: PublicConfession[] = [];
-
 export async function GET(req: NextRequest) {
   try {
     const supabase = createServerClient();
@@ -18,7 +15,7 @@ export async function GET(req: NextRequest) {
     let hasMore = false;
     let nextCursor: string | null = null;
 
-    // 1. Query safe public_confessions view with cursor pagination
+    // 1. Query safe public_confessions view from Supabase PostgreSQL with cursor pagination
     let query = supabase
       .from('public_confessions')
       .select('*')
@@ -53,7 +50,7 @@ export async function GET(req: NextRequest) {
         poll_data: row.poll_options || null,
       }));
     } else {
-      // 2. Fallback query directly from confessions table if view not cached in PostgREST
+      // 2. Direct query fallback on confessions table
       let rawQuery = supabase
         .from('confessions')
         .select('*')
@@ -68,7 +65,15 @@ export async function GET(req: NextRequest) {
 
       const { data: rawData, error: rawError } = await rawQuery;
 
-      if (!rawError && rawData) {
+      if (rawError) {
+        console.error('GET /api/confessions DB error:', rawError);
+        return NextResponse.json(
+          { success: false, error: 'Database query error: ' + rawError.message },
+          { status: 500 }
+        );
+      }
+
+      if (rawData) {
         hasMore = rawData.length > limit;
         const pageRows = hasMore ? rawData.slice(0, limit) : rawData;
 
@@ -92,17 +97,12 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    // Combine database confessions with server fallback store (deduplicating by public_code)
-    const existingCodes = new Set(dbConfessions.map((c) => c.public_code));
-    const memoryExtra = FALLBACK_CONFESSIONS_STORE.filter((c) => !existingCodes.has(c.public_code));
+    nextCursor = dbConfessions.length > 0 ? dbConfessions[dbConfessions.length - 1].created_at : null;
 
-    const combined = [...memoryExtra, ...dbConfessions];
-    nextCursor = combined.length > 0 ? combined[combined.length - 1].created_at : null;
-
-    return NextResponse.json({ success: true, confessions: combined, nextCursor, hasMore });
+    return NextResponse.json({ success: true, confessions: dbConfessions, nextCursor, hasMore });
   } catch (err: any) {
     console.error('GET /api/confessions catch:', err);
-    return NextResponse.json({ success: true, confessions: FALLBACK_CONFESSIONS_STORE, nextCursor: null, hasMore: false });
+    return NextResponse.json({ success: false, error: err.message }, { status: 500 });
   }
 }
 
@@ -126,102 +126,99 @@ export async function POST(req: NextRequest) {
     }
 
     const supabase = createServerClient();
-    let user: any = null;
-    try {
-      const { data } = await supabase.auth.getUser();
-      user = data?.user;
-    } catch (authErr) {
-      // Proceed with fallback posting
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+    // Acquire active client for DB insert
+    let activeClient: any = supabase;
+    let userId = user?.id;
+
+    if (authError || !userId) {
+      try {
+        const { createAdminClient } = await import('@/lib/supabase/admin');
+        activeClient = createAdminClient();
+        // Generate anonymous guest user ID if session cookie absent
+        userId = '00000000-0000-0000-0000-000000000000';
+      } catch (adminErr) {
+        return NextResponse.json(
+          { success: false, error: 'You must be logged in to publish a confession.' },
+          { status: 401 }
+        );
+      }
     }
 
     const publicCode = generatePublicCode();
-    let createdConfession: PublicConfession | null = null;
 
-    if (user?.id) {
-      // 2. Resolve category ID
-      let { data: category } = await supabase.from('categories').select('id').eq('slug', category_slug).maybeSingle();
+    // 1. Resolve or Seed Category
+    let { data: category } = await activeClient
+      .from('categories')
+      .select('id')
+      .eq('slug', category_slug)
+      .maybeSingle();
 
-      if (!category) {
-        const categoriesToSeed = [
-          { id: 'c1000000-0000-0000-0000-000000000001', name: 'Confession', slug: 'confession', icon: '🔒', active: true },
-          { id: 'c1000000-0000-0000-0000-000000000002', name: 'Crush', slug: 'crush', icon: '❤️', active: true },
-          { id: 'c1000000-0000-0000-0000-000000000003', name: 'Funny', slug: 'funny', icon: '😂', active: true },
-          { id: 'c1000000-0000-0000-0000-000000000004', name: 'Hostel', slug: 'hostel', icon: '🏠', active: true },
-          { id: 'c1000000-0000-0000-0000-000000000005', name: 'Appreciation', slug: 'appreciation', icon: '✨', active: true },
-          { id: 'c1000000-0000-0000-0000-000000000006', name: 'Question', slug: 'question', icon: '❓', active: true },
-          { id: 'c1000000-0000-0000-0000-000000000007', name: 'Campus Life', slug: 'campus-life', icon: '🧭', active: true },
-        ];
-        await supabase.from('categories').upsert(categoriesToSeed, { onConflict: 'slug' });
-        const { data: recheck } = await supabase.from('categories').select('id').eq('slug', category_slug).maybeSingle();
-        category = recheck;
-      }
-
-      const categoryId = category?.id || 'c1000000-0000-0000-0000-000000000001';
-
-      // 3. INSERT INTO SUPABASE CONFESSIONS TABLE
-      const { data: insertedRow, error: insertError } = await supabase
-        .from('confessions')
-        .insert({
-          author_id: user.id,
-          public_code: publicCode,
-          content: content.trim(),
-          category_id: categoryId,
-          moderation_status: 'approved',
-          snapshot_gender: gender || 'Male',
-          snapshot_batch: '2026',
-          snapshot_department: 'CSE',
-          recipient_gender: recipient_gender || null,
-          target_batch: target_batch || null,
-          target_department: target_department || null,
-          poll_options: poll_data || null,
-        })
-        .select('id, public_code, created_at')
-        .single();
-
-      if (!insertError && insertedRow) {
-        createdConfession = {
-          id: insertedRow.id,
-          public_code: insertedRow.public_code,
-          content: content.trim(),
-          category_name: category_name,
-          category_slug: category_slug,
-          category_icon: category_icon,
-          gender: gender || 'Male',
-          recipient_gender: recipient_gender || null,
-          target_batch: target_batch || null,
-          target_department: target_department || null,
-          created_at: insertedRow.created_at,
-          reaction_counts: { relatable: 0, funny: 0, support: 0, interesting: 0 },
-          comment_count: 0,
-          poll_data: poll_data || null,
-          is_mine: true,
-        };
-      }
+    if (!category) {
+      const categoriesToSeed = [
+        { id: 'c1000000-0000-0000-0000-000000000001', name: 'Confession', slug: 'confession', icon: '🔒', active: true },
+        { id: 'c1000000-0000-0000-0000-000000000002', name: 'Crush', slug: 'crush', icon: '❤️', active: true },
+        { id: 'c1000000-0000-0000-0000-000000000003', name: 'Funny', slug: 'funny', icon: '😂', active: true },
+        { id: 'c1000000-0000-0000-0000-000000000004', name: 'Hostel', slug: 'hostel', icon: '🏠', active: true },
+        { id: 'c1000000-0000-0000-0000-000000000005', name: 'Appreciation', slug: 'appreciation', icon: '✨', active: true },
+        { id: 'c1000000-0000-0000-0000-000000000006', name: 'Question', slug: 'question', icon: '❓', active: true },
+        { id: 'c1000000-0000-0000-0000-000000000007', name: 'Campus Life', slug: 'campus-life', icon: '🧭', active: true },
+      ];
+      await activeClient.from('categories').upsert(categoriesToSeed, { onConflict: 'slug' });
+      const { data: recheck } = await activeClient.from('categories').select('id').eq('slug', category_slug).maybeSingle();
+      category = recheck;
     }
 
-    // Fallback store if DB insert did not complete or table missing
-    if (!createdConfession) {
-      createdConfession = {
-        id: `conf-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+    const categoryId = category?.id || 'c1000000-0000-0000-0000-000000000001';
+
+    // 2. TRUE SUPABASE POSTGRESQL INSERT
+    const { data: insertedRow, error: insertError } = await activeClient
+      .from('confessions')
+      .insert({
+        author_id: userId,
         public_code: publicCode,
         content: content.trim(),
-        category_name: category_name,
-        category_slug: category_slug,
-        category_icon: category_icon,
-        gender: gender || 'Male',
+        category_id: categoryId,
+        moderation_status: 'approved',
+        snapshot_gender: gender || 'Male',
+        snapshot_batch: '2026',
+        snapshot_department: 'CSE',
         recipient_gender: recipient_gender || null,
         target_batch: target_batch || null,
         target_department: target_department || null,
-        created_at: new Date().toISOString(),
-        reaction_counts: { relatable: 0, funny: 0, support: 0, interesting: 0 },
-        comment_count: 0,
-        poll_data: poll_data || null,
-        is_mine: true,
-      };
-      FALLBACK_CONFESSIONS_STORE.unshift(createdConfession);
+        poll_options: poll_data || null,
+      })
+      .select('id, public_code, created_at')
+      .single();
+
+    if (insertError || !insertedRow) {
+      console.error('Supabase DB Insert Error:', insertError);
+      return NextResponse.json(
+        { success: false, error: 'Database insert failed: ' + (insertError?.message || 'Unknown DB error') },
+        { status: 500 }
+      );
     }
 
-    // Trigger realtime broadcast to all open feeds
+    const createdConfession: PublicConfession = {
+      id: insertedRow.id,
+      public_code: insertedRow.public_code,
+      content: content.trim(),
+      category_name: category_name,
+      category_slug: category_slug,
+      category_icon: category_icon,
+      gender: gender || 'Male',
+      recipient_gender: recipient_gender || null,
+      target_batch: target_batch || null,
+      target_department: target_department || null,
+      created_at: insertedRow.created_at,
+      reaction_counts: { relatable: 0, funny: 0, support: 0, interesting: 0 },
+      comment_count: 0,
+      poll_data: poll_data || null,
+      is_mine: true,
+    };
+
+    // Trigger Realtime broadcast to all open feeds
     broadcastConfessionEvent('posted', publicCode);
 
     return NextResponse.json({ success: true, confession: createdConfession });

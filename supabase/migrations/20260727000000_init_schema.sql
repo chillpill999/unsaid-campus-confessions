@@ -266,7 +266,8 @@ CREATE POLICY "Read Own Profile" ON profiles FOR SELECT USING (auth.uid() = id);
 CREATE POLICY "Insert Own Profile" ON profiles FOR INSERT WITH CHECK (auth.uid() = id);
 CREATE POLICY "Update Own Profile" ON profiles FOR UPDATE USING (auth.uid() = id);
 
--- Confessions: Public read access handled via view; direct table read restricted.
+-- Confessions: Public read access for approved, non-deleted confessions; insert/update restricted to author
+CREATE POLICY "Public Read Approved Confessions" ON confessions FOR SELECT USING (moderation_status = 'approved' AND is_deleted = false);
 CREATE POLICY "Insert Own Confession" ON confessions FOR INSERT WITH CHECK (auth.uid() = author_id);
 CREATE POLICY "Update Own Confession" ON confessions FOR UPDATE USING (auth.uid() = author_id);
 CREATE POLICY "Admin Select Confessions" ON confessions FOR SELECT USING (
@@ -275,6 +276,12 @@ CREATE POLICY "Admin Select Confessions" ON confessions FOR SELECT USING (
 
 -- Revoke direct table SELECT from all roles to enforce view-only access
 REVOKE SELECT ON confessions FROM anon, authenticated;
+
+-- Grant SELECT access on public views to anon and authenticated roles
+GRANT SELECT ON public_confessions TO anon, authenticated;
+GRANT SELECT ON public_comments TO anon, authenticated;
+GRANT SELECT ON categories TO anon, authenticated;
+GRANT SELECT ON colleges TO anon, authenticated;
 
 -- Bookmarks & Reactions: User restricted
 CREATE POLICY "Manage Own Bookmarks" ON bookmarks FOR ALL USING (auth.uid() = user_id);
