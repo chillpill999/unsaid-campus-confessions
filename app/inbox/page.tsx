@@ -24,7 +24,8 @@ import {
   Zap,
   Radio,
   ShieldAlert,
-  SmilePlus
+  SmilePlus,
+  Loader2
 } from 'lucide-react';
 import { MOCK_INBOX_CONVERSATIONS, MOCK_CONVERSATION_MESSAGES } from '@/lib/mock-data';
 import { AnonymousMessage, DirectMessage, FriendContact, FriendRequest } from '@/lib/types';
@@ -44,6 +45,20 @@ import {
   getRemainingTimeFormatted,
   purgeExpiredMessages
 } from '@/lib/friends-chat';
+import {
+  syncUserHandle,
+  sendFriendRequestAction,
+  fetchFriendRequestsAction,
+  acceptFriendRequestAction,
+  rejectFriendRequestAction,
+  fetchFriendsListAction,
+  sendDirectMessageAction,
+  fetchDirectMessagesAction
+} from '@/lib/actions/friends';
+import { createClient } from '@supabase/supabase-js';
+
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://prkecywvrficjylboior.supabase.co';
+const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBya2VjeXd2cmZpY2p5bGJvaW9yIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODUxMzYzNTMsImV4cCI6MjEwMDcxMjM1M30.Rl-77UJekLrfDJgUzKBVrro8AyYFW6vWOXNHQ4hoVDg';
 
 const QUICK_REACTION_EMOJIS = ['🔥', '💀', '🤫', '⚡', '💖', '👀', '💯'];
 
@@ -69,6 +84,7 @@ export default function InboxPage() {
 
   // Add Friend Search Query
   const [searchHandle, setSearchHandle] = useState('');
+  const [isSendingRequest, setIsSendingRequest] = useState(false);
   const [searchNotice, setSearchNotice] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   // Anonymous Confession Chat state
@@ -76,28 +92,124 @@ export default function InboxPage() {
   const [confessionMessages, setConfessionMessages] = useState<Record<string, AnonymousMessage[]>>(MOCK_CONVERSATION_MESSAGES);
   const [confessionInputMsg, setConfessionInputMsg] = useState('');
 
-  // 1. Initialize Clean Production State on load
+  // 1. Initialize Clean Production State & Fetch Live Server Friends/Requests on load
   useEffect(() => {
     const handle = getSavedUsername();
     setMyUsername(handle);
     setUsernameInput(handle);
     initializeChatData(handle);
 
-    const loadedFriends = getFriendsList();
-    setFriends(loadedFriends);
+    // Initial hydration from local cache for instant UI rendering
+    const localFriends = getFriendsList();
+    setFriends(localFriends);
     setRequests(getFriendRequests());
-    if (loadedFriends.length > 0) {
-      setActiveFriend(loadedFriends[0]);
+    if (localFriends.length > 0) {
+      setActiveFriend(localFriends[0]);
     }
+
+    // Sync handle with server profile
+    syncUserHandle(handle);
+
+    // Fetch live requests and friend contacts from server
+    const loadLiveServerData = async () => {
+      try {
+        const liveRequests = await fetchFriendRequestsAction(handle);
+        const liveFriends = await fetchFriendsListAction(handle);
+
+        if (liveRequests && liveRequests.length > 0) {
+          setRequests(liveRequests);
+        }
+        if (liveFriends && liveFriends.length > 0) {
+          setFriends(liveFriends);
+          if (!activeFriend) {
+            setActiveFriend(liveFriends[0]);
+          }
+        }
+      } catch (err) {
+        console.warn('Error loading live friends data:', err);
+      }
+    };
+
+    loadLiveServerData();
   }, []);
 
-  // 2. Refresh active Direct Chat messages & Auto-purge expired 24h messages
+  // 2. Subscribe to Supabase Realtime Friend Requests Channel
+  useEffect(() => {
+    if (!myUsername) return;
+
+    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    const channel = supabase.channel('campus:friend_requests');
+
+    channel.on('broadcast', { event: 'friend_request_sent' }, (payload) => {
+      const req = payload.payload;
+      if (req && (req.receiver_username.toLowerCase() === myUsername.toLowerCase() || req.sender_username.toLowerCase() === myUsername.toLowerCase())) {
+        setRequests((prev) => {
+          if (prev.some((r) => r.id === req.id)) return prev;
+          return [req, ...prev];
+        });
+      }
+    });
+
+    channel.on('broadcast', { event: 'friend_request_accepted' }, (payload) => {
+      const req = payload.payload;
+      if (req && (req.receiver_username.toLowerCase() === myUsername.toLowerCase() || req.sender_username.toLowerCase() === myUsername.toLowerCase())) {
+        fetchFriendsListAction(myUsername).then((updatedFriends) => {
+          if (updatedFriends && updatedFriends.length > 0) {
+            setFriends(updatedFriends);
+          }
+        });
+        fetchFriendRequestsAction(myUsername).then((updatedReqs) => {
+          if (updatedReqs) setRequests(updatedReqs);
+        });
+      }
+    });
+
+    channel.subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [myUsername]);
+
+  // 3. Refresh & Subscribe to Active Conversation Direct Messages via Supabase Realtime
   useEffect(() => {
     if (!activeFriend || inboxMode !== 'direct') return;
 
     const convKey = getConversationKey(myUsername, activeFriend.username);
+    
+    // Initial fetch from local + server
     const msgs = getDirectMessagesForConv(convKey, myUsername);
     setDmMessages(msgs);
+
+    fetchDirectMessagesAction(convKey, myUsername).then((serverMsgs) => {
+      if (serverMsgs && serverMsgs.length > 0) {
+        const mapped = serverMsgs.map((m) => ({
+          ...m,
+          is_mine: m.sender_username.toLowerCase() === myUsername.toLowerCase(),
+        }));
+        setDmMessages(mapped);
+      }
+    });
+
+    // Realtime channel subscription for live DMs
+    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    const dmChannel = supabase.channel(`campus:dm:${convKey}`);
+
+    dmChannel.on('broadcast', { event: 'direct_message_sent' }, (payload) => {
+      const msg = payload.payload;
+      if (msg && msg.conversation_key === convKey) {
+        const formattedMsg: DirectMessage = {
+          ...msg,
+          is_mine: msg.sender_username.toLowerCase() === myUsername.toLowerCase(),
+        };
+        setDmMessages((prev) => {
+          if (prev.some((m) => m.id === formattedMsg.id)) return prev;
+          return [...prev, formattedMsg];
+        });
+      }
+    });
+
+    dmChannel.subscribe();
 
     const interval = setInterval(() => {
       purgeExpiredMessages();
@@ -105,59 +217,97 @@ export default function InboxPage() {
       setDmMessages(updatedMsgs);
     }, 5000);
 
-    return () => clearInterval(interval);
+    return () => {
+      supabase.removeChannel(dmChannel);
+      clearInterval(interval);
+    };
   }, [activeFriend, myUsername, inboxMode]);
 
   // Save username handler
-  const handleSaveUsernameSubmit = (e: React.FormEvent) => {
+  const handleSaveUsernameSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!usernameInput.trim()) return;
     const clean = saveUsername(usernameInput);
     setMyUsername(clean);
     setIsEditingUsername(false);
+
+    // Sync with server profile
+    await syncUserHandle(clean);
+
     setUsernameNotice(`Handle initialized as @${clean}`);
     setTimeout(() => setUsernameNotice(null), 3000);
   };
 
   // Send Direct Message (24h volatile)
-  const handleSendDirectMessageSubmit = (e?: React.FormEvent, customText?: string) => {
+  const handleSendDirectMessageSubmit = async (e?: React.FormEvent, customText?: string) => {
     if (e) e.preventDefault();
     const textToSend = customText || directInputMsg;
     if (!textToSend.trim() || !activeFriend) return;
 
+    // Send local + server broadcast
     const newMsg = sendDirectMessage(myUsername, activeFriend.username, textToSend.trim());
     setDmMessages((prev) => [...prev, newMsg]);
     if (!customText) setDirectInputMsg('');
+
+    // Trigger server action for multi-device sync
+    await sendDirectMessageAction(myUsername, activeFriend.username, textToSend.trim());
   };
 
   // Send Friend Request
-  const handleSendRequestSubmit = (targetHandle: string) => {
+  const handleSendRequestSubmit = async (targetHandle: string) => {
     setSearchNotice(null);
-    const res = sendFriendRequest(myUsername, 'LNJPIT Student', targetHandle);
-    if (res.success) {
-      setSearchNotice({ type: 'success', text: res.message });
-      setRequests(getFriendRequests());
-      setSearchHandle('');
-    } else {
-      setSearchNotice({ type: 'error', text: res.message });
+    setIsSendingRequest(true);
+
+    try {
+      // 1. Save local request
+      const localRes = sendFriendRequest(myUsername, 'LNJPIT Student', targetHandle);
+      
+      // 2. Trigger global server action with Realtime Broadcast
+      const serverRes = await sendFriendRequestAction(myUsername, 'LNJPIT Student', targetHandle);
+
+      if (serverRes.success || localRes.success) {
+        const successMsg = serverRes.message || localRes.message;
+        setSearchNotice({ type: 'success', text: successMsg });
+        
+        // Refresh requests state
+        if (serverRes.request) {
+          setRequests((prev) => [serverRes.request!, ...prev]);
+        } else {
+          setRequests(getFriendRequests());
+        }
+        setSearchHandle('');
+      } else {
+        setSearchNotice({ type: 'error', text: serverRes.message || localRes.message });
+      }
+    } catch (err: any) {
+      setSearchNotice({ type: 'error', text: err.message || 'Error sending request.' });
+    } finally {
+      setIsSendingRequest(false);
     }
   };
 
   // Accept Friend Request
-  const handleAcceptRequest = (reqId: string) => {
+  const handleAcceptRequest = async (reqId: string) => {
     const newFriend = acceptFriendRequest(reqId);
-    setRequests(getFriendRequests());
+    const serverRes = await acceptFriendRequestAction(reqId, myUsername);
+
+    const updatedRequests = getFriendRequests();
+    setRequests(updatedRequests);
+
     const updatedFriends = getFriendsList();
     setFriends(updatedFriends);
-    if (newFriend) {
-      setActiveFriend(newFriend);
+
+    const activeContact = serverRes.friend || newFriend;
+    if (activeContact) {
+      setActiveFriend(activeContact);
       setDmSubTab('chats');
     }
   };
 
   // Reject Friend Request
-  const handleRejectRequest = (reqId: string) => {
+  const handleRejectRequest = async (reqId: string) => {
     rejectFriendRequest(reqId);
+    await rejectFriendRequestAction(reqId);
     setRequests(getFriendRequests());
   };
 
@@ -180,23 +330,28 @@ export default function InboxPage() {
       ...prev,
       [activeConfessionConvId]: [...(prev[activeConfessionConvId] || []), newMsg],
     }));
-
     setConfessionInputMsg('');
   };
 
-  const pendingIncomingRequests = requests.filter((r) => r.receiver_username.toLowerCase() === myUsername.toLowerCase() && r.status === 'pending');
-  const pendingOutgoingRequests = requests.filter((r) => r.sender_username.toLowerCase() === myUsername.toLowerCase() && r.status === 'pending');
+  const pendingIncomingRequests = requests.filter(
+    (r) => r.receiver_username.toLowerCase() === myUsername.toLowerCase() && r.status === 'pending'
+  );
+
+  const pendingOutgoingRequests = requests.filter(
+    (r) => r.sender_username.toLowerCase() === myUsername.toLowerCase() && r.status === 'pending'
+  );
+
   const activeConfessionConv = MOCK_INBOX_CONVERSATIONS.find((c) => c.id === activeConfessionConvId);
 
   return (
-    <div className="min-h-screen bg-[#F4F3EF] text-slate-900 flex flex-col pb-24 md:pb-8 selection:bg-[#FF6B00] selection:text-white">
+    <div className="min-h-screen bg-[#F4F3EF] text-slate-900 flex flex-col font-sans selection:bg-[#FF6B00] selection:text-white">
       <Navbar />
 
-      <main className="max-w-6xl mx-auto px-3 sm:px-4 pt-4 sm:pt-6 flex-1 w-full flex flex-col space-y-4">
+      <main className="flex-1 max-w-6xl w-full mx-auto px-3 sm:px-6 pt-4 pb-24 space-y-4">
         
-        {/* Futuristic Cyber Banner Header - Stitch Warm Light Porcelain Mode */}
-        <div className="relative overflow-hidden rounded-[28px] bg-white border border-slate-200/80 p-5 shadow-xl">
-          <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
+        {/* Top Header Card */}
+        <div className="rounded-[28px] bg-white border border-slate-200/80 p-5 sm:p-6 shadow-xl relative overflow-hidden">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 relative z-10">
             
             {/* Title & Pulse Indicator */}
             <div className="space-y-1">
@@ -437,10 +592,10 @@ export default function InboxPage() {
                       </div>
                       <button
                         onClick={() => handleSendRequestSubmit(searchHandle)}
-                        disabled={!searchHandle.trim()}
-                        className="px-3.5 py-2 rounded-xl bg-[#FF6B00] text-white font-bold text-xs disabled:opacity-50"
+                        disabled={!searchHandle.trim() || isSendingRequest}
+                        className="px-3.5 py-2 rounded-xl bg-[#FF6B00] hover:bg-[#E05E00] text-white font-bold text-xs disabled:opacity-50 flex items-center gap-1 shadow-md"
                       >
-                        Request
+                        {isSendingRequest ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'Request'}
                       </button>
                     </div>
 
@@ -719,28 +874,28 @@ export default function InboxPage() {
       {/* Edit Username Modal */}
       {isEditingUsername && (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-slate-950/85 backdrop-blur-md">
-          <div className="w-full sm:max-w-md bg-slate-900 border border-indigo-500/30 rounded-3xl p-6 shadow-2xl space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-              <h3 className="text-base font-bold text-white flex items-center gap-2">
-                <AtSign className="w-5 h-5 text-cyan-400" />
+          <div className="w-full sm:max-w-md bg-white border border-slate-200 rounded-3xl p-6 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <h3 className="text-base font-bold text-slate-950 flex items-center gap-2 font-heading">
+                <AtSign className="w-5 h-5 text-[#FF6B00]" />
                 Initialize Student Handle
               </h3>
-              <button onClick={() => setIsEditingUsername(false)} className="text-slate-400 hover:text-white">
+              <button onClick={() => setIsEditingUsername(false)} className="text-slate-400 hover:text-slate-700">
                 <X className="w-4 h-4" />
               </button>
             </div>
 
             <form onSubmit={handleSaveUsernameSubmit} className="space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1.5">Username Handle</label>
+                <label className="block text-xs font-bold text-slate-700 mb-1.5">Username Handle</label>
                 <div className="relative">
-                  <span className="absolute left-3.5 top-2.5 text-cyan-400 text-xs font-mono font-bold">@</span>
+                  <span className="absolute left-3.5 top-2.5 text-[#FF6B00] text-xs font-mono font-bold">@</span>
                   <input
                     type="text"
                     value={usernameInput}
                     onChange={(e) => setUsernameInput(e.target.value)}
                     placeholder="student_lnj"
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-8 pr-3 py-2.5 text-xs text-slate-200 focus:outline-none focus:border-cyan-500 font-mono"
+                    className="w-full bg-[#F4F3EF] border border-slate-200 rounded-xl pl-8 pr-3 py-2.5 text-xs text-slate-950 focus:outline-none focus:border-[#FF6B00] font-mono"
                     required
                   />
                 </div>
@@ -753,13 +908,13 @@ export default function InboxPage() {
                 <button
                   type="button"
                   onClick={() => setIsEditingUsername(false)}
-                  className="px-4 py-2 rounded-xl bg-slate-950 text-slate-400 text-xs font-semibold border border-slate-800"
+                  className="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 text-xs font-semibold hover:bg-slate-200"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 rounded-xl bg-gradient-to-r from-cyan-500 to-indigo-600 text-slate-950 text-xs font-black shadow-md"
+                  className="px-4 py-2 rounded-xl bg-[#FF6B00] hover:bg-[#E05E00] text-white text-xs font-black shadow-md"
                 >
                   Save Handle
                 </button>

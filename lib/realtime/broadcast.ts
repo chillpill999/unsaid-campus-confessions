@@ -109,3 +109,52 @@ export async function broadcastPrivateNotification(recipientId: string, type: st
     console.warn('Realtime notification broadcast note:', err);
   }
 }
+
+export async function broadcastFriendRequestEvent(request: any) {
+  try {
+    const supabase = getRealtimeBroadcastClient();
+    const channel = supabase.channel('campus:friend_requests');
+    await channel.subscribe();
+    await channel.send({
+      type: 'broadcast',
+      event: 'friend_request_sent',
+      payload: request,
+    });
+    supabase.removeChannel(channel);
+  } catch (err) {
+    console.warn('Realtime friend request broadcast note:', err);
+  }
+}
+
+export async function broadcastFriendAcceptEvent(request: any) {
+  try {
+    const supabase = getRealtimeBroadcastClient();
+    const channel = supabase.channel('campus:friend_requests');
+    await channel.subscribe();
+    await channel.send({
+      type: 'broadcast',
+      event: 'friend_request_accepted',
+      payload: request,
+    });
+    supabase.removeChannel(channel);
+  } catch (err) {
+    console.warn('Realtime friend accept broadcast note:', err);
+  }
+}
+
+export async function broadcastDirectMessageEvent(message: any) {
+  try {
+    const supabase = getRealtimeBroadcastClient();
+    const channelName = `campus:dm:${message.conversation_key}`;
+    const channel = supabase.channel(channelName);
+    await channel.subscribe();
+    await channel.send({
+      type: 'broadcast',
+      event: 'direct_message_sent',
+      payload: message,
+    });
+    supabase.removeChannel(channel);
+  } catch (err) {
+    console.warn('Realtime direct message broadcast note:', err);
+  }
+}
