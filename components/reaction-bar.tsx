@@ -8,6 +8,7 @@ interface ReactionBarProps {
   initialCounts: Record<ReactionType, number>;
   initialUserReaction?: ReactionType | null;
   onReact?: (type: ReactionType) => void;
+  customPillClass?: string;
 }
 
 const REACTIONS: { type: ReactionType; label: string; emoji: string }[] = [
@@ -22,6 +23,7 @@ export function ReactionBar({
   initialCounts,
   initialUserReaction = null,
   onReact,
+  customPillClass = '',
 }: ReactionBarProps) {
   const [counts, setCounts] = useState<Record<ReactionType, number>>({
     relatable: initialCounts.relatable || 0,
@@ -63,14 +65,14 @@ export function ReactionBar({
           <button
             key={item.type}
             onClick={() => handleToggle(item.type)}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all ${
+            className={`flex items-center gap-1 sm:gap-1.5 px-2.5 py-1.5 rounded-full text-xs font-bold transition-all active:scale-95 shrink-0 ${
               isSelected
-                ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/50 shadow-sm shadow-indigo-500/10 scale-105'
-                : 'bg-slate-900/80 text-slate-300 border border-slate-800 hover:border-slate-700 hover:bg-slate-900'
+                ? 'bg-[#FF6B00] text-white border-transparent shadow-md shadow-[#FF6B00]/25 scale-105'
+                : customPillClass || 'bg-black/10 text-slate-800 hover:bg-black/20 border border-black/10'
             }`}
           >
-            <span className="text-sm">{item.emoji}</span>
-            <span>{count}</span>
+            <span className="text-xs sm:text-sm">{item.emoji}</span>
+            <span className="font-mono">{count}</span>
           </button>
         );
       })}
