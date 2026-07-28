@@ -19,7 +19,10 @@ import {
   Send,
   Zap,
   Flame,
-  Radio
+  Radio,
+  ShoppingBag,
+  Music,
+  Utensils
 } from 'lucide-react';
 import { PublicConfession, ReactionType } from '@/lib/types';
 import { formatTimeAgo } from '@/lib/utils';
@@ -44,48 +47,78 @@ const CATEGORY_ICONS: Record<string, React.ElementType> = {
   Compass,
 };
 
-const CATEGORY_STYLES: Record<string, { bg: string; text: string; border: string; badgeBg: string }> = {
+// Stitch Google Vibrant Ledger Category Card Color Schemes
+const CATEGORY_THEMES: Record<string, {
+  cardClass: string;
+  pillClass: string;
+  iconBg: string;
+  iconColor: string;
+  textColor: string;
+  subtextColor: string;
+  dividerColor: string;
+}> = {
   crush: {
-    bg: 'from-rose-950/40 via-slate-900/90 to-slate-950',
-    text: 'text-rose-400',
-    border: 'border-rose-500/30',
-    badgeBg: 'bg-rose-500/10 text-rose-300 border-rose-500/30',
+    cardClass: 'bg-[#FF6B00] text-white border-transparent shadow-xl',
+    pillClass: 'bg-black/20 text-white border border-white/20',
+    iconBg: 'bg-white/20',
+    iconColor: 'text-white',
+    textColor: 'text-white',
+    subtextColor: 'text-white/80',
+    dividerColor: 'border-white/20',
   },
   funny: {
-    bg: 'from-amber-950/40 via-slate-900/90 to-slate-950',
-    text: 'text-amber-400',
-    border: 'border-amber-500/30',
-    badgeBg: 'bg-amber-500/10 text-amber-300 border-amber-500/30',
+    cardClass: 'bg-[#FCDAD7] text-slate-950 border-transparent shadow-xl',
+    pillClass: 'bg-slate-950/10 text-slate-900 border border-slate-950/10',
+    iconBg: 'bg-[#D1311F]/15',
+    iconColor: 'text-[#D1311F]',
+    textColor: 'text-slate-950',
+    subtextColor: 'text-slate-700',
+    dividerColor: 'border-slate-950/10',
   },
   hostel: {
-    bg: 'from-emerald-950/40 via-slate-900/90 to-slate-950',
-    text: 'text-emerald-400',
-    border: 'border-emerald-500/30',
-    badgeBg: 'bg-emerald-500/10 text-emerald-300 border-emerald-500/30',
+    cardClass: 'bg-[#C6EAA5] text-slate-950 border-transparent shadow-xl',
+    pillClass: 'bg-slate-950/10 text-slate-900 border border-slate-950/10',
+    iconBg: 'bg-[#769B6C]/25',
+    iconColor: 'text-[#2E5E24]',
+    textColor: 'text-slate-950',
+    subtextColor: 'text-slate-700',
+    dividerColor: 'border-slate-950/10',
   },
   appreciation: {
-    bg: 'from-purple-950/40 via-slate-900/90 to-slate-950',
-    text: 'text-purple-400',
-    border: 'border-purple-500/30',
-    badgeBg: 'bg-purple-500/10 text-purple-300 border-purple-500/30',
+    cardClass: 'bg-[#EAE8E3] text-slate-950 border-transparent shadow-xl',
+    pillClass: 'bg-slate-950/10 text-slate-900 border border-slate-950/10',
+    iconBg: 'bg-slate-950/10',
+    iconColor: 'text-slate-900',
+    textColor: 'text-slate-950',
+    subtextColor: 'text-slate-700',
+    dividerColor: 'border-slate-950/10',
   },
   question: {
-    bg: 'from-cyan-950/40 via-slate-900/90 to-slate-950',
-    text: 'text-cyan-400',
-    border: 'border-cyan-500/30',
-    badgeBg: 'bg-cyan-500/10 text-cyan-300 border-cyan-500/30',
+    cardClass: 'bg-[#121212] text-white border border-slate-800 shadow-xl',
+    pillClass: 'bg-slate-800 text-slate-300 border border-slate-700',
+    iconBg: 'bg-[#FF6B00]/20',
+    iconColor: 'text-[#FF6B00]',
+    textColor: 'text-white',
+    subtextColor: 'text-slate-400',
+    dividerColor: 'border-slate-800',
   },
   'campus-life': {
-    bg: 'from-orange-950/40 via-slate-900/90 to-slate-950',
-    text: 'text-orange-400',
-    border: 'border-orange-500/30',
-    badgeBg: 'bg-orange-500/10 text-orange-300 border-orange-500/30',
+    cardClass: 'bg-slate-900 text-white border border-slate-800 shadow-xl',
+    pillClass: 'bg-slate-800 text-slate-300 border border-slate-700',
+    iconBg: 'bg-[#FF6B00]/20',
+    iconColor: 'text-[#FF6B00]',
+    textColor: 'text-white',
+    subtextColor: 'text-slate-400',
+    dividerColor: 'border-slate-800',
   },
   confession: {
-    bg: 'from-indigo-950/40 via-slate-900/90 to-slate-950',
-    text: 'text-indigo-400',
-    border: 'border-indigo-500/30',
-    badgeBg: 'bg-indigo-500/10 text-indigo-300 border-indigo-500/30',
+    cardClass: 'bg-[#121212] text-white border border-slate-800 shadow-xl',
+    pillClass: 'bg-slate-800 text-slate-300 border border-slate-700',
+    iconBg: 'bg-[#FF6B00]/20',
+    iconColor: 'text-[#FF6B00]',
+    textColor: 'text-white',
+    subtextColor: 'text-slate-400',
+    dividerColor: 'border-slate-800',
   },
 };
 
@@ -100,7 +133,7 @@ export function ConfessionCard({
   const [pollData, setPollData] = useState(confession.poll_data);
 
   const IconComponent = CATEGORY_ICONS[confession.category_icon] || Lock;
-  const style = CATEGORY_STYLES[confession.category_slug] || CATEGORY_STYLES.confession;
+  const theme = CATEGORY_THEMES[confession.category_slug] || CATEGORY_THEMES.confession;
 
   const handleCopyCode = () => {
     navigator.clipboard.writeText(confession.public_code);
@@ -124,70 +157,75 @@ export function ConfessionCard({
   };
 
   return (
-    <article className={`rounded-[28px] bg-gradient-to-b ${style.bg} border ${style.border} p-5 sm:p-6 mb-4 relative overflow-hidden shadow-2xl backdrop-blur-xl transition-all duration-300 hover:-translate-y-1 hover:shadow-cyan-500/10 group`}>
+    <article className={`rounded-[28px] ${theme.cardClass} p-5 sm:p-6 mb-4 relative overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl group`}>
       
-      {/* Top Accent Gradient Bar for Featured Posts */}
+      {/* Featured Accent Indicator */}
       {confession.is_featured && (
-        <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-amber-400 via-pink-500 to-cyan-400" />
+        <div className="absolute top-0 left-0 right-0 h-1.5 bg-[#FF6B00]" />
       )}
 
-      {/* Material iOS Card Header: Category Icon Ring & Author Badge */}
-      <div className="flex items-center justify-between gap-3 mb-4">
+      {/* Stitch Bento Card Header: Circle Icon + Author + Category Capsule Pill */}
+      <div className="flex items-start justify-between gap-3 mb-4">
         
         <div className="flex items-center gap-3">
-          {/* Category Avatar Icon Ring */}
-          <div className={`w-11 h-11 rounded-2xl ${style.badgeBg} flex items-center justify-center border shadow-md shrink-0 group-hover:scale-105 transition-transform`}>
-            <IconComponent className="w-5 h-5" />
+          {/* Circular Icon Container (Stitch Google Signature) */}
+          <div className={`w-11 h-11 rounded-2xl ${theme.iconBg} ${theme.iconColor} flex items-center justify-center font-bold shadow-sm shrink-0 group-hover:scale-105 transition-transform`}>
+            <IconComponent className="w-5 h-5 stroke-[2.5]" />
           </div>
 
           <div className="flex flex-col">
             <div className="flex items-center gap-2">
-              <span className="text-xs font-bold text-white font-heading">
+              <span className={`text-sm font-black font-heading ${theme.textColor}`}>
                 Anonymous Student
               </span>
               {confession.gender !== 'Prefer not to say' && (
-                <span className={`text-[10px] font-mono px-2 py-0.5 rounded-md ${style.badgeBg}`}>
+                <span className={`text-[10px] font-mono px-2 py-0.5 rounded-md ${theme.pillClass}`}>
                   {confession.gender}
                 </span>
               )}
             </div>
-            <span className="text-[11px] text-slate-400 font-mono flex items-center gap-1 mt-0.5">
-              <Radio className="w-2.5 h-2.5 text-emerald-400 animate-pulse" />
+            <span className={`text-[11px] font-mono flex items-center gap-1 mt-0.5 ${theme.subtextColor}`}>
+              <Radio className="w-2.5 h-2.5 text-[#FF6B00] animate-pulse" />
               {formatTimeAgo(confession.created_at)}
             </span>
           </div>
         </div>
 
-        {/* Public Code Pill (#CF7K2P) */}
-        <button
-          onClick={handleCopyCode}
-          className="flex items-center gap-1.5 bg-slate-950 hover:bg-slate-900 text-cyan-300 font-mono text-xs px-3 py-1.5 rounded-xl border border-cyan-500/30 shadow-inner transition-all shrink-0"
-          title="Click to copy public confession code"
-        >
-          {copiedCode ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <span className="font-black text-cyan-400">#</span>}
-          <span className="font-bold">{confession.public_code}</span>
-        </button>
+        {/* Category Pill Tag (Stitch Google Top-Right Capsule) & Code */}
+        <div className="flex items-center gap-2">
+          <span className={`text-xs font-bold px-3 py-1 rounded-full ${theme.pillClass}`}>
+            {confession.category_name}
+          </span>
+          <button
+            onClick={handleCopyCode}
+            className={`flex items-center gap-1 font-mono text-xs px-2.5 py-1 rounded-full transition-all ${theme.pillClass}`}
+            title="Click to copy public code"
+          >
+            {copiedCode ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <span className="font-black">#</span>}
+            <span className="font-bold">{confession.public_code}</span>
+          </button>
+        </div>
       </div>
 
       {/* Target Tag Pill */}
       {(confession.target_batch || confession.target_department) && (
         <div className="mb-3">
-          <span className="inline-flex items-center gap-1 text-[11px] font-mono font-bold bg-slate-950 text-slate-300 px-3 py-1 rounded-full border border-slate-800">
+          <span className={`inline-flex items-center gap-1 text-[11px] font-mono font-bold px-3 py-1 rounded-full ${theme.pillClass}`}>
             Target: {confession.target_department || ''} {confession.target_batch ? `'${confession.target_batch.slice(-2)}` : ''}
           </span>
         </div>
       )}
 
-      {/* Confession Body Content */}
-      <div className="text-slate-100 text-base leading-relaxed whitespace-pre-wrap mb-4 font-sans font-normal tracking-wide">
+      {/* Confession Content */}
+      <div className={`text-base leading-relaxed whitespace-pre-wrap mb-4 font-sans font-medium tracking-wide ${theme.textColor}`}>
         {confession.content}
       </div>
 
       {/* Optional Interactive Poll Widget */}
       {pollData && (
-        <div className="my-4 p-4 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-2.5 shadow-inner">
-          <div className="text-xs font-bold text-cyan-300 mb-2 uppercase tracking-wider font-mono flex items-center gap-1.5">
-            <Zap className="w-3.5 h-3.5 text-cyan-400" /> Poll: {pollData.question}
+        <div className={`my-4 p-4 rounded-2xl bg-black/10 border ${theme.dividerColor} space-y-2.5`}>
+          <div className={`text-xs font-bold font-mono mb-2 uppercase tracking-wider flex items-center gap-1.5 ${theme.textColor}`}>
+            <Zap className="w-3.5 h-3.5 text-[#FF6B00]" /> Poll: {pollData.question}
           </div>
           {pollData.options.map((opt) => {
             const pct = pollData.total_votes > 0 ? Math.round((opt.votes / pollData.total_votes) * 100) : 0;
@@ -197,24 +235,24 @@ export function ConfessionCard({
                 key={opt.id}
                 onClick={() => handleVotePoll(opt.id)}
                 disabled={Boolean(pollData.user_voted_option_id)}
-                className={`w-full text-left relative overflow-hidden rounded-xl p-3.5 border transition-all text-xs font-semibold ${
+                className={`w-full text-left relative overflow-hidden rounded-xl p-3.5 border transition-all text-xs font-bold ${
                   isVoted
-                    ? 'border-cyan-400 bg-cyan-500/20 text-cyan-200 shadow-md'
-                    : 'border-slate-800 bg-slate-900/80 hover:border-slate-700 text-slate-200'
+                    ? 'border-[#FF6B00] bg-[#FF6B00]/20 text-[#FF6B00]'
+                    : `border-black/10 bg-black/5 hover:bg-black/10 ${theme.textColor}`
                 }`}
               >
                 <div
-                  className="absolute left-0 top-0 bottom-0 bg-gradient-to-r from-cyan-500/30 to-indigo-600/30 transition-all duration-500 pointer-events-none"
+                  className="absolute left-0 top-0 bottom-0 bg-[#FF6B00]/25 transition-all duration-500 pointer-events-none"
                   style={{ width: `${pct}%` }}
                 />
                 <div className="relative flex justify-between items-center z-10">
                   <span>{opt.text}</span>
-                  <span className="font-mono text-cyan-300 font-black text-xs">{pct}%</span>
+                  <span className="font-mono font-black text-xs">{pct}%</span>
                 </div>
               </button>
             );
           })}
-          <div className="text-[11px] text-slate-500 text-right font-mono">
+          <div className={`text-[11px] text-right font-mono ${theme.subtextColor}`}>
             {pollData.total_votes} votes recorded
           </div>
         </div>
@@ -222,23 +260,23 @@ export function ConfessionCard({
 
       {/* Anonymous Signal Banner (Crush / Appreciation) */}
       {(confession.category_slug === 'crush' || confession.category_slug === 'appreciation') && (
-        <div className="my-4 p-4 rounded-2xl bg-gradient-to-r from-pink-500/15 via-purple-500/10 to-indigo-500/15 border border-pink-500/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-lg">
-          <div className="flex items-center gap-2 text-xs font-bold text-pink-300">
-            <Eye className="w-4 h-4 text-pink-400 animate-bounce" />
+        <div className={`my-4 p-4 rounded-2xl bg-black/10 border ${theme.dividerColor} flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-sm`}>
+          <div className={`flex items-center gap-2 text-xs font-bold ${theme.textColor}`}>
+            <Eye className="w-4 h-4 text-[#FF6B00] animate-bounce" />
             <span>Is this confession about you? 👀</span>
           </div>
           <button
             onClick={() => onOpenThinkAboutYou && onOpenThinkAboutYou(confession.public_code)}
-            className="w-full sm:w-auto px-4 py-2 rounded-xl bg-gradient-to-r from-pink-500 to-rose-600 hover:brightness-110 text-white font-black text-xs transition-all flex items-center justify-center gap-1.5 shadow-md"
+            className="w-full sm:w-auto px-4 py-2 rounded-xl bg-slate-950 text-white font-black text-xs transition-all flex items-center justify-center gap-1.5 shadow-md hover:bg-slate-900"
           >
             <Send className="w-3.5 h-3.5" />
-            Send Anonymous Signal
+            Send Signal
           </button>
         </div>
       )}
 
       {/* Footer Controls: Reactions, Comments, Bookmarks, Share, Report */}
-      <div className="pt-3 border-t border-slate-800/80 flex flex-wrap items-center justify-between gap-3">
+      <div className={`pt-3 border-t ${theme.dividerColor} flex flex-wrap items-center justify-between gap-3`}>
         {/* Reaction Bar */}
         <ReactionBar
           confessionId={confession.id}
@@ -257,21 +295,19 @@ export function ConfessionCard({
         />
 
         {/* Action Buttons */}
-        <div className="flex items-center gap-2 text-slate-400">
+        <div className="flex items-center gap-2">
           <Link
             href={`/confession/${confession.public_code}`}
-            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-slate-950 hover:bg-slate-900 text-slate-200 text-xs font-bold border border-slate-800 hover:border-slate-700 transition-all shadow-inner"
+            className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold transition-all ${theme.pillClass}`}
           >
-            <MessageSquare className="w-3.5 h-3.5 text-cyan-400" />
+            <MessageSquare className="w-3.5 h-3.5" />
             <span>{confession.comment_count}</span>
           </Link>
 
           <button
             onClick={() => setIsBookmarked(!isBookmarked)}
-            className={`p-2 rounded-full border transition-all ${
-              isBookmarked
-                ? 'bg-amber-500/20 text-amber-300 border-amber-500/40 shadow-md'
-                : 'bg-slate-950 hover:bg-slate-900 border-slate-800 text-slate-400 hover:text-slate-200'
+            className={`p-2 rounded-full transition-all ${theme.pillClass} ${
+              isBookmarked ? 'bg-[#FF6B00] text-white border-transparent' : ''
             }`}
             title="Save confession"
           >
@@ -280,7 +316,7 @@ export function ConfessionCard({
 
           <button
             onClick={handleCopyCode}
-            className="p-2 rounded-full bg-slate-950 hover:bg-slate-900 border border-slate-800 text-slate-400 hover:text-slate-200 transition-all"
+            className={`p-2 rounded-full transition-all ${theme.pillClass}`}
             title="Share code"
           >
             <Share2 className="w-3.5 h-3.5" />
@@ -289,7 +325,7 @@ export function ConfessionCard({
           {onOpenReport && (
             <button
               onClick={() => onOpenReport(confession.public_code)}
-              className="p-2 rounded-full bg-slate-950 hover:bg-slate-900 border border-slate-800 text-slate-400 hover:text-rose-400 hover:border-rose-500/30 transition-all"
+              className={`p-2 rounded-full transition-all hover:text-rose-500 ${theme.pillClass}`}
               title="Report confession"
             >
               <Flag className="w-3.5 h-3.5" />

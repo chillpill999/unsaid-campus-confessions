@@ -12,8 +12,7 @@ import {
   MessageSquare, 
   User, 
   ShieldAlert, 
-  PlusCircle,
-  Sparkles
+  PlusCircle
 } from 'lucide-react';
 
 interface NavbarProps {
@@ -34,22 +33,23 @@ export function Navbar({ onOpenComposer, isAdmin = false }: NavbarProps) {
   ];
 
   return (
-    <header className="sticky top-0 z-40 w-full border-b border-slate-800/80 bg-slate-950/85 backdrop-blur-xl">
+    <header className="sticky top-0 z-40 w-full border-b border-slate-200/80 bg-[#F4F3EF]/90 backdrop-blur-xl">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-        {/* Brand Logo */}
+        
+        {/* Brand Logo - Stitch Google Vibrant Orange Accent */}
         <Link href="/feed" className="flex items-center gap-3 group">
-          <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-cyan-500 via-indigo-600 to-pink-500 flex items-center justify-center text-slate-950 font-black shadow-lg shadow-cyan-500/20 group-hover:scale-105 transition-transform">
+          <div className="w-10 h-10 rounded-2xl bg-[#FF6B00] flex items-center justify-center text-white font-black shadow-md shadow-[#FF6B00]/25 group-hover:scale-105 transition-transform">
             <Lock className="w-5 h-5 stroke-[2.5]" />
           </div>
           <div>
-            <span className="font-heading font-black text-lg sm:text-xl tracking-tight text-white group-hover:text-cyan-300 transition-colors">
+            <span className="font-heading font-black text-xl tracking-tight text-slate-950 group-hover:text-[#FF6B00] transition-colors">
               ConfessionLnjpit
             </span>
           </div>
         </Link>
 
-        {/* Desktop Nav Items - Material iOS Pill Bar */}
-        <nav className="hidden md:flex items-center gap-1.5 bg-slate-900/90 p-1.5 rounded-full border border-slate-800/80 shadow-inner">
+        {/* Desktop Nav Items - Stitch Google Light Pill Bar */}
+        <nav className="hidden md:flex items-center gap-1 bg-white/90 p-1.5 rounded-full border border-slate-200/80 shadow-sm">
           {navItems.map((item) => {
             const Icon = item.icon;
             const isActive = pathname === item.href;
@@ -59,8 +59,8 @@ export function Navbar({ onOpenComposer, isAdmin = false }: NavbarProps) {
                 href={item.href}
                 className={`flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold transition-all ${
                   isActive
-                    ? 'bg-gradient-to-r from-cyan-500 to-indigo-600 text-slate-950 shadow-md shadow-cyan-500/20'
-                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
+                    ? 'bg-[#FF6B00] text-white shadow-md shadow-[#FF6B00]/20'
+                    : 'text-slate-600 hover:text-slate-950 hover:bg-slate-100'
                 }`}
               >
                 <Icon className="w-3.5 h-3.5" />
@@ -75,7 +75,7 @@ export function Navbar({ onOpenComposer, isAdmin = false }: NavbarProps) {
           {onOpenComposer && (
             <button
               onClick={onOpenComposer}
-              className="hidden sm:flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-gradient-to-r from-cyan-500 via-indigo-600 to-pink-500 hover:brightness-110 text-slate-950 font-black text-xs shadow-lg shadow-cyan-500/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
+              className="hidden sm:flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-[#FF6B00] hover:bg-[#E05E00] text-white font-black text-xs shadow-lg shadow-[#FF6B00]/25 transition-all hover:scale-[1.02] active:scale-[0.98]"
             >
               <PlusCircle className="w-4 h-4" />
               Confess
@@ -87,18 +87,18 @@ export function Navbar({ onOpenComposer, isAdmin = false }: NavbarProps) {
               href="/admin"
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border transition-all ${
                 pathname.startsWith('/admin')
-                  ? 'bg-amber-500/20 text-amber-300 border-amber-500/40'
-                  : 'bg-slate-900 text-amber-400/90 border-slate-800 hover:border-amber-500/30'
+                  ? 'bg-amber-500/20 text-amber-900 border-amber-500/40'
+                  : 'bg-white text-amber-700 border-slate-200 hover:border-amber-500/30'
               }`}
             >
-              <ShieldAlert className="w-3.5 h-3.5 text-amber-400" />
+              <ShieldAlert className="w-3.5 h-3.5 text-amber-600" />
               Admin
             </Link>
           )}
 
           <Link
             href="/profile"
-            className="w-10 h-10 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-center text-slate-300 hover:text-white hover:border-cyan-500/40 transition-all shadow-inner"
+            className="w-10 h-10 rounded-2xl bg-white border border-slate-200 flex items-center justify-center text-slate-700 hover:text-slate-950 hover:border-[#FF6B00]/40 transition-all shadow-sm"
             title="Profile & Settings"
           >
             <User className="w-4.5 h-4.5" />

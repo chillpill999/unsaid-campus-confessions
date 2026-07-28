@@ -35,13 +35,13 @@ const CATEGORY_ICONS: Record<string, React.ElementType> = {
 };
 
 const CATEGORY_SWATCHES: Record<string, string> = {
-  crush: 'border-rose-500/50 bg-rose-500/10 text-rose-300',
-  funny: 'border-amber-500/50 bg-amber-500/10 text-amber-300',
-  hostel: 'border-emerald-500/50 bg-emerald-500/10 text-emerald-300',
-  appreciation: 'border-purple-500/50 bg-purple-500/10 text-purple-300',
-  question: 'border-cyan-500/50 bg-cyan-500/10 text-cyan-300',
-  'campus-life': 'border-orange-500/50 bg-orange-500/10 text-orange-300',
-  confession: 'border-indigo-500/50 bg-indigo-500/10 text-indigo-300',
+  crush: 'bg-[#FF6B00] text-white border-transparent',
+  funny: 'bg-[#FCDAD7] text-slate-950 border-transparent',
+  hostel: 'bg-[#C6EAA5] text-slate-950 border-transparent',
+  appreciation: 'bg-[#EAE8E3] text-slate-950 border-transparent',
+  question: 'bg-slate-950 text-white border-slate-800',
+  'campus-life': 'bg-slate-950 text-white border-slate-800',
+  confession: 'bg-[#FF6B00] text-white border-transparent',
 };
 
 const LOCAL_STORAGE_DRAFT_KEY = 'unsaid_confession_draft';
@@ -70,7 +70,6 @@ export function ConfessionComposer({ onClose, onPostSuccess }: ConfessionCompose
       if (g) setUserGender(g);
     } catch {}
 
-    // Restore draft from LocalStorage if available
     try {
       const savedDraft = localStorage.getItem(LOCAL_STORAGE_DRAFT_KEY);
       if (savedDraft) {
@@ -90,7 +89,6 @@ export function ConfessionComposer({ onClose, onPostSuccess }: ConfessionCompose
     }
   }, []);
 
-  // Autosave draft to LocalStorage on content change
   useEffect(() => {
     if (!content.trim()) {
       localStorage.removeItem(LOCAL_STORAGE_DRAFT_KEY);
@@ -181,9 +179,7 @@ export function ConfessionComposer({ onClose, onPostSuccess }: ConfessionCompose
         throw new Error(json.error || 'Failed to publish confession.');
       }
 
-      // Clear local storage draft
       localStorage.removeItem(LOCAL_STORAGE_DRAFT_KEY);
-
       setSuccessNotice(true);
       const publishedConfession: PublicConfession = json.confession;
 
@@ -209,11 +205,11 @@ export function ConfessionComposer({ onClose, onPostSuccess }: ConfessionCompose
         <div className="px-6 py-4 border-b border-slate-800 flex items-center justify-between">
           <div>
             <h3 className="text-lg font-black text-white flex items-center gap-2 font-heading">
-              <Sparkles className="w-5 h-5 text-cyan-400" />
+              <Sparkles className="w-5 h-5 text-[#FF6B00]" />
               Say what you couldn't say.
             </h3>
             <p className="text-xs text-slate-400 font-medium">
-              Posting as <span className="text-cyan-300 font-bold font-mono">Anonymous • {userGender}</span>
+              Posting as <span className="text-[#FF6B00] font-bold font-mono">Anonymous • {userGender}</span>
             </p>
           </div>
           <button
@@ -226,7 +222,7 @@ export function ConfessionComposer({ onClose, onPostSuccess }: ConfessionCompose
 
         {/* Notices */}
         {draftRestoredNotice && (
-          <div className="bg-cyan-500/10 border-b border-cyan-500/20 px-6 py-2 text-cyan-300 text-[11px] font-semibold flex items-center gap-1.5 animate-slide-down">
+          <div className="bg-[#FF6B00]/10 border-b border-[#FF6B00]/20 px-6 py-2 text-[#FF6B00] text-[11px] font-semibold flex items-center gap-1.5 animate-slide-down">
             <Lock className="w-3.5 h-3.5" />
             Restored draft from local storage
           </div>
@@ -256,18 +252,18 @@ export function ConfessionComposer({ onClose, onPostSuccess }: ConfessionCompose
               placeholder="Write your confession here... (Stored permanently in database)"
               rows={4}
               maxLength={1000}
-              className="w-full bg-slate-950 border border-slate-800 rounded-3xl p-4 text-xs text-slate-100 focus:outline-none focus:border-cyan-500 placeholder-slate-600 resize-none font-sans"
+              className="w-full bg-slate-950 border border-slate-800 rounded-3xl p-4 text-xs text-slate-100 focus:outline-none focus:border-[#FF6B00] placeholder-slate-600 resize-none font-sans"
               required
             />
             <div className="flex justify-between text-[11px] text-slate-500 font-mono">
               <span>Publicly Anonymous</span>
-              <span className={content.length > 900 ? 'text-amber-400 font-bold' : ''}>
+              <span className={content.length > 900 ? 'text-[#FF6B00] font-bold' : ''}>
                 {content.length} / 1000
               </span>
             </div>
           </div>
 
-          {/* Category Swatches */}
+          {/* Category Swatches (Stitch Google Ledger Palette) */}
           <div className="space-y-2">
             <label className="block text-xs font-bold text-slate-300">Category</label>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
@@ -283,7 +279,7 @@ export function ConfessionComposer({ onClose, onPostSuccess }: ConfessionCompose
                     className={`flex items-center gap-2 p-3 rounded-2xl border text-xs font-bold transition-all text-left ${
                       isSelected
                         ? `${swatchStyle} shadow-lg scale-[1.02]`
-                        : 'bg-slate-950/80 border-slate-800 text-slate-400 hover:border-slate-700'
+                        : 'bg-slate-950 border-slate-800 text-slate-400 hover:border-slate-700'
                     }`}
                   >
                     <Icon className="w-4 h-4 shrink-0" />
@@ -294,16 +290,16 @@ export function ConfessionComposer({ onClose, onPostSuccess }: ConfessionCompose
             </div>
           </div>
 
-          {/* Optional Target Metadata */}
-          <div className="p-4 rounded-3xl bg-slate-950/80 border border-slate-800 space-y-3">
-            <span className="text-xs font-bold text-slate-300 block">Specify Target (Optional)</span>
+          {/* Target Metadata */}
+          <div className="p-4 rounded-3xl bg-slate-950 border border-slate-800 space-y-3">
+            <span className="text-xs font-bold text-slate-300 block font-mono">Specify Target (Optional)</span>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
               <div>
                 <label className="block text-[10px] text-slate-400 uppercase tracking-wider mb-1 font-mono">Recipient Gender</label>
                 <select
                   value={recipientGender}
                   onChange={(e) => setRecipientGender(e.target.value)}
-                  className="w-full bg-slate-900 border border-slate-800 rounded-xl p-2 text-xs text-slate-200 focus:outline-none focus:border-cyan-500 font-mono"
+                  className="w-full bg-slate-900 border border-slate-800 rounded-xl p-2 text-xs text-slate-200 focus:outline-none focus:border-[#FF6B00] font-mono"
                 >
                   <option value="">Any</option>
                   <option value="Male">Male</option>
@@ -319,7 +315,7 @@ export function ConfessionComposer({ onClose, onPostSuccess }: ConfessionCompose
                   value={targetBatch}
                   onChange={(e) => setTargetBatch(e.target.value)}
                   placeholder="e.g. 2026"
-                  className="w-full bg-slate-900 border border-slate-800 rounded-xl p-2 text-xs text-slate-200 focus:outline-none focus:border-cyan-500 font-mono"
+                  className="w-full bg-slate-900 border border-slate-800 rounded-xl p-2 text-xs text-slate-200 focus:outline-none focus:border-[#FF6B00] font-mono"
                 />
               </div>
 
@@ -330,7 +326,7 @@ export function ConfessionComposer({ onClose, onPostSuccess }: ConfessionCompose
                   value={targetDepartment}
                   onChange={(e) => setTargetDepartment(e.target.value)}
                   placeholder="e.g. CSE"
-                  className="w-full bg-slate-900 border border-slate-800 rounded-xl p-2 text-xs text-slate-200 focus:outline-none focus:border-cyan-500 font-mono"
+                  className="w-full bg-slate-900 border border-slate-800 rounded-xl p-2 text-xs text-slate-200 focus:outline-none focus:border-[#FF6B00] font-mono"
                 />
               </div>
             </div>
@@ -344,14 +340,14 @@ export function ConfessionComposer({ onClose, onPostSuccess }: ConfessionCompose
                 onClick={() => setShowPollBuilder(true)}
                 className="w-full p-3 rounded-2xl bg-slate-950 border border-slate-800 hover:border-slate-700 text-xs font-bold text-slate-300 flex items-center justify-center gap-2 transition-all"
               >
-                <BarChart2 className="w-4 h-4 text-cyan-400" />
+                <BarChart2 className="w-4 h-4 text-[#FF6B00]" />
                 Add Interactive Poll to Confession
               </button>
             ) : (
-              <div className="p-4 rounded-3xl bg-slate-950 border border-cyan-500/30 space-y-3">
+              <div className="p-4 rounded-3xl bg-slate-950 border border-[#FF6B00]/40 space-y-3">
                 <div className="flex justify-between items-center">
-                  <span className="text-xs font-bold text-cyan-300 flex items-center gap-1.5 font-mono">
-                    <BarChart2 className="w-4 h-4 text-cyan-400" /> Poll Builder
+                  <span className="text-xs font-bold text-[#FF6B00] flex items-center gap-1.5 font-mono">
+                    <BarChart2 className="w-4 h-4 text-[#FF6B00]" /> Poll Builder
                   </span>
                   <button
                     type="button"
@@ -367,7 +363,7 @@ export function ConfessionComposer({ onClose, onPostSuccess }: ConfessionCompose
                   value={pollQuestion}
                   onChange={(e) => setPollQuestion(e.target.value)}
                   placeholder="Poll Question (e.g. Is this relatable?)"
-                  className="w-full bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-xs text-slate-200 focus:outline-none focus:border-cyan-500"
+                  className="w-full bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-xs text-slate-200 focus:outline-none focus:border-[#FF6B00]"
                 />
 
                 <div className="space-y-2">
@@ -378,7 +374,7 @@ export function ConfessionComposer({ onClose, onPostSuccess }: ConfessionCompose
                         value={opt}
                         onChange={(e) => handlePollOptionChange(idx, e.target.value)}
                         placeholder={`Option ${idx + 1}`}
-                        className="flex-1 bg-slate-900 border border-slate-800 rounded-xl p-2 text-xs text-slate-200 focus:outline-none focus:border-cyan-500"
+                        className="flex-1 bg-slate-900 border border-slate-800 rounded-xl p-2 text-xs text-slate-200 focus:outline-none focus:border-[#FF6B00]"
                       />
                       {pollOptions.length > 2 && (
                         <button
@@ -396,7 +392,7 @@ export function ConfessionComposer({ onClose, onPostSuccess }: ConfessionCompose
                     <button
                       type="button"
                       onClick={handleAddPollOption}
-                      className="text-xs text-cyan-400 font-bold hover:underline pt-1 block"
+                      className="text-xs text-[#FF6B00] font-bold hover:underline pt-1 block"
                     >
                       + Add Option
                     </button>
@@ -410,7 +406,7 @@ export function ConfessionComposer({ onClose, onPostSuccess }: ConfessionCompose
           <button
             type="submit"
             disabled={isSubmitting || !content.trim()}
-            className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-cyan-500 via-indigo-600 to-pink-500 hover:brightness-110 text-slate-950 font-black text-xs shadow-lg shadow-cyan-500/20 disabled:opacity-50 flex items-center justify-center gap-2 transition-all"
+            className="w-full py-4 rounded-2xl bg-[#FF6B00] hover:bg-[#E05E00] text-white font-black text-xs shadow-lg shadow-[#FF6B00]/25 disabled:opacity-50 flex items-center justify-center gap-2 transition-all"
           >
             <Send className="w-4 h-4" />
             {isSubmitting ? 'Publishing to Database...' : 'Post Anonymous Confession'}

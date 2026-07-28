@@ -4,71 +4,41 @@
 
 @layer base {
   :root {
-    --background: 220 20% 97%;
-    --foreground: 224 71% 4%;
+    --background: 40 10% 97%;
+    --foreground: 0 0% 10%;
 
     --card: 0 0% 100%;
-    --card-foreground: 224 71% 4%;
+    --card-foreground: 0 0% 10%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 224 71% 4%;
+    --popover-foreground: 0 0% 10%;
 
-    --primary: 239 84% 67%;
+    --primary: 25 100% 50%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 220 14% 96%;
-    --secondary-foreground: 220 9% 46%;
+    --secondary: 106 20% 51%;
+    --secondary-foreground: 0 0% 100%;
 
-    --muted: 220 14% 96%;
-    --muted-foreground: 220 9% 46%;
+    --muted: 40 10% 94%;
+    --muted-foreground: 0 0% 45%;
 
-    --accent: 262 83% 58%;
+    --accent: 7 74% 47%;
     --accent-foreground: 0 0% 100%;
 
-    --destructive: 0 84% 60%;
+    --destructive: 7 74% 47%;
     --destructive-foreground: 0 0% 98%;
 
-    --border: 220 13% 91%;
-    --input: 220 13% 91%;
-    --ring: 239 84% 67%;
+    --border: 40 10% 90%;
+    --input: 40 10% 90%;
+    --ring: 25 100% 50%;
 
-    --radius: 1.5rem;
+    --radius: 1.75rem;
 
-    /* Safe area insets for notched phones */
+    /* Safe area insets */
     --safe-area-top: env(safe-area-inset-top, 0px);
     --safe-area-bottom: env(safe-area-inset-bottom, 0px);
     --safe-area-left: env(safe-area-inset-left, 0px);
     --safe-area-right: env(safe-area-inset-right, 0px);
-  }
-
-  .dark {
-    --background: 224 71% 4%;
-    --foreground: 210 20% 98%;
-
-    --card: 222 47% 7%;
-    --card-foreground: 210 20% 98%;
-
-    --popover: 222 47% 7%;
-    --popover-foreground: 210 20% 98%;
-
-    --primary: 239 84% 67%;
-    --primary-foreground: 0 0% 100%;
-
-    --secondary: 215 27.9% 16.9%;
-    --secondary-foreground: 210 20% 98%;
-
-    --muted: 215 27.9% 16.9%;
-    --muted-foreground: 217.9 10.6% 64.9%;
-
-    --accent: 262 83% 58%;
-    --accent-foreground: 0 0% 100%;
-
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 20% 98%;
-
-    --border: 215 27.9% 16.9%;
-    --input: 215 27.9% 16.9%;
-    --ring: 239 84% 67%;
   }
 }
 
@@ -85,62 +55,79 @@
   }
 
   body {
-    @apply bg-background text-foreground font-sans antialiased selection:bg-brand-500 selection:text-white min-h-screen transition-colors duration-200;
+    @apply bg-[#F4F3EF] text-slate-900 font-sans antialiased selection:bg-[#FF6B00] selection:text-white min-h-screen transition-colors duration-200;
     -webkit-overflow-scrolling: touch;
     -webkit-tap-highlight-color: transparent;
   }
 }
 
-/* Material iOS Design Utilities */
-.ios-card {
-  @apply rounded-[28px] bg-slate-900/90 border border-slate-800/90 shadow-xl backdrop-blur-xl transition-all duration-300;
+/* Google Stitch "Vibrant Ledger" Light Mode Utility Classes */
+.ledger-card {
+  @apply rounded-[28px] bg-white border border-slate-200/80 p-5 shadow-xl transition-all duration-300;
 }
 
-.ios-card-stacked {
-  @apply rounded-[28px] border border-slate-800/90 shadow-2xl transition-all duration-300 hover:-translate-y-1 hover:shadow-cyan-500/10;
+/* Bento Color Block Cards */
+.ledger-card-orange {
+  @apply rounded-[28px] bg-[#FF6B00] text-white p-5 shadow-xl transition-all duration-300 hover:-translate-y-1;
 }
 
-.ios-pill {
+.ledger-card-sage {
+  @apply rounded-[28px] bg-[#C6EAA5] text-slate-950 p-5 shadow-xl transition-all duration-300 hover:-translate-y-1;
+}
+
+.ledger-card-rust {
+  @apply rounded-[28px] bg-[#FCDAD7] text-slate-950 p-5 shadow-xl transition-all duration-300 hover:-translate-y-1;
+}
+
+.ledger-card-dark {
+  @apply rounded-[28px] bg-[#121212] text-white p-5 shadow-xl transition-all duration-300 hover:-translate-y-1;
+}
+
+.ledger-pill {
   @apply rounded-full px-4 py-2 text-xs font-bold transition-all duration-200 flex items-center gap-2;
 }
 
+.ledger-fab {
+  @apply w-14 h-14 rounded-full bg-[#FF6B00] text-white flex items-center justify-center shadow-xl shadow-[#FF6B00]/30 hover:scale-105 active:scale-95 transition-all;
+}
+
 .glass-card {
-  @apply rounded-[28px] bg-slate-900/80 backdrop-blur-xl border border-slate-800/90 shadow-xl transition-all duration-300;
+  @apply rounded-[28px] bg-white/90 backdrop-blur-xl border border-slate-200/80 shadow-xl transition-all duration-300;
 }
 
 .glass-card-hover {
-  @apply hover:border-indigo-500/40 hover:shadow-2xl hover:-translate-y-1 transition-all duration-300;
+  @apply hover:border-[#FF6B00]/50 hover:shadow-2xl hover:-translate-y-1 transition-all duration-300;
 }
 
 .gradient-text {
-  @apply bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 via-indigo-300 to-pink-400;
+  @apply bg-clip-text text-transparent bg-gradient-to-r from-[#FF6B00] via-[#E05E00] to-[#2E5E24];
 }
 
 .gradient-brand-bg {
-  @apply bg-gradient-to-r from-cyan-500 via-indigo-600 to-pink-500 text-slate-950 font-black shadow-lg shadow-cyan-500/20 hover:brightness-110;
+  @apply bg-[#FF6B00] hover:bg-[#E05E00] text-white font-black shadow-lg shadow-[#FF6B00]/25 transition-all;
 }
 
-/* Category Accent Themes (Material iOS Stacked Colors) */
+/* Category Accent Themes (Stitch Light Canvas Palette) */
 .category-confession {
-  @apply bg-gradient-to-br from-indigo-950/80 via-slate-900 to-slate-950 border-indigo-500/30;
+  @apply bg-[#121212] text-white border-transparent;
 }
 .category-crush {
-  @apply bg-gradient-to-br from-rose-950/80 via-slate-900 to-slate-950 border-rose-500/30;
+  @apply bg-[#FF6B00] text-white border-transparent;
 }
 .category-funny {
-  @apply bg-gradient-to-br from-amber-950/80 via-slate-900 to-slate-950 border-amber-500/30;
+  @apply bg-[#FCDAD7] text-slate-950 border-transparent;
 }
 .category-hostel {
-  @apply bg-gradient-to-br from-emerald-950/80 via-slate-900 to-slate-950 border-emerald-500/30;
+  @apply bg-[#C6EAA5] text-slate-950 border-transparent;
 }
 .category-appreciation {
-  @apply bg-gradient-to-br from-purple-950/80 via-slate-900 to-slate-950 border-purple-500/30;
+  @apply bg-[#EAE8E3] text-slate-950 border-transparent;
 }
 .category-question {
-  @apply bg-gradient-to-br from-cyan-950/80 via-slate-900 to-slate-950 border-cyan-500/30;
+  @apply bg-white text-slate-950 border border-slate-200;
 }
 .category-campus-life {
-  @apply bg-gradient-to-br from-orange-950/80 via-slate-900 to-slate-950 border-orange-500/30;
+  @apply bg-white text-slate-950 border border-slate-200;
 }
 
 /* Mobile-optimized touch targets */
@@ -162,7 +149,7 @@
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  @apply bg-slate-800 rounded-full;
+  @apply bg-slate-300 rounded-full;
 }
 
 @media (max-width: 768px) {
