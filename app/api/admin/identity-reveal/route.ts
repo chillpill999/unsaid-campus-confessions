@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
-import { isDemoModeActive } from '@/lib/demo-mode';
 import { checkRateLimit } from '@/lib/rate-limit';
-import { MOCK_REVEALED_IDENTITIES, MOCK_AUDIT_LOGS } from '@/lib/mock-data';
 
 export async function POST(req: NextRequest) {
   try {
@@ -14,44 +12,6 @@ export async function POST(req: NextRequest) {
         { error: 'A valid, non-empty reason is required for identity access.' },
         { status: 400 }
       );
-    }
-
-    if (isDemoModeActive()) {
-      const mockIdentity = MOCK_REVEALED_IDENTITIES[confession_code] || {
-        internal_ref: 'REF-STU-102938',
-        google_name: 'Jordan Lee (Demo Student)',
-        google_email: 'jordan.lee.demo@stanford.edu',
-        google_avatar_url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
-        college: 'Stanford University',
-        batch: '2026',
-        department: 'Economics',
-        gender: 'Male',
-        account_created: '2026-02-10',
-        account_status: 'active',
-        activity_stats: {
-          confessions_count: 2,
-          comments_count: 7,
-          reports_received: 0,
-          previous_warnings: 0,
-          restrictions_history: [],
-        },
-      };
-
-      MOCK_AUDIT_LOGS.unshift({
-        id: `log-${Date.now()}`,
-        admin_id: 'usr-demo-admin-999',
-        admin_name: 'Chief Admin (Demo)',
-        target_internal_ref: mockIdentity.internal_ref,
-        confession_code,
-        reason: reason.trim(),
-        created_at: new Date().toISOString(),
-      });
-
-      return NextResponse.json({
-        success: true,
-        identity: mockIdentity,
-        audit_recorded: true,
-      });
     }
 
     const { createClient } = await import('@/lib/supabase/server');

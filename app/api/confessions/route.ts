@@ -7,6 +7,12 @@ import { broadcastConfessionEvent } from '@/lib/realtime/broadcast';
 export async function GET(req: NextRequest) {
   try {
     const supabase = createServerClient();
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
+    }
+
     const { searchParams } = new URL(req.url);
     const limit = parseInt(searchParams.get('limit') || '20', 10);
     const cursor = searchParams.get('cursor');
@@ -125,18 +131,10 @@ export async function POST(req: NextRequest) {
     }
 
     const supabase = createServerClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
 
-    // 1. Resolve author ID
-    let authorId = user?.id;
-
-    if (!authorId) {
-      const { data: profile } = await supabase.from('profiles').select('id').limit(1).maybeSingle();
-      authorId = profile?.id;
-    }
-
-    if (!authorId) {
-      authorId = '11111111-1111-1111-1111-111111111111';
+    if (authError || !user) {
+      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
     }
 
     // 2. Resolve category ID
@@ -164,7 +162,7 @@ export async function POST(req: NextRequest) {
     const { data: insertedRow, error: insertError } = await supabase
       .from('confessions')
       .insert({
-        author_id: authorId,
+        author_id: user.id,
         public_code: publicCode,
         content: content.trim(),
         category_id: categoryId,

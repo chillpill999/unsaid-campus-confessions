@@ -4,12 +4,10 @@ import { createClient } from '@/lib/supabase/server';
 
 export async function fetchPublicConfessions(limit: number = 20, cursor?: string) {
   const supabase = createClient();
-  let user: any = null;
-  try {
-    const { data } = await supabase.auth.getUser();
-    user = data?.user;
-  } catch (err) {
-    // Ignore and proceed with guest access
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+  if (authError || !user) {
+    throw new Error('Unauthorized');
   }
 
   let query = supabase
@@ -38,27 +36,24 @@ export async function fetchPublicConfessions(limit: number = 20, cursor?: string
   const reactionCountsMap = new Map<string, { relatable: number; funny: number; support: number; interesting: number }>();
 
   if (confessionIds.length > 0) {
-    // 1. Fetch authenticated user's reactions/bookmarks if logged in
-    if (user) {
-      const { data: reactions } = await supabase
-        .from('reactions')
-        .select('confession_id, reaction_type')
-        .in('confession_id', confessionIds)
-        .eq('user_id', user.id);
+    const { data: reactions } = await supabase
+      .from('reactions')
+      .select('confession_id, reaction_type')
+      .in('confession_id', confessionIds)
+      .eq('user_id', user.id);
 
-      for (const r of (reactions || [])) {
-        userReactions[r.confession_id] = r.reaction_type;
-      }
+    for (const r of (reactions || [])) {
+      userReactions[r.confession_id] = r.reaction_type;
+    }
 
-      const { data: bookmarks } = await supabase
-        .from('bookmarks')
-        .select('confession_id')
-        .in('confession_id', confessionIds)
-        .eq('user_id', user.id);
+    const { data: bookmarks } = await supabase
+      .from('bookmarks')
+      .select('confession_id')
+      .in('confession_id', confessionIds)
+      .eq('user_id', user.id);
 
-      for (const b of (bookmarks || [])) {
-        userBookmarks.add(b.confession_id);
-      }
+    for (const b of (bookmarks || [])) {
+      userBookmarks.add(b.confession_id);
     }
 
     // 2. Fetch real reaction counts for all confessions in view

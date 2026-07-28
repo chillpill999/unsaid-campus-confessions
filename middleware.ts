@@ -11,6 +11,7 @@ const PROTECTED_PREFIXES = [
   '/profile',
   '/settings',
   '/onboarding',
+  '/confession',
   '/admin',
 ];
 
@@ -121,6 +122,8 @@ export const config = {
     '/settings/:path*',
     '/onboarding',
     '/onboarding/:path*',
+    '/confession',
+    '/confession/:path*',
     '/admin',
     '/admin/:path*',
   ],

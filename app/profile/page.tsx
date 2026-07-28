@@ -22,27 +22,6 @@ export default function ProfilePage() {
     setUsernameInput(saved);
 
     async function loadUserProfile() {
-      if (typeof window === 'undefined') return;
-      
-      // 1. Try to load local profile
-      const uid = localStorage.getItem('unsaid_uid');
-      if (uid) {
-        const localProf = localStorage.getItem(`unsaid_profile_${uid}`);
-        if (localProf) {
-          try {
-            const parsed = JSON.parse(localProf);
-            setProfile((prev) => ({
-              ...prev,
-              full_name: parsed.fullName || prev.full_name,
-              gender: parsed.gender || prev.gender,
-              department: parsed.department || prev.department,
-              batch: parsed.batch || prev.batch,
-            }));
-          } catch (e) {}
-        }
-      }
-
-      // 2. Fetch from Supabase for fresh data
       try {
         const { getProfile } = await import('@/lib/actions/profile');
         const dbProfile = await getProfile();

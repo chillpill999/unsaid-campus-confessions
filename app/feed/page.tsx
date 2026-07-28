@@ -126,64 +126,21 @@ export default function FeedPage() {
     }
   }, []);
 
-  // STRICT Client-Side Authentication Guard — blocks rendering until verified
+  // Client-side verification mirrors middleware and never trusts local storage.
   useEffect(() => {
     async function verifyAuth() {
       try {
-        // 1. Try to verify via Supabase (to sync cross-device identities)
         const { createClient } = await import('@/lib/supabase/client');
         const supabase = createClient();
         const { data: { user }, error } = await supabase.auth.getUser();
 
         if (user && !error) {
-          if (typeof window !== 'undefined') {
-            localStorage.setItem('unsaid_uid', user.id);
-            localStorage.setItem('unsaid_session', 'student');
-            document.cookie = "unsaid_session=student; path=/; max-age=2592000; SameSite=Lax";
-            document.cookie = `unsaid_uid=${user.id}; path=/; max-age=2592000; SameSite=Lax`;
-
-            // Sync profile data from Supabase DB to localStorage
-            try {
-              const { getProfile } = await import('@/lib/actions/profile');
-              const dbProfile = await getProfile();
-              if (dbProfile) {
-                const profileObj = {
-                  fullName: 'Student User',
-                  gender: dbProfile.gender,
-                  department: dbProfile.department,
-                  batch: dbProfile.batch,
-                  college: 'Loknayak Jai Prakash Institute of Technology',
-                  completedAt: Date.now()
-                };
-                localStorage.setItem(`unsaid_profile_${user.id}`, JSON.stringify(profileObj));
-                localStorage.setItem('unsaid_gender', dbProfile.gender);
-                localStorage.setItem('unsaid_department', dbProfile.department);
-                localStorage.setItem('unsaid_batch', dbProfile.batch);
-              }
-            } catch (profileErr) {
-              console.error('Failed to sync profile from DB:', profileErr);
-            }
-          }
           setIsAuthVerified(true);
           return;
-        }
-
-        // 2. Fallback check local session for instant student access mode
-        if (typeof window !== 'undefined') {
-          const hasLocalSession = localStorage.getItem('unsaid_session') || localStorage.getItem('unsaid_demo_role') || document.cookie.includes('unsaid_session=');
-          if (hasLocalSession) {
-            setIsAuthVerified(true);
-            return;
-          }
         }
 
         router.replace('/login');
       } catch (err) {
-        // Network/other exception fallback: check local session
-        if (typeof window !== 'undefined' && (localStorage.getItem('unsaid_session') || localStorage.getItem('unsaid_demo_role') || document.cookie.includes('unsaid_session='))) {
-          setIsAuthVerified(true);
-          return;
-        }
         router.replace('/login');
       }
     }

@@ -26,41 +26,13 @@ export default function OnboardingPage() {
     'Information Technology (IT)',
   ];
 
-  // Auto-skip onboarding if user already completed it on this device/browser
+  // Auto-skip onboarding only when the authenticated Supabase profile exists.
   useEffect(() => {
     async function checkExistingProfile() {
-      if (typeof window === 'undefined') return;
-
-      // 1. Check local storage first
-      const uid = localStorage.getItem('unsaid_uid');
-      if (uid) {
-        const existing = localStorage.getItem(`unsaid_profile_${uid}`);
-        if (existing) {
-          router.replace('/feed');
-          return;
-        }
-      }
-
-      // 2. Check Supabase DB for existing profile
       try {
         const { getProfile } = await import('@/lib/actions/profile');
         const dbProfile = await getProfile();
         if (dbProfile) {
-          const user_id = dbProfile.id;
-          const profileObj = {
-            fullName: 'Student User',
-            gender: dbProfile.gender,
-            department: dbProfile.department,
-            batch: dbProfile.batch,
-            college: 'Loknayak Jai Prakash Institute of Technology',
-            completedAt: Date.now()
-          };
-          localStorage.setItem('unsaid_uid', user_id);
-          localStorage.setItem(`unsaid_profile_${user_id}`, JSON.stringify(profileObj));
-          localStorage.setItem('unsaid_gender', dbProfile.gender);
-          localStorage.setItem('unsaid_department', dbProfile.department);
-          localStorage.setItem('unsaid_batch', dbProfile.batch);
-          
           router.replace('/feed');
         }
       } catch (err) {
@@ -71,43 +43,19 @@ export default function OnboardingPage() {
     checkExistingProfile();
   }, [router]);
 
-  const getUID = (): string => {
-    if (typeof window === 'undefined') return '';
-    let uid = localStorage.getItem('unsaid_uid');
-    if (!uid) {
-      uid = 'uid_' + Math.random().toString(36).slice(2) + Date.now().toString(36);
-      localStorage.setItem('unsaid_uid', uid);
-      document.cookie = `unsaid_uid=${uid}; path=/; max-age=2592000; SameSite=Lax`;
-    }
-    return uid;
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!acceptedTerms || !fullName.trim()) return;
     setOnboardingError('');
 
     try {
-      // Save profile data locally under stable user ID
-      const uid = getUID();
-      const profile = { fullName, gender, department, batch, college, completedAt: Date.now() };
-      localStorage.setItem(`unsaid_profile_${uid}`, JSON.stringify(profile));
-      localStorage.setItem('unsaid_gender', gender);
-      localStorage.setItem('unsaid_department', department);
-      localStorage.setItem('unsaid_batch', batch);
-
-      // Also try to persist to Supabase if session exists
-      try {
-        const { createProfile } = await import('@/lib/actions/profile');
-        await createProfile({
-          gender,
-          batch,
-          department,
-          college_id: '11111111-1111-1111-1111-111111111111',
-        });
-      } catch (_) {
-        // Supabase profile creation is optional — local save is the source of truth
-      }
+      const { createProfile } = await import('@/lib/actions/profile');
+      await createProfile({
+        gender,
+        batch,
+        department,
+        college_id: '11111111-1111-1111-1111-111111111111',
+      });
 
       setShowWelcomeModal(true);
     } catch (err: any) {

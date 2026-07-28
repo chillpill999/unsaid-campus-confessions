@@ -7,6 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
+    "test:auth": "tsx scripts/test-auth.ts",
     "test:security": "tsx scripts/test-security.ts",
     "test:cross-user": "tsx scripts/test-cross-user.ts",
     "test:realtime": "tsx scripts/test-realtime-privacy.ts",
