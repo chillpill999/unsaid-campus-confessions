@@ -32,9 +32,8 @@ export default function LandingPage() {
             <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-cyan-500 via-indigo-600 to-pink-500 flex items-center justify-center text-slate-950 font-black shadow-lg shadow-cyan-500/20">
               <Lock className="w-5 h-5 stroke-[2.5]" />
             </div>
-            <span className="font-heading font-black text-xl tracking-tight text-white flex items-center gap-1.5">
+            <span className="font-heading font-black text-xl tracking-tight text-white font-heading">
               ConfessionLnjpit
-              <span className="text-[10px] font-mono text-cyan-400 bg-cyan-500/10 px-2 py-0.5 rounded-full border border-cyan-500/20">iOS Material</span>
             </span>
           </div>
 

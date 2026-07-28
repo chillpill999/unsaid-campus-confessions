@@ -179,9 +179,8 @@ export default function FeedPage() {
         {/* Left Column (Material iOS Desktop Categories Sidebar) */}
         <aside className="hidden md:block md:col-span-3 space-y-6 sticky top-22 h-fit">
           <div className="rounded-[28px] bg-slate-900/60 border border-slate-800 p-5 space-y-4 backdrop-blur-xl shadow-2xl">
-            <div className="flex items-center justify-between border-b border-slate-800/80 pb-3">
+            <div className="border-b border-slate-800/80 pb-3">
               <h3 className="text-xs font-black uppercase tracking-wider text-slate-400 font-mono">Categories</h3>
-              <span className="text-[10px] font-mono bg-cyan-500/10 text-cyan-300 border border-cyan-500/20 px-2 py-0.5 rounded-full">iOS Style</span>
             </div>
 
             <div className="space-y-1.5">

@@ -42,9 +42,8 @@ export function Navbar({ onOpenComposer, isAdmin = false }: NavbarProps) {
             <Lock className="w-5 h-5 stroke-[2.5]" />
           </div>
           <div>
-            <span className="font-heading font-black text-lg sm:text-xl tracking-tight text-white group-hover:text-cyan-300 transition-colors flex items-center gap-1">
+            <span className="font-heading font-black text-lg sm:text-xl tracking-tight text-white group-hover:text-cyan-300 transition-colors">
               ConfessionLnjpit
-              <span className="text-[10px] font-mono text-cyan-400 bg-cyan-500/10 px-1.5 py-0.5 rounded-md border border-cyan-500/20 hidden sm:inline">iOS</span>
             </span>
           </div>
         </Link>
