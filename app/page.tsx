@@ -120,24 +120,25 @@ export default function LandingPage() {
             </div>
           </div>
 
-          {/* Card 2: Dark Feature Metric Card (#121212) */}
+          {/* Card 2: Dark Featured Confession Card (#121212) */}
           <div className="sm:col-span-6 rounded-[28px] bg-[#121212] text-white p-6 shadow-xl space-y-4">
             <div className="flex items-center justify-between">
-              <span className="text-[10px] font-mono uppercase tracking-widest text-[#FF6B00] font-bold">LIVE METRICS</span>
-              <span className="text-xs font-bold px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 font-mono">
-                Active 24/7
+              <div className="w-12 h-12 rounded-2xl bg-[#FF6B00]/20 text-[#FF6B00] flex items-center justify-center font-bold">
+                <Lock className="w-6 h-6 stroke-[2.5]" />
+              </div>
+              <span className="text-xs font-bold px-3 py-1 rounded-full bg-slate-800 text-slate-300 border border-slate-700 font-mono">
+                Hostel Confession
               </span>
             </div>
             <div>
-              <div className="text-4xl font-black text-white font-mono tracking-tight">$64,320+</div>
-              <p className="text-xs text-slate-400 mt-1 flex items-center gap-1">
-                <TrendingUp className="w-3.5 h-3.5 text-emerald-400 inline" />
-                <span className="text-emerald-400 font-bold">+18.4%</span> campus engagement this week
+              <span className="text-[11px] font-mono text-slate-400 uppercase tracking-wider block">Anonymous • Male</span>
+              <p className="text-lg font-bold text-white mt-1 leading-snug font-sans">
+                "Mess food was actually fire today, don't tell anyone I said this 🤫"
               </p>
             </div>
-            <div className="flex items-center gap-2 pt-2 border-t border-slate-800 text-xs font-mono text-slate-400">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-              <span>LNJPIT Verified Student Single Source of Truth</span>
+            <div className="flex justify-between items-center text-xs font-mono text-slate-400 pt-2 border-t border-slate-800">
+              <span>Public Code #CF104M</span>
+              <span>89 Reactions</span>
             </div>
           </div>
 

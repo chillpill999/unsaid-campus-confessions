@@ -329,8 +329,8 @@ export default function FeedPage() {
             </div>
 
             <div className="p-4 rounded-2xl bg-[#121212] text-white space-y-1 shadow-md">
-              <span className="text-[10px] text-[#FF6B00] font-mono uppercase tracking-wider block font-bold">TOTAL CONFESSIONS</span>
-              <div className="text-2xl font-black text-white font-mono">$64,320+</div>
+              <span className="text-[10px] text-[#FF6B00] font-mono uppercase tracking-wider block font-bold">COMMUNITY ACTIVITY</span>
+              <div className="text-2xl font-black text-white font-mono">1,420+ Confessions</div>
               <span className="text-[11px] text-emerald-400 font-bold font-mono flex items-center gap-1">
                 <TrendingUp className="w-3 h-3 inline" /> +18.4% this week
               </span>
