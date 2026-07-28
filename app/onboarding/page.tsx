@@ -22,8 +22,7 @@ export default function OnboardingPage() {
     'Civil Engineering (CE)',
     'Mechanical Engineering (ME)',
     'Electrical & Electronics Engineering (EEE)',
-    'Electronics & Communication Engineering (ECE)',
-    'Information Technology (IT)',
+    'Food Processing & Preservation (FPP)',
   ];
 
   // Auto-skip onboarding only when the authenticated Supabase profile exists.
