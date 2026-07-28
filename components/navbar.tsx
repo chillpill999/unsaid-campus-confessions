@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { 
@@ -14,14 +14,39 @@ import {
   ShieldAlert, 
   PlusCircle
 } from 'lucide-react';
+import { createClient } from '@/lib/supabase/client';
 
 interface NavbarProps {
   onOpenComposer?: () => void;
   isAdmin?: boolean;
 }
 
-export function Navbar({ onOpenComposer, isAdmin = false }: NavbarProps) {
+export function Navbar({ onOpenComposer, isAdmin: isAdminProp = false }: NavbarProps) {
   const pathname = usePathname();
+  const [isAdminUser, setIsAdminUser] = useState(isAdminProp);
+
+  useEffect(() => {
+    async function checkRole() {
+      try {
+        const supabase = createClient();
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('role')
+            .eq('id', user.id)
+            .single();
+
+          if (profile?.role === 'admin') {
+            setIsAdminUser(true);
+          }
+        }
+      } catch {}
+    }
+    checkRole();
+  }, []);
+
+  const showAdminLink = isAdminProp || isAdminUser;
 
   const navItems = [
     { label: 'Feed', href: '/feed', icon: Lock },
@@ -71,7 +96,7 @@ export function Navbar({ onOpenComposer, isAdmin = false }: NavbarProps) {
         </nav>
 
         {/* Action Controls */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2.5">
           {onOpenComposer && (
             <button
               onClick={onOpenComposer}
@@ -82,17 +107,18 @@ export function Navbar({ onOpenComposer, isAdmin = false }: NavbarProps) {
             </button>
           )}
 
-          {isAdmin && (
+          {showAdminLink && (
             <Link
               href="/admin"
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border transition-all ${
+              className={`flex items-center gap-1.5 px-3.5 py-2 rounded-2xl text-xs font-bold border transition-all ${
                 pathname.startsWith('/admin')
-                  ? 'bg-amber-500/20 text-amber-900 border-amber-500/40'
-                  : 'bg-white text-amber-700 border-slate-200 hover:border-amber-500/30'
+                  ? 'bg-amber-500 text-slate-950 border-amber-500 font-extrabold shadow-md'
+                  : 'bg-white text-amber-700 border-amber-200 hover:bg-amber-50 shadow-sm'
               }`}
+              title="Admin Portal & Safety Governance"
             >
-              <ShieldAlert className="w-3.5 h-3.5 text-amber-600" />
-              Admin
+              <ShieldAlert className="w-4 h-4 text-amber-600" />
+              <span>Admin Portal</span>
             </Link>
           )}
 
