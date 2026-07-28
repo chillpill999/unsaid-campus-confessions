@@ -24,13 +24,18 @@ export async function GET(request: NextRequest) {
   const nextParam = requestUrl.searchParams.get('next') ?? '';
   const next = isSafeRedirectPath(nextParam) ? nextParam : '/feed';
 
+  // Smart origin detection: if coming through vercel.app fallback, prefer configured custom domain
+  const targetOrigin = (process.env.NEXT_PUBLIC_APP_URL && requestUrl.origin.includes('vercel.app'))
+    ? process.env.NEXT_PUBLIC_APP_URL
+    : requestUrl.origin;
+
   if (!code) {
-    return NextResponse.redirect(new URL('/login?error=auth-failed', requestUrl.origin));
+    return NextResponse.redirect(new URL('/login?error=auth-failed', targetOrigin));
   }
 
   // Create the redirect response FIRST so Supabase auth cookies
   // are written to the actual HTTP response during exchangeCodeForSession
-  const redirectUrl = new URL(next, requestUrl.origin);
+  const redirectUrl = new URL(next, targetOrigin);
   let response = NextResponse.redirect(redirectUrl);
 
   const supabase = createRouteHandlerClient(request, response);
@@ -58,7 +63,7 @@ export async function GET(request: NextRequest) {
       }
     }
   } else {
-    response = NextResponse.redirect(new URL('/login?error=auth-failed', requestUrl.origin));
+    response = NextResponse.redirect(new URL('/login?error=auth-failed', targetOrigin));
   }
 
   return response;
