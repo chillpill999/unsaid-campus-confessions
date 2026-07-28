@@ -279,6 +279,20 @@ GRANT SELECT ON public_comments TO anon, authenticated;
 GRANT SELECT ON categories TO anon, authenticated;
 GRANT SELECT ON colleges TO anon, authenticated;
 
+-- Grant write permissions on user-writable tables to authenticated role
+-- (RLS policies enforce row-level restrictions, but table-level GRANT is required first)
+GRANT INSERT, UPDATE ON confessions TO authenticated;
+GRANT INSERT, UPDATE ON comments TO authenticated;
+GRANT INSERT, DELETE ON reactions TO authenticated;
+GRANT INSERT, DELETE ON bookmarks TO authenticated;
+GRANT INSERT ON reports TO authenticated;
+GRANT ALL ON profiles TO authenticated;
+GRANT ALL ON notifications TO authenticated;
+GRANT INSERT, DELETE ON blocks TO authenticated;
+GRANT ALL ON mood_votes TO authenticated;
+GRANT INSERT, SELECT ON anonymous_conversations TO authenticated;
+GRANT INSERT, SELECT ON anonymous_messages TO authenticated;
+
 -- Bookmarks & Reactions: User restricted
 CREATE POLICY "Manage Own Bookmarks" ON bookmarks FOR ALL USING (auth.uid() = user_id);
 CREATE POLICY "Manage Own Reactions" ON reactions FOR ALL USING (auth.uid() = user_id);
