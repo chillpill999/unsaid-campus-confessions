@@ -14,16 +14,16 @@ export default function SavedPage() {
   );
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col pb-24 md:pb-8">
+    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col pb-24 md:pb-8 selection:bg-amber-500 selection:text-black">
       <Navbar />
 
       <main className="max-w-4xl mx-auto px-4 pt-6 flex-1 w-full space-y-6">
-        <div className="flex items-center gap-3 border-b border-slate-800 pb-4">
-          <div className="w-10 h-10 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-400 flex items-center justify-center">
-            <Bookmark className="w-5 h-5" />
+        <div className="rounded-[28px] bg-gradient-to-r from-amber-950/40 via-slate-900/90 to-slate-950 border border-amber-500/30 p-5 shadow-2xl backdrop-blur-xl flex items-center gap-4">
+          <div className="w-12 h-12 rounded-2xl bg-amber-500/20 border border-amber-500/40 text-amber-300 flex items-center justify-center shrink-0 shadow-lg">
+            <Bookmark className="w-6 h-6" />
           </div>
           <div>
-            <h1 className="text-xl font-bold text-white font-heading">Saved Confessions</h1>
+            <h1 className="text-2xl font-black text-white font-heading">Saved Confessions</h1>
             <p className="text-xs text-slate-400">Private bookmarks accessible only to you.</p>
           </div>
         </div>

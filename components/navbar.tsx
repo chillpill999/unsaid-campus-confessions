@@ -12,7 +12,8 @@ import {
   MessageSquare, 
   User, 
   ShieldAlert, 
-  PlusCircle 
+  PlusCircle,
+  Sparkles
 } from 'lucide-react';
 
 interface NavbarProps {
@@ -33,22 +34,23 @@ export function Navbar({ onOpenComposer, isAdmin = false }: NavbarProps) {
   ];
 
   return (
-    <header className="sticky top-0 z-40 w-full border-b border-slate-800 bg-slate-950/80 backdrop-blur-md">
-      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-14 sm:h-16 flex items-center justify-between">
+    <header className="sticky top-0 z-40 w-full border-b border-slate-800/80 bg-slate-950/85 backdrop-blur-xl">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
         {/* Brand Logo */}
-        <Link href="/feed" className="flex items-center gap-2.5 group">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 via-purple-600 to-pink-500 flex items-center justify-center text-white shadow-lg shadow-indigo-500/20 group-hover:scale-105 transition-transform">
+        <Link href="/feed" className="flex items-center gap-3 group">
+          <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-cyan-500 via-indigo-600 to-pink-500 flex items-center justify-center text-slate-950 font-black shadow-lg shadow-cyan-500/20 group-hover:scale-105 transition-transform">
             <Lock className="w-5 h-5 stroke-[2.5]" />
           </div>
           <div>
-            <span className="font-heading font-extrabold text-lg sm:text-xl tracking-tight text-white group-hover:text-indigo-400 transition-colors">
+            <span className="font-heading font-black text-lg sm:text-xl tracking-tight text-white group-hover:text-cyan-300 transition-colors flex items-center gap-1">
               ConfessionLnjpit
+              <span className="text-[10px] font-mono text-cyan-400 bg-cyan-500/10 px-1.5 py-0.5 rounded-md border border-cyan-500/20 hidden sm:inline">iOS</span>
             </span>
           </div>
         </Link>
 
-        {/* Desktop Nav Items */}
-        <nav className="hidden md:flex items-center gap-1">
+        {/* Desktop Nav Items - Material iOS Pill Bar */}
+        <nav className="hidden md:flex items-center gap-1.5 bg-slate-900/90 p-1.5 rounded-full border border-slate-800/80 shadow-inner">
           {navItems.map((item) => {
             const Icon = item.icon;
             const isActive = pathname === item.href;
@@ -56,13 +58,13 @@ export function Navbar({ onOpenComposer, isAdmin = false }: NavbarProps) {
               <Link
                 key={item.href}
                 href={item.href}
-                className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-sm font-medium transition-all ${
+                className={`flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold transition-all ${
                   isActive
-                    ? 'bg-indigo-500/15 text-indigo-400 border border-indigo-500/30'
-                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
+                    ? 'bg-gradient-to-r from-cyan-500 to-indigo-600 text-slate-950 shadow-md shadow-cyan-500/20'
+                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
                 }`}
               >
-                <Icon className="w-4 h-4" />
+                <Icon className="w-3.5 h-3.5" />
                 {item.label}
               </Link>
             );
@@ -74,7 +76,7 @@ export function Navbar({ onOpenComposer, isAdmin = false }: NavbarProps) {
           {onOpenComposer && (
             <button
               onClick={onOpenComposer}
-              className="hidden sm:flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-semibold text-sm shadow-md shadow-indigo-500/25 transition-all hover:scale-[1.02] active:scale-[0.98]"
+              className="hidden sm:flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-gradient-to-r from-cyan-500 via-indigo-600 to-pink-500 hover:brightness-110 text-slate-950 font-black text-xs shadow-lg shadow-cyan-500/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
             >
               <PlusCircle className="w-4 h-4" />
               Confess
@@ -84,7 +86,7 @@ export function Navbar({ onOpenComposer, isAdmin = false }: NavbarProps) {
           {isAdmin && (
             <Link
               href="/admin"
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border transition-all ${
                 pathname.startsWith('/admin')
                   ? 'bg-amber-500/20 text-amber-300 border-amber-500/40'
                   : 'bg-slate-900 text-amber-400/90 border-slate-800 hover:border-amber-500/30'
@@ -97,10 +99,10 @@ export function Navbar({ onOpenComposer, isAdmin = false }: NavbarProps) {
 
           <Link
             href="/profile"
-            className="w-9 h-9 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-center text-slate-300 hover:text-white hover:border-slate-700 transition-all"
+            className="w-10 h-10 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-center text-slate-300 hover:text-white hover:border-cyan-500/40 transition-all shadow-inner"
             title="Profile & Settings"
           >
-            <User className="w-4 h-4" />
+            <User className="w-4.5 h-4.5" />
           </Link>
         </div>
       </div>

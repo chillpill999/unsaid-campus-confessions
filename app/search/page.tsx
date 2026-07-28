@@ -5,7 +5,7 @@ import { Navbar } from '@/components/navbar';
 import { MobileNav } from '@/components/mobile-nav';
 import { ConfessionCard } from '@/components/confession-card';
 import { EmptyState } from '@/components/empty-state';
-import { Search, Filter, Hash } from 'lucide-react';
+import { Search } from 'lucide-react';
 import { PublicConfession } from '@/lib/types';
 import { fetchPublicConfessions } from '@/lib/actions/feed';
 
@@ -47,28 +47,30 @@ export default function SearchPage() {
   });
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col pb-24 md:pb-8">
+    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col pb-24 md:pb-8 selection:bg-cyan-500 selection:text-black">
       <Navbar />
 
       <main className="max-w-4xl mx-auto px-4 pt-6 flex-1 w-full space-y-6">
-        <div className="space-y-3">
-          <h1 className="text-xl font-bold text-white font-heading flex items-center gap-2">
-            <Search className="w-5 h-5 text-indigo-400" />
-            Search Confessions
-          </h1>
-          <p className="text-xs text-slate-400">
-            Search by public code (e.g. <span className="font-mono text-indigo-300">#CF7K2P</span>), keywords, or category. Author lookup is strictly disabled.
-          </p>
+        <div className="rounded-[28px] bg-gradient-to-r from-cyan-950/40 via-slate-900/90 to-slate-950 border border-cyan-500/30 p-5 shadow-2xl backdrop-blur-xl space-y-4">
+          <div>
+            <h1 className="text-2xl font-black text-white font-heading flex items-center gap-2">
+              <Search className="w-6 h-6 text-cyan-400" />
+              Search Confessions
+            </h1>
+            <p className="text-xs text-slate-400 mt-1">
+              Search by public code (e.g. <span className="font-mono text-cyan-300">#CF7K2P</span>), keywords, or category. Author lookup is strictly disabled.
+            </p>
+          </div>
 
           {/* Search Bar Input */}
           <div className="relative">
-            <Search className="w-4 h-4 text-slate-500 absolute left-4 top-1/2 -translate-y-1/2" />
+            <Search className="w-4 h-4 text-cyan-400 absolute left-4 top-1/2 -translate-y-1/2" />
             <input
               type="text"
-              placeholder="Search code #CF7K2P, library, hostel, CS 106B..."
+              placeholder="Search code #CF7K2P, library, hostel, CSE..."
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              className="w-full bg-slate-900 border border-slate-800 rounded-2xl pl-11 pr-4 py-3.5 text-sm text-slate-200 focus:outline-none focus:border-indigo-500 transition-all placeholder-slate-500"
+              className="w-full bg-slate-950 border border-slate-800 rounded-2xl pl-11 pr-4 py-3.5 text-xs text-slate-100 focus:outline-none focus:border-cyan-500 font-mono shadow-inner"
             />
           </div>
         </div>
