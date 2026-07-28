@@ -44,21 +44,19 @@ export default function FeedPage() {
         console.error('Failed to parse local confessions:', err);
       }
 
-      // 2. Fetch live confessions via secure Server Action (uses public_confessions view, no author_id)
+      // 2. Fetch live confessions via API endpoint for cross-device sync
       try {
-        const data = await fetchPublicConfessions();
-        if (data && data.length > 0) {
+        const res = await fetch('/api/confessions');
+        const json = await res.json();
+        if (json && json.success && json.confessions && json.confessions.length > 0) {
           const codeMap = new Map<string, PublicConfession>();
-          (data as PublicConfession[]).forEach((c) => codeMap.set(c.public_code, c));
+          (json.confessions as PublicConfession[]).forEach((c) => codeMap.set(c.public_code, c));
           combined.forEach((c) => codeMap.set(c.public_code, c));
-          MOCK_CONFESSIONS.forEach((c) => {
-            if (!codeMap.has(c.public_code)) codeMap.set(c.public_code, c);
-          });
           setConfessions(Array.from(codeMap.values()));
           return;
         }
       } catch (err) {
-        console.warn('Server action fetch fallback:', err);
+        console.warn('API fetch fallback:', err);
       }
 
       // 3. Fallback: Combine local saved + mock confessions

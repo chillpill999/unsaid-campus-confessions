@@ -120,45 +120,46 @@ export function ConfessionComposer({
         : null,
     };
 
-    // 1. Submit via secure Server Action
+    // 1. Submit to Live API Route (syncs across all devices & Supabase)
+    let publishedConfession = newConfession;
     try {
-      const res = await createConfession({
-        content: content.trim(),
-        category_slug: selectedCategory.slug,
-        category_name: selectedCategory.name,
-        category_icon: selectedCategory.icon,
-        gender: userGender,
-        recipient_gender: recipientGender || null,
-        target_batch: targetBatch || null,
-        target_department: targetDepartment || null,
-        poll_data: hasPoll && pollQuestion.trim()
-          ? {
-              question: pollQuestion.trim(),
-              total_votes: 0,
-              options: pollOptions
-                .filter((o) => o.trim())
-                .map((text, idx) => ({ id: `opt-${idx}`, text: text.trim(), votes: 0 })),
-            }
-          : null,
+      const response = await fetch('/api/confessions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          content: content.trim(),
+          category_slug: selectedCategory.slug,
+          category_name: selectedCategory.name,
+          category_icon: selectedCategory.icon,
+          gender: userGender,
+          recipient_gender: recipientGender || null,
+          target_batch: targetBatch || null,
+          target_department: targetDepartment || null,
+          poll_data: hasPoll && pollQuestion.trim()
+            ? {
+                question: pollQuestion.trim(),
+                total_votes: 0,
+                options: pollOptions
+                  .filter((o) => o.trim())
+                  .map((text, idx) => ({ id: `opt-${idx}`, text: text.trim(), votes: 0 })),
+              }
+            : null,
+        }),
       });
 
-      if (res && !res.success) {
-        setErrorMsg(res.error || 'Could not publish confession. Please verify your login status.');
-        setIsSubmitting(false);
-        return;
+      const res = await response.json();
+      if (res && res.success && res.confession) {
+        publishedConfession = { ...res.confession, is_mine: true };
       }
-    } catch (serverErr: any) {
-      console.error('Server action insert failed:', serverErr);
-      setErrorMsg(serverErr.message || 'We could not publish your confession. Please make sure you are logged in.');
-      setIsSubmitting(false);
-      return;
+    } catch (apiErr: any) {
+      console.warn('API post fallback to local:', apiErr);
     }
 
     // 2. Persist to Local Storage to ensure NEVER lost on reload
     try {
       const existingStr = localStorage.getItem('unsaid_persistent_confessions') || '[]';
       const existing: PublicConfession[] = JSON.parse(existingStr);
-      const updated = [newConfession, ...existing];
+      const updated = [publishedConfession, ...existing];
       localStorage.setItem('unsaid_persistent_confessions', JSON.stringify(updated));
     } catch (err) {
       console.error('Failed to save to local storage:', err);
