@@ -1,6 +1,7 @@
 'use server';
 
 import { createClient } from '@/lib/supabase/server';
+import { broadcastCommentUpdate } from '@/lib/realtime/broadcast';
 
 export async function fetchPublicComments(confessionId: string) {
   const supabase = createClient();
@@ -63,6 +64,27 @@ export async function createComment(confessionId: string, content: string, paren
 
   if (error) {
     throw new Error('Failed to create comment');
+  }
+
+  // Fetch updated total comment count and public_code for realtime broadcast
+  try {
+    const { data: confession } = await supabase
+      .from('confessions')
+      .select('public_code')
+      .eq('id', confessionId)
+      .single();
+
+    const { count } = await supabase
+      .from('comments')
+      .select('*', { count: 'exact', head: true })
+      .eq('confession_id', confessionId)
+      .eq('is_deleted', false);
+
+    if (confession?.public_code) {
+      broadcastCommentUpdate(confession.public_code, count || 1);
+    }
+  } catch (bcErr) {
+    console.warn('Realtime comment broadcast note:', bcErr);
   }
 
   return { success: true, comment_id: data.id };

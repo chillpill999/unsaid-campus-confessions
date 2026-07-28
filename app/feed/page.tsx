@@ -14,6 +14,8 @@ import { EmptyState } from '@/components/empty-state';
 import { MOCK_CONFESSIONS, MOCK_CATEGORIES } from '@/lib/mock-data';
 import { PublicConfession, Category } from '@/lib/types';
 import { fetchPublicConfessions } from '@/lib/actions/feed';
+import { useRealtimeFeed } from '@/lib/realtime/hooks';
+import { RealtimeDevStatus } from '@/components/realtime-dev-status';
 import { Flame, Sparkles, PlusCircle, Heart } from 'lucide-react';
 
 export default function FeedPage() {
@@ -28,8 +30,45 @@ export default function FeedPage() {
   const [reportingCode, setReportingCode] = useState<string | null>(null);
   const [thinkAboutYouNotice, setThinkAboutYouNotice] = useState<string | null>(null);
 
+  const fetchLiveConfessions = async () => {
+    try {
+      const res = await fetch('/api/confessions');
+      const json = await res.json();
+      if (json && json.success && json.confessions) {
+        setConfessions(json.confessions);
+      }
+    } catch (err) {
+      console.warn('Realtime feed refetch note:', err);
+    }
+  };
+
+  // 1. Subscribe to Supabase Realtime Campus Feed Broadcasts
+  useRealtimeFeed({
+    onConfessionPosted: () => fetchLiveConfessions(),
+    onConfessionDeleted: (code) => {
+      setConfessions((prev) => prev.filter((c) => c.public_code !== code));
+    },
+    onReactionUpdated: (code, counts) => {
+      setConfessions((prev) =>
+        prev.map((c) => (c.public_code === code ? { ...c, reaction_counts: counts } : c))
+      );
+    },
+    onCommentUpdated: (code, count) => {
+      setConfessions((prev) =>
+        prev.map((c) => (c.public_code === code ? { ...c, comment_count: count } : c))
+      );
+    },
+    onPollUpdated: (code, pollData) => {
+      setConfessions((prev) =>
+        prev.map((c) => (c.public_code === code ? { ...c, poll_data: pollData } : c))
+      );
+    },
+  });
+
   // Load shared confessions from Supabase PostgreSQL Database across all devices
   useEffect(() => {
+    loadConfessions();
+
     async function loadConfessions() {
       try {
         const res = await fetch('/api/confessions');
@@ -52,8 +91,6 @@ export default function FeedPage() {
         console.error('Failed to load public confessions:', err);
       }
     }
-
-    loadConfessions();
   }, []);
 
   // STRICT Client-Side Authentication Guard — blocks rendering until verified
@@ -343,6 +380,9 @@ export default function FeedPage() {
 
       {/* Mobile Bottom Navigation */}
       <MobileNav onOpenComposer={() => setIsComposerOpen(true)} />
+
+      {/* Realtime Development Diagnostics Widget */}
+      <RealtimeDevStatus />
     </div>
   );
 }

@@ -18,9 +18,11 @@ import {
   Check,
   Send
 } from 'lucide-react';
-import { PublicConfession } from '@/lib/types';
+import { PublicConfession, ReactionType } from '@/lib/types';
 import { formatTimeAgo } from '@/lib/utils';
 import { ReactionBar } from './reaction-bar';
+import { toggleReaction } from '@/lib/actions/feed';
+import { broadcastReactionUpdate, broadcastPollUpdate } from '@/lib/realtime/broadcast';
 
 interface ConfessionCardProps {
   confession: PublicConfession;
@@ -62,12 +64,14 @@ export function ConfessionCard({
     const updatedOptions = pollData.options.map((opt) =>
       opt.id === optionId ? { ...opt, votes: opt.votes + 1 } : opt
     );
-    setPollData({
+    const updatedPoll = {
       ...pollData,
       total_votes: pollData.total_votes + 1,
       options: updatedOptions,
       user_voted_option_id: optionId,
-    });
+    };
+    setPollData(updatedPoll);
+    broadcastPollUpdate(confession.public_code, updatedPoll);
   };
 
   return (
@@ -188,6 +192,16 @@ export function ConfessionCard({
           confessionId={confession.id}
           initialCounts={confession.reaction_counts}
           initialUserReaction={confession.user_reaction}
+          onReact={async (type) => {
+            try {
+              await toggleReaction(confession.id, type);
+              const updatedCounts = { ...confession.reaction_counts };
+              updatedCounts[type] = (updatedCounts[type] || 0) + 1;
+              broadcastReactionUpdate(confession.public_code, updatedCounts);
+            } catch (err) {
+              console.warn('Reaction action note:', err);
+            }
+          }}
         />
 
         {/* Action Buttons */}

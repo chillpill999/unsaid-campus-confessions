@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient as createServerClient } from '@/lib/supabase/server';
 import { generatePublicCode } from '@/lib/utils';
 import { PublicConfession } from '@/lib/types';
+import { broadcastConfessionEvent } from '@/lib/realtime/broadcast';
 
 export async function GET() {
   try {
@@ -185,6 +186,9 @@ export async function POST(req: NextRequest) {
       poll_data: poll_data || null,
       is_mine: true,
     };
+
+    // Trigger realtime broadcast to all open feeds
+    broadcastConfessionEvent('posted', insertedRow.public_code);
 
     return NextResponse.json({ success: true, confession: createdConfession });
   } catch (err: any) {
