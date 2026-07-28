@@ -329,20 +329,23 @@ export default function FeedPage() {
             </div>
 
             <div className="p-4 rounded-2xl bg-[#121212] text-white space-y-1 shadow-md">
-              <span className="text-[10px] text-[#FF6B00] font-mono uppercase tracking-wider block font-bold">COMMUNITY ACTIVITY</span>
-              <div className="text-2xl font-black text-white font-mono">1,420+ Confessions</div>
+              <span className="text-[10px] text-[#FF6B00] font-mono uppercase tracking-wider block font-bold">LIVE DATABASE TOTAL</span>
+              <div className="text-2xl font-black text-white font-mono">{confessions.length} Confessions</div>
               <span className="text-[11px] text-emerald-400 font-bold font-mono flex items-center gap-1">
-                <TrendingUp className="w-3 h-3 inline" /> +18.4% this week
+                <TrendingUp className="w-3 h-3 inline" /> Realtime Synced
               </span>
             </div>
 
             <div className="space-y-2 pt-1">
-              {['#LNJPITConfessions', '#HostelNight', '#MidSemTrauma', '#CrushAlert'].map((tag, idx) => (
-                <div key={idx} className="p-3 rounded-2xl bg-[#F4F3EF] border border-slate-200 text-xs flex justify-between items-center hover:border-[#FF6B00]/40 transition-all">
-                  <span className="font-bold text-slate-900 font-mono">{tag}</span>
-                  <span className="text-[10px] text-[#FF6B00] font-mono font-bold">{12 + idx * 8} signals</span>
-                </div>
-              ))}
+              {MOCK_CATEGORIES.slice(0, 4).map((cat) => {
+                const liveCount = confessions.filter((c) => c.category_slug === cat.slug).length;
+                return (
+                  <div key={cat.id} className="p-3 rounded-2xl bg-[#F4F3EF] border border-slate-200 text-xs flex justify-between items-center hover:border-[#FF6B00]/40 transition-all">
+                    <span className="font-bold text-slate-900 font-mono">#{cat.name}</span>
+                    <span className="text-[10px] text-[#FF6B00] font-mono font-bold">{liveCount} live post{liveCount === 1 ? '' : 's'}</span>
+                  </div>
+                );
+              })}
             </div>
           </div>
         </aside>
