@@ -188,10 +188,6 @@ CREATE INDEX IF NOT EXISTS idx_reactions_confession_id ON reactions(confession_i
 CREATE INDEX IF NOT EXISTS idx_bookmarks_user_id ON bookmarks(user_id);
 CREATE INDEX IF NOT EXISTS idx_reports_status ON reports(status);
 
--- Grant view access to authenticated users only (not anon)
-GRANT SELECT ON public_confessions TO authenticated;
-GRANT SELECT ON public_comments TO authenticated;
-
 -- SAFE PUBLIC VIEWS (WITHOUT AUTHOR_ID OR IDENTITY METADATA)
 
 -- Safe Public Confessions View
