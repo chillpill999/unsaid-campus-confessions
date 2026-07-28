@@ -128,23 +128,20 @@ export async function POST(req: NextRequest) {
     const supabase = createServerClient();
     const { data: { user }, error: authError } = await supabase.auth.getUser();
 
-    // Acquire active client for DB insert
-    let activeClient: any = supabase;
-    let userId = user?.id;
-
-    if (authError || !userId) {
-      try {
-        const { createAdminClient } = await import('@/lib/supabase/admin');
-        activeClient = createAdminClient();
-        // Generate anonymous guest user ID if session cookie absent
-        userId = '00000000-0000-0000-0000-000000000000';
-      } catch (adminErr) {
-        return NextResponse.json(
-          { success: false, error: 'You must be logged in to publish a confession.' },
-          { status: 401 }
-        );
-      }
+    if (authError || !user?.id) {
+      return NextResponse.json(
+        { success: false, error: 'You must be logged in to publish a confession.' },
+        { status: 401 }
+      );
     }
+
+    const userId = user.id;
+
+    // Use admin client for DB mutations — the server-side API route is trusted,
+    // and the anon-key server client loses session context in Next.js API routes,
+    // causing "permission denied" errors.
+    const { createAdminClient } = await import('@/lib/supabase/admin');
+    const activeClient = createAdminClient();
 
     const publicCode = generatePublicCode();
 
