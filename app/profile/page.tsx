@@ -5,12 +5,32 @@ import Link from 'next/link';
 import { Navbar } from '@/components/navbar';
 import { MobileNav } from '@/components/mobile-nav';
 import { ConfessionCard } from '@/components/confession-card';
-import { User, Settings, Lock, Sparkles, Heart, MessageSquare, ShieldCheck, AtSign, Clock, Users } from 'lucide-react';
-import { MOCK_DEMO_USER_PROFILE, MOCK_CONFESSIONS } from '@/lib/mock-data';
+import { User, Settings, AtSign, Clock } from 'lucide-react';
 import { getSavedUsername, saveUsername } from '@/lib/friends-chat';
+import { PublicConfession, UserProfile } from '@/lib/types';
+
+const EMPTY_PROFILE: UserProfile = {
+  id: '',
+  full_name: 'Student User',
+  gender: 'Prefer not to say',
+  college_id: '',
+  college_name: 'Loknayak Jai Prakash Institute of Technology',
+  batch: '',
+  department: '',
+  role: 'student',
+  account_status: 'active',
+  created_at: '',
+};
 
 export default function ProfilePage() {
-  const [profile, setProfile] = useState(MOCK_DEMO_USER_PROFILE);
+  const [profile, setProfile] = useState<UserProfile>(EMPTY_PROFILE);
+  const [stats, setStats] = useState({
+    confessionsCount: 0,
+    reactionsReceived: 0,
+    activeChatsCount: 0,
+  });
+  const [myConfessions, setMyConfessions] = useState<PublicConfession[]>([]);
+  const [isLoadingProfile, setIsLoadingProfile] = useState(true);
   const [activeTab, setActiveTab] = useState<'my-confessions' | 'saved'>('my-confessions');
   const [username, setUsername] = useState<string>('student_lnj');
   const [isEditingUsername, setIsEditingUsername] = useState(false);
@@ -23,18 +43,18 @@ export default function ProfilePage() {
 
     async function loadUserProfile() {
       try {
-        const { getProfile } = await import('@/lib/actions/profile');
-        const dbProfile = await getProfile();
-        if (dbProfile) {
-          setProfile((prev) => ({
-            ...prev,
-            full_name: 'Student User',
-            gender: dbProfile.gender,
-            department: dbProfile.department,
-            batch: dbProfile.batch,
-          }));
+        const { getMyProfileSummary } = await import('@/lib/actions/profile');
+        const summary = await getMyProfileSummary();
+        if (summary.profile) {
+          setProfile(summary.profile);
         }
-      } catch (err) {}
+        setStats(summary.stats);
+        setMyConfessions(summary.confessions);
+      } catch (err) {
+        console.error('Failed to load profile summary:', err);
+      } finally {
+        setIsLoadingProfile(false);
+      }
     }
     loadUserProfile();
   }, []);
@@ -106,15 +126,21 @@ export default function ProfilePage() {
           <div className="grid grid-cols-3 gap-3 text-center">
             <div className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800">
               <span className="block text-[11px] text-slate-500 uppercase font-semibold">Confessions</span>
-              <span className="text-xl font-extrabold text-white font-mono">4</span>
+              <span className="text-xl font-extrabold text-white font-mono">
+                {isLoadingProfile ? '...' : stats.confessionsCount}
+              </span>
             </div>
             <div className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800">
               <span className="block text-[11px] text-slate-500 uppercase font-semibold">Reactions Recv</span>
-              <span className="text-xl font-extrabold text-indigo-400 font-mono">483</span>
+              <span className="text-xl font-extrabold text-indigo-400 font-mono">
+                {isLoadingProfile ? '...' : stats.reactionsReceived}
+              </span>
             </div>
             <div className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800">
               <span className="block text-[11px] text-slate-500 uppercase font-semibold">24h Volatile Chats</span>
-              <span className="text-xl font-extrabold text-pink-400 font-mono">Active</span>
+              <span className="text-xl font-extrabold text-pink-400 font-mono">
+                {isLoadingProfile ? '...' : stats.activeChatsCount}
+              </span>
             </div>
           </div>
         </div>
@@ -135,9 +161,19 @@ export default function ProfilePage() {
 
         {/* Confessions List */}
         <div className="space-y-4">
-          {MOCK_CONFESSIONS.slice(0, 2).map((confession) => (
-            <ConfessionCard key={confession.id} confession={confession} />
-          ))}
+          {isLoadingProfile ? (
+            <div className="glass-card p-8 text-center text-xs text-slate-400">
+              Loading your real activity...
+            </div>
+          ) : myConfessions.length > 0 ? (
+            myConfessions.map((confession) => (
+              <ConfessionCard key={confession.id} confession={confession} />
+            ))
+          ) : (
+            <div className="glass-card p-8 text-center text-xs text-slate-400">
+              You have not posted any confessions yet.
+            </div>
+          )}
         </div>
       </main>
 
