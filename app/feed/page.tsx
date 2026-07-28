@@ -218,7 +218,7 @@ export default function FeedPage() {
             <div className="pt-3 mt-2 border-t border-slate-100 text-[11px] text-[#FF6B00] font-bold flex items-center gap-1.5 font-mono">
               <span>Made with</span>
               <Heart className="w-3.5 h-3.5 text-[#FF6B00] fill-[#FF6B00] inline" />
-              <span>for LNJPIT Students</span>
+              <span>love of Hothlali Members</span>
             </div>
           </div>
         </aside>
