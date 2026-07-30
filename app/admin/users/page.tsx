@@ -84,13 +84,13 @@ export default function AdminUsersPage() {
                 </span>
               </div>
 
-              <div className="grid grid-cols-3 gap-2 text-xs text-slate-600 font-mono">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs text-slate-600 font-mono">
                 <div>College: <strong className="text-slate-950">{acc.college_name || 'LNJPIT'}</strong></div>
                 <div>Batch: <strong className="text-slate-950">'{acc.batch || '2026'}</strong></div>
                 <div>Role: <strong className="text-[#FF6B00] capitalize">{acc.role || 'student'}</strong></div>
               </div>
 
-              <div className="pt-3 border-t border-slate-100 flex justify-end gap-2 text-xs">
+              <div className="pt-3 border-t border-slate-100 flex flex-wrap justify-end gap-2 text-xs">
                 <button
                   onClick={() => handleUpdateStatus(acc.id, 'active')}
                   className="px-3.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold border border-slate-200"

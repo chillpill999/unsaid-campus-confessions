@@ -6,7 +6,7 @@ import { Navbar } from '@/components/navbar';
 import { MobileNav } from '@/components/mobile-nav';
 import { ConfessionCard } from '@/components/confession-card';
 import { User, Settings, AtSign, Clock, ShieldCheck, Heart } from 'lucide-react';
-import { getSavedUsername, saveUsername } from '@/lib/friends-chat';
+import { getSavedUsername, saveUsername, isUsernameLocked } from '@/lib/friends-chat';
 import { PublicConfession, UserProfile } from '@/lib/types';
 
 const EMPTY_PROFILE: UserProfile = {
@@ -35,11 +35,13 @@ export default function ProfilePage() {
   const [username, setUsername] = useState<string>('student_lnj');
   const [isEditingUsername, setIsEditingUsername] = useState(false);
   const [usernameInput, setUsernameInput] = useState('');
+  const [usernameLocked, setUsernameLocked] = useState(false);
 
   useEffect(() => {
     const saved = getSavedUsername();
     setUsername(saved);
     setUsernameInput(saved);
+    setUsernameLocked(isUsernameLocked());
 
     async function loadUserProfile() {
       try {
@@ -61,10 +63,12 @@ export default function ProfilePage() {
 
   const handleSaveUsername = (e: React.FormEvent) => {
     e.preventDefault();
+    if (usernameLocked) return;
     const clean = usernameInput.trim().toLowerCase().replace(/[^a-z0-9_]/g, '');
     if (!clean) return;
     saveUsername(clean);
     setUsername(clean);
+    setUsernameLocked(true);
     setIsEditingUsername(false);
   };
 
@@ -103,10 +107,11 @@ export default function ProfilePage() {
             </Link>
           </div>
 
-          {/* Handle Change Box */}
-          {isEditingUsername ? (
+          {/* Handle Display */}
+          {isEditingUsername && !usernameLocked ? (
             <form onSubmit={handleSaveUsername} className="p-4 rounded-2xl bg-[#F4F3EF] border border-slate-200 space-y-3">
-              <label className="block text-xs font-bold text-slate-800">Claim / Change Student Handle</label>
+              <label className="block text-xs font-bold text-slate-800">Claim Student Handle</label>
+              <p className="text-[11px] text-amber-600 font-semibold">⚠️ Choose carefully — your handle is permanent and cannot be changed later.</p>
               <div className="flex gap-2">
                 <div className="relative flex-1">
                   <AtSign className="w-4 h-4 text-[#FF6B00] absolute left-3 top-2.5" />
@@ -123,7 +128,7 @@ export default function ProfilePage() {
                   type="submit"
                   className="px-4 py-2 rounded-xl bg-[#FF6B00] text-white font-bold text-xs shadow-md"
                 >
-                  Save Handle
+                  Lock Handle
                 </button>
                 <button
                   type="button"

@@ -88,22 +88,22 @@ export default function AdminReportsPage() {
                 <p className="text-slate-600">{report.details || 'No additional details provided.'}</p>
               </div>
 
-              <div className="flex items-center justify-between pt-3 border-t border-slate-100 text-xs">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pt-3 border-t border-slate-100 text-xs">
                 <span className="font-bold text-slate-600 capitalize">
                   Status: <strong className="text-slate-950">{report.status}</strong>
                 </span>
 
                 {report.status === 'pending' && (
-                  <div className="flex gap-2">
+                  <div className="flex items-center gap-2 w-full sm:w-auto">
                     <button
                       onClick={() => handleAction(report.id, 'actioned')}
-                      className="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-1 shadow-sm"
+                      className="flex-1 sm:flex-none justify-center px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-1 shadow-sm"
                     >
                       <Check className="w-3.5 h-3.5" /> Action
                     </button>
                     <button
                       onClick={() => handleAction(report.id, 'dismissed')}
-                      className="px-3.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs flex items-center gap-1 border border-slate-200"
+                      className="flex-1 sm:flex-none justify-center px-3.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs flex items-center gap-1 border border-slate-200"
                     >
                       <X className="w-3.5 h-3.5" /> Dismiss
                     </button>

@@ -48,6 +48,10 @@ export default function OnboardingPage() {
     setOnboardingError('');
 
     try {
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('unsaid_user_gender', gender);
+        localStorage.setItem('unsaid_gender_locked', 'true');
+      }
       const { createProfile } = await import('@/lib/actions/profile');
       await createProfile({
         gender,

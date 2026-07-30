@@ -81,7 +81,7 @@ export default function NotificationsPage() {
       .on(
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'notifications' },
-        (payload) => {
+        (payload: any) => {
           const newNotif = payload.new as Notification;
           setNotifs((prev) => [newNotif, ...prev]);
         }

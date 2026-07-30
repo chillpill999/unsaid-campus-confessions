@@ -74,8 +74,8 @@ export default function AdminConfessionsPage() {
         <div className="space-y-4">
           {confessions.map((confession) => (
             <div key={confession.id} className="bg-white p-5 rounded-[24px] border border-slate-200/80 shadow-md space-y-3">
-              <div className="flex items-center justify-between text-xs">
-                <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
+                <div className="flex flex-wrap items-center gap-2">
                   <span className="font-mono text-[#FF6B00] font-bold text-sm">#{confession.public_code}</span>
                   <span className="text-slate-500 font-mono">• {confession.gender}</span>
                   <span className="text-slate-500 font-mono">• {formatTimeAgo(confession.created_at)}</span>
@@ -87,23 +87,23 @@ export default function AdminConfessionsPage() {
 
               <p className="text-xs text-slate-900 leading-relaxed font-sans">{confession.content}</p>
 
-              <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
+              <div className="pt-3 border-t border-slate-100 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
                 <span className="text-slate-500 font-mono text-[11px]">Author: Anonymous</span>
 
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
                   <button
                     onClick={() => handleDeleteConfession(confession.id, confession.public_code)}
-                    className="px-3.5 py-1.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-700 font-bold text-xs border border-rose-500/20 flex items-center gap-1.5 transition-all shadow-sm"
+                    className="flex-1 sm:flex-none justify-center px-3.5 py-1.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-700 font-bold text-xs border border-rose-500/20 flex items-center gap-1.5 transition-all shadow-sm"
                   >
                     <Trash2 className="w-3.5 h-3.5" /> Delete
                   </button>
 
                   <button
                     onClick={() => setSelectedRevealCode(confession.public_code)}
-                    className="px-4 py-1.5 rounded-xl bg-[#FF6B00] hover:bg-[#E05E00] text-white font-bold text-xs flex items-center gap-1.5 transition-all shadow-md shadow-[#FF6B00]/20"
+                    className="flex-1 sm:flex-none justify-center px-4 py-1.5 rounded-xl bg-[#FF6B00] hover:bg-[#E05E00] text-white font-bold text-xs flex items-center gap-1.5 transition-all shadow-md shadow-[#FF6B00]/20"
                   >
                     <Eye className="w-3.5 h-3.5" />
-                    Reveal Author Identity
+                    Reveal Identity
                   </button>
                 </div>
               </div>

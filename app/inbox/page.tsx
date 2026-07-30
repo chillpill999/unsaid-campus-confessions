@@ -33,6 +33,7 @@ import { formatTimeAgo } from '@/lib/utils';
 import {
   getSavedUsername,
   saveUsername,
+  isUsernameLocked,
   initializeChatData,
   getFriendsList,
   getFriendRequests,
@@ -57,8 +58,11 @@ import {
 } from '@/lib/actions/friends';
 import { createClient } from '@supabase/supabase-js';
 
-const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://prkecywvrficjylboior.supabase.co';
-const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBya2VjeXd2cmZpY2p5bGJvaW9yIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODUxMzYzNTMsImV4cCI6MjEwMDcxMjM1M30.Rl-77UJekLrfDJgUzKBVrro8AyYFW6vWOXNHQ4hoVDg';
+const rawUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const SUPABASE_URL = (rawUrl && rawUrl.startsWith('http')) ? rawUrl : 'https://prkecywvrficjylboior.supabase.co';
+
+const rawKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+const SUPABASE_ANON_KEY = (rawKey && !rawKey.includes('[SENSITIVE]')) ? rawKey : 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBya2VjeXd2cmZpY2p5bGJvaW9yIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODUxMzYzNTMsImV4cCI6MjEwMDcxMjM1M30.Rl-77UJekLrfDJgUzKBVrro8AyYFW6vWOXNHQ4hoVDg';
 
 const QUICK_REACTION_EMOJIS = ['🔥', '💀', '🤫', '⚡', '💖', '👀', '💯'];
 
@@ -74,6 +78,7 @@ export default function InboxPage() {
   const [isEditingUsername, setIsEditingUsername] = useState(false);
   const [usernameInput, setUsernameInput] = useState('');
   const [usernameNotice, setUsernameNotice] = useState<string | null>(null);
+  const [usernameLocked, setUsernameLocked] = useState(false);
 
   // Friend contacts & requests
   const [friends, setFriends] = useState<FriendContact[]>([]);
@@ -97,6 +102,7 @@ export default function InboxPage() {
     const handle = getSavedUsername();
     setMyUsername(handle);
     setUsernameInput(handle);
+    setUsernameLocked(isUsernameLocked());
     initializeChatData(handle);
 
     // Initial hydration from local cache for instant UI rendering
@@ -211,30 +217,28 @@ export default function InboxPage() {
 
     dmChannel.subscribe();
 
-    const interval = setInterval(() => {
-      purgeExpiredMessages();
-      const updatedMsgs = getDirectMessagesForConv(convKey, myUsername);
-      setDmMessages(updatedMsgs);
-    }, 5000);
+    // Note: Removed destructive 5-second interval that was clobbering DM state
+    // with stale localStorage data, causing messages to vanish instantly after sending.
+    // Realtime subscription above handles live message delivery correctly.
 
     return () => {
       supabase.removeChannel(dmChannel);
-      clearInterval(interval);
     };
   }, [activeFriend, myUsername, inboxMode]);
 
   // Save username handler
   const handleSaveUsernameSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!usernameInput.trim()) return;
+    if (!usernameInput.trim() || usernameLocked) return;
     const clean = saveUsername(usernameInput);
     setMyUsername(clean);
+    setUsernameLocked(true);
     setIsEditingUsername(false);
 
     // Sync with server profile
     await syncUserHandle(clean);
 
-    setUsernameNotice(`Handle initialized as @${clean}`);
+    setUsernameNotice(`Handle permanently set as @${clean}`);
     setTimeout(() => setUsernameNotice(null), 3000);
   };
 
@@ -382,13 +386,20 @@ export default function InboxPage() {
                     <span className="text-xs font-bold font-mono text-[#FF6B00]">@{myUsername}</span>
                   </div>
                 </div>
-                <button
-                  onClick={() => setIsEditingUsername(true)}
-                  className="p-1.5 rounded-lg bg-[#FF6B00]/10 hover:bg-[#FF6B00]/20 text-[#FF6B00] transition-colors border border-[#FF6B00]/20"
-                  title="Claim / Change Handle"
-                >
-                  <Edit2 className="w-3.5 h-3.5" />
-                </button>
+                {!usernameLocked && (
+                  <button
+                    onClick={() => setIsEditingUsername(true)}
+                    className="p-1.5 rounded-lg bg-[#FF6B00]/10 hover:bg-[#FF6B00]/20 text-[#FF6B00] transition-colors border border-[#FF6B00]/20"
+                    title="Claim Handle"
+                  >
+                    <Edit2 className="w-3.5 h-3.5" />
+                  </button>
+                )}
+                {usernameLocked && (
+                  <span className="px-2 py-1 rounded-lg bg-emerald-500/10 text-emerald-700 text-[10px] font-bold border border-emerald-500/20 flex items-center gap-1">
+                    <CheckCircle2 className="w-3 h-3" /> Locked
+                  </span>
+                )}
               </div>
 
             </div>
@@ -878,48 +889,65 @@ export default function InboxPage() {
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <h3 className="text-base font-bold text-slate-950 flex items-center gap-2 font-heading">
                 <AtSign className="w-5 h-5 text-[#FF6B00]" />
-                Initialize Student Handle
+                {usernameLocked ? 'Student Handle (Locked)' : 'Initialize Student Handle'}
               </h3>
               <button onClick={() => setIsEditingUsername(false)} className="text-slate-400 hover:text-slate-700">
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            <form onSubmit={handleSaveUsernameSubmit} className="space-y-4">
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1.5">Username Handle</label>
-                <div className="relative">
-                  <span className="absolute left-3.5 top-2.5 text-[#FF6B00] text-xs font-mono font-bold">@</span>
-                  <input
-                    type="text"
-                    value={usernameInput}
-                    onChange={(e) => setUsernameInput(e.target.value)}
-                    placeholder="student_lnj"
-                    className="w-full bg-[#F4F3EF] border border-slate-200 rounded-xl pl-8 pr-3 py-2.5 text-xs text-slate-950 focus:outline-none focus:border-[#FF6B00] font-mono"
-                    required
-                  />
+            {usernameLocked ? (
+              <div className="space-y-3">
+                <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-center space-y-2">
+                  <CheckCircle2 className="w-8 h-8 text-emerald-600 mx-auto" />
+                  <p className="text-xs font-bold text-emerald-800">Your handle is permanently set</p>
+                  <p className="text-lg font-black text-[#FF6B00] font-mono">@{myUsername}</p>
+                  <p className="text-[11px] text-slate-500">Student handles cannot be changed once claimed to ensure identity consistency.</p>
                 </div>
-                <p className="text-[11px] text-slate-500 mt-1">
-                  Only letters, numbers, and underscores allowed.
-                </p>
-              </div>
-
-              <div className="flex justify-end gap-2 pt-2">
                 <button
-                  type="button"
                   onClick={() => setIsEditingUsername(false)}
-                  className="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 text-xs font-semibold hover:bg-slate-200"
+                  className="w-full px-4 py-2.5 rounded-xl bg-slate-100 text-slate-700 text-xs font-semibold hover:bg-slate-200"
                 >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 rounded-xl bg-[#FF6B00] hover:bg-[#E05E00] text-white text-xs font-black shadow-md"
-                >
-                  Save Handle
+                  Close
                 </button>
               </div>
-            </form>
+            ) : (
+              <form onSubmit={handleSaveUsernameSubmit} className="space-y-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1.5">Username Handle</label>
+                  <div className="relative">
+                    <span className="absolute left-3.5 top-2.5 text-[#FF6B00] text-xs font-mono font-bold">@</span>
+                    <input
+                      type="text"
+                      value={usernameInput}
+                      onChange={(e) => setUsernameInput(e.target.value)}
+                      placeholder="student_lnj"
+                      className="w-full bg-[#F4F3EF] border border-slate-200 rounded-xl pl-8 pr-3 py-2.5 text-xs text-slate-950 focus:outline-none focus:border-[#FF6B00] font-mono"
+                      required
+                    />
+                  </div>
+                  <p className="text-[11px] text-amber-600 mt-1 font-semibold">
+                    ⚠️ Choose carefully — your handle is permanent and cannot be changed later.
+                  </p>
+                </div>
+
+                <div className="flex justify-end gap-2 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsEditingUsername(false)}
+                    className="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 text-xs font-semibold hover:bg-slate-200"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-4 py-2 rounded-xl bg-[#FF6B00] hover:bg-[#E05E00] text-white text-xs font-black shadow-md"
+                  >
+                    Lock Handle Permanently
+                  </button>
+                </div>
+              </form>
+            )}
           </div>
         </div>
       )}

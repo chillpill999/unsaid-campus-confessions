@@ -45,10 +45,23 @@ export function getSavedUsername(): string {
   return saved;
 }
 
+export function isUsernameLocked(): boolean {
+  if (typeof window === 'undefined') return false;
+  return localStorage.getItem('unsaid_prod_username_locked') === 'true';
+}
+
+export function lockUsername(): void {
+  if (typeof window !== 'undefined') {
+    localStorage.setItem('unsaid_prod_username_locked', 'true');
+  }
+}
+
 export function saveUsername(username: string): string {
   const clean = username.trim().toLowerCase().replace(/[^a-z0-9_]/g, '');
   if (typeof window !== 'undefined' && clean) {
     localStorage.setItem(STORAGE_KEYS.USERNAME, clean);
+    // Lock permanently after first explicit save
+    localStorage.setItem('unsaid_prod_username_locked', 'true');
   }
   return clean;
 }
