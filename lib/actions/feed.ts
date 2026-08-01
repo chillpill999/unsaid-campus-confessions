@@ -89,7 +89,9 @@ export async function fetchPublicConfessions(limit: number = 20, cursor?: string
     comment_count: c.comment_count || 0,
     user_reaction: userReactions[c.id] || null,
     is_bookmarked: userBookmarks.has(c.id),
-    is_mine: user ? c.author_id === user.id : false,
+    // The public_confessions view does not expose author_id (anonymity), so a
+    // feed row can never be flagged as "mine".
+    is_mine: false,
     can_edit: false,
   }));
 

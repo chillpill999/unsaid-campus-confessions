@@ -87,22 +87,8 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(statusUrl);
     }
 
-    // For admin routes, allow access for aryanrockstar2007@gmail.com or passcode login
-    if (isAdminPath(pathname)) {
-      const userEmail = (user?.email || '').toLowerCase();
-      const isSuperAdminEmail = userEmail === 'aryanrockstar2007@gmail.com';
-      const isRoleAdmin = profile?.role === 'admin';
-
-      if (isSuperAdminEmail && profile && profile.role !== 'admin') {
-        try {
-          await supabase.from('profiles').update({ role: 'admin' }).eq('id', user.id);
-        } catch {}
-      }
-
-      // Allow /admin to render so AdminLayout handles passcode & admin auth cleanly
-      return response;
-    }
-
+    // Allow /admin to render so the AdminLayout and admin server actions can
+    // enforce authorization (super-admin email or role = 'admin') server-side.
     return response;
   } catch (err) {
     console.warn('[MIDDLEWARE] Auth check note:', err);

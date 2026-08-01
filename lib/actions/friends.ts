@@ -13,6 +13,23 @@ function getAdminClient() {
   }
 }
 
+/**
+ * Derives the authenticated user's campus handle from their verified session
+ * email (local part), so actions are bound to the real caller and cannot be
+ * spoofed with an arbitrary username from the client. Returns null when the
+ * caller is not signed in.
+ */
+async function getAuthHandle(): Promise<string | null> {
+  try {
+    const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user?.email) return null;
+    return user.email.split('@')[0].toLowerCase().replace(/[^a-z0-9_]/g, '');
+  } catch {
+    return null;
+  }
+}
+
 // Storage helper for production persistence
 export async function syncUserHandle(username: string) {
   try {
@@ -48,7 +65,14 @@ export async function sendFriendRequestAction(
   senderName: string,
   targetUsername: string
 ): Promise<{ success: boolean; message: string; request?: FriendRequest }> {
-  const cleanSender = senderUsername.trim().toLowerCase().replace(/^@/, '');
+  const authHandle = await getAuthHandle();
+  if (!authHandle) {
+    return { success: false, message: 'You must be signed in to send a friend request.' };
+  }
+
+  // Derive the sender from the authenticated session, never from client input,
+  // so a user cannot impersonate another handle.
+  const cleanSender = authHandle;
   const cleanTarget = targetUsername.trim().toLowerCase().replace(/^@/, '');
 
   if (!cleanTarget) {
@@ -141,7 +165,7 @@ export async function sendFriendRequestAction(
 }
 
 export async function fetchFriendRequestsAction(username: string): Promise<FriendRequest[]> {
-  const clean = username.trim().toLowerCase().replace(/^@/, '');
+  const clean = (await getAuthHandle()) || username.trim().toLowerCase().replace(/^@/, '');
   if (!clean) return [];
 
   const admin = getAdminClient();
@@ -177,7 +201,13 @@ export async function acceptFriendRequestAction(
   requestId: string,
   myUsername: string
 ): Promise<{ success: boolean; friend?: FriendContact; message: string }> {
-  const cleanMine = myUsername.trim().toLowerCase().replace(/^@/, '');
+  const authHandle = await getAuthHandle();
+  if (!authHandle) {
+    return { success: false, message: 'You must be signed in to accept a friend request.', friend: undefined };
+  }
+
+  // The "me" side of the connection must always be the authenticated handle.
+  const cleanMine = authHandle;
   let req: FriendRequest | undefined = GLOBAL_FRIEND_REQUESTS.find((r) => r.id === requestId);
 
   const admin = getAdminClient();
@@ -274,6 +304,11 @@ export async function acceptFriendRequestAction(
 }
 
 export async function rejectFriendRequestAction(requestId: string): Promise<{ success: boolean }> {
+  const authHandle = await getAuthHandle();
+  if (!authHandle) {
+    return { success: false };
+  }
+
   const req = GLOBAL_FRIEND_REQUESTS.find((r) => r.id === requestId);
   if (req) {
     req.status = 'rejected';
@@ -290,7 +325,7 @@ export async function rejectFriendRequestAction(requestId: string): Promise<{ su
 }
 
 export async function fetchFriendsListAction(username: string): Promise<FriendContact[]> {
-  const clean = username.trim().toLowerCase().replace(/^@/, '');
+  const clean = (await getAuthHandle()) || username.trim().toLowerCase().replace(/^@/, '');
   if (!clean) return [];
 
   const admin = getAdminClient();
@@ -328,8 +363,14 @@ export async function sendDirectMessageAction(
   senderUsername: string,
   receiverUsername: string,
   content: string
-): Promise<{ success: boolean; message: DirectMessage }> {
-  const cleanSender = senderUsername.trim().toLowerCase().replace(/^@/, '');
+): Promise<{ success: boolean; message: DirectMessage | string }> {
+  const authHandle = await getAuthHandle();
+  if (!authHandle) {
+    return { success: false, message: 'You must be signed in to send a message.' };
+  }
+
+  // The sender is always the authenticated handle — never client input.
+  const cleanSender = authHandle;
   const cleanReceiver = receiverUsername.trim().toLowerCase().replace(/^@/, '');
 
   const sorted = [cleanSender, cleanReceiver].sort();
@@ -365,11 +406,23 @@ export async function fetchDirectMessagesAction(
   conversationKey: string,
   username: string
 ): Promise<DirectMessage[]> {
-  const clean = username.trim().toLowerCase().replace(/^@/, '');
+  const authHandle = (await getAuthHandle()) || username.trim().toLowerCase().replace(/^@/, '');
+  if (!authHandle || !conversationKey) return [];
+
+  // Only return messages for a conversation that actually involves this user,
+  // so an authenticated user cannot read a stranger's DM thread by guessing the
+  // conversation key.
+  const key = conversationKey;
+  const involvesMe =
+    key === `${authHandle}_${authHandle}` ||
+    key.startsWith(authHandle + '_') ||
+    key.endsWith('_' + authHandle);
+  if (!involvesMe) return [];
+
   const nowTime = Date.now();
 
   return GLOBAL_DIRECT_MESSAGES.filter((m) => {
-    if (m.conversation_key !== conversationKey) return false;
+    if (m.conversation_key !== key) return false;
     const expiresTime = new Date(m.expires_at).getTime();
     return expiresTime > nowTime;
   });

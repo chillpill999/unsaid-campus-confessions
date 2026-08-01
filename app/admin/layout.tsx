@@ -13,9 +13,6 @@ import {
   ArrowLeft,
   ShieldX,
   LogOut,
-  KeyRound,
-  CheckCircle2,
-  Lock,
   Menu,
   X
 } from 'lucide-react';
@@ -25,73 +22,26 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const router = useRouter();
   
   const [isAuthorizedAdmin, setIsAuthorizedAdmin] = useState<boolean | null>(null);
-  const [passcodeInput, setPasscodeInput] = useState('');
-  const [passcodeError, setPasscodeError] = useState('');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-
-  const VALID_PASSKEYS = ['aryan2007', '2007', 'aryanrockstar2007@gmail.com', 'admin2007'];
 
   useEffect(() => {
     async function checkAdminAuth() {
-      // 1. Check local session passkey
-      if (typeof window !== 'undefined') {
-        const savedKey = localStorage.getItem('unsaid_admin_key');
-        if (savedKey && VALID_PASSKEYS.includes(savedKey.toLowerCase().trim())) {
-          setIsAuthorizedAdmin(true);
-          return;
-        }
-      }
-
-      // 2. Check Supabase auth session
       try {
-        const { createClient } = await import('@/lib/supabase/client');
-        const supabase = createClient();
-        const { data: { user } } = await supabase.auth.getUser();
-
-        if (user) {
-          const userEmail = (user.email || '').toLowerCase();
-          if (userEmail === 'aryanrockstar2007@gmail.com') {
-            localStorage.setItem('unsaid_admin_key', 'aryan2007');
-            setIsAuthorizedAdmin(true);
-            return;
-          }
-
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('role')
-            .eq('id', user.id)
-            .single();
-
-          if (profile?.role === 'admin') {
-            localStorage.setItem('unsaid_admin_key', 'aryan2007');
-            setIsAuthorizedAdmin(true);
-            return;
-          }
-        }
+        // Server-side authorization is the real boundary. The UI never trusts
+        // client state or a hardcoded passcode.
+        const { checkAdminAccess } = await import('@/lib/actions/admin');
+        const ok = await checkAdminAccess();
+        setIsAuthorizedAdmin(ok);
       } catch (err) {
         console.warn('Admin check note:', err);
+        setIsAuthorizedAdmin(false);
       }
-
-      setIsAuthorizedAdmin(false);
     }
 
     checkAdminAuth();
   }, []);
 
-  const handlePasscodeSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const clean = passcodeInput.trim().toLowerCase();
-    if (VALID_PASSKEYS.includes(clean)) {
-      localStorage.setItem('unsaid_admin_key', clean);
-      setIsAuthorizedAdmin(true);
-      setPasscodeError('');
-    } else {
-      setPasscodeError('Invalid Admin Passcode key. Please check your credentials.');
-    }
-  };
-
   const handleAdminLogout = () => {
-    localStorage.removeItem('unsaid_admin_key');
     setIsAuthorizedAdmin(false);
     router.push('/feed');
   };
@@ -119,48 +69,28 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     return (
       <div className="min-h-screen bg-[#F4F3EF] text-slate-900 flex items-center justify-center p-4 selection:bg-[#FF6B00] selection:text-white">
         <div className="max-w-md w-full bg-white border border-slate-200/80 rounded-[28px] p-8 text-center space-y-5 shadow-2xl">
-          <div className="w-16 h-16 rounded-2xl bg-[#FF6B00]/10 border border-[#FF6B00]/20 text-[#FF6B00] flex items-center justify-center mx-auto shadow-sm">
-            <KeyRound className="w-8 h-8" />
+          <div className="w-16 h-16 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-rose-500 flex items-center justify-center mx-auto shadow-sm">
+            <ShieldX className="w-8 h-8" />
           </div>
 
           <div className="space-y-1.5">
-            <h1 className="text-xl font-black text-slate-950 font-heading tracking-tight">Super Admin Passcode Access</h1>
+            <h1 className="text-xl font-black text-slate-950 font-heading tracking-tight">Access Denied</h1>
             <p className="text-xs text-slate-600 leading-relaxed font-sans">
-              Enter your Admin Passcode or Super Admin email (<span className="text-[#FF6B00] font-mono font-bold">aryanrockstar2007@gmail.com</span>) to unlock moderation.
+              This area is restricted to authorized administrators. Sign in with an admin
+              account to continue.
             </p>
           </div>
 
-          <form onSubmit={handlePasscodeSubmit} className="space-y-3.5 pt-2">
-            <div className="relative">
-              <Lock className="w-4 h-4 text-[#FF6B00] absolute left-3.5 top-3" />
-              <input
-                type="password"
-                value={passcodeInput}
-                onChange={(e) => setPasscodeInput(e.target.value)}
-                placeholder="Enter Passcode (e.g. aryan2007)"
-                className="w-full bg-[#F4F3EF] border border-slate-200 focus:border-[#FF6B00] rounded-2xl pl-9 pr-3 py-2.5 text-xs text-slate-950 placeholder-slate-500 font-mono focus:outline-none transition-colors shadow-inner"
-                required
-              />
-            </div>
-
-            {passcodeError && (
-              <div className="p-2.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-700 text-xs font-semibold">
-                {passcodeError}
-              </div>
-            )}
-
-            <button
-              type="submit"
-              className="w-full py-3 rounded-2xl bg-[#FF6B00] hover:bg-[#E05E00] text-white font-black text-xs shadow-lg shadow-[#FF6B00]/20 transition-all hover:scale-[1.01]"
+          <div className="pt-2 flex flex-col gap-2">
+            <Link
+              href="/login"
+              className="w-full py-3 rounded-2xl bg-[#FF6B00] hover:bg-[#E05E00] text-white font-black text-xs shadow-lg shadow-[#FF6B00]/20 transition-all"
             >
-              Unlock Super Admin Mode 🔓
-            </button>
-          </form>
-
-          <div className="pt-2 border-t border-slate-100">
+              Sign In as Admin
+            </Link>
             <Link
               href="/feed"
-              className="text-xs font-bold text-slate-600 hover:text-slate-950 transition-colors inline-flex items-center gap-1.5"
+              className="w-full py-3 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-black text-xs transition-all inline-flex items-center justify-center gap-1.5"
             >
               <ArrowLeft className="w-3.5 h-3.5" /> Return to Campus Feed
             </Link>

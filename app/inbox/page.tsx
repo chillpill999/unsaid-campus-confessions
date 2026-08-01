@@ -292,7 +292,7 @@ export default function InboxPage() {
 
     // Trigger server action for multi-device sync + realtime broadcast
     const res = await sendDirectMessageAction(myUsername, activeFriend.username, textToSend.trim());
-    if (res && res.success && res.message) {
+    if (res && res.success && res.message && typeof res.message !== 'string') {
       const formattedMsg: DirectMessage = {
         ...res.message,
         is_mine: true,

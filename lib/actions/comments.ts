@@ -66,15 +66,20 @@ export async function createComment(confessionId: string, content: string, paren
     throw new Error('Failed to create comment');
   }
 
-  // Fetch updated total comment count and public_code for realtime broadcast
+  // Fetch updated total comment count and public_code for realtime broadcast.
+  // Direct SELECT on confessions/comments is revoked for the client role, so
+  // use the admin (service-role) client for these read-only lookups.
   try {
-    const { data: confession } = await supabase
+    const { createAdminClient } = await import('@/lib/supabase/admin');
+    const admin = createAdminClient();
+
+    const { data: confession } = await admin
       .from('confessions')
       .select('public_code')
       .eq('id', confessionId)
       .single();
 
-    const { count } = await supabase
+    const { count } = await admin
       .from('comments')
       .select('*', { count: 'exact', head: true })
       .eq('confession_id', confessionId)

@@ -240,6 +240,31 @@ export async function POST(req: NextRequest) {
 
     const userId = user.id;
 
+    // Block banned/suspended accounts at the API layer (middleware only guards
+    // page routes, not /api/*).
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('account_status')
+      .eq('id', user.id)
+      .maybeSingle();
+
+    if (profile && (profile.account_status === 'banned' || profile.account_status === 'suspended')) {
+      return NextResponse.json(
+        { success: false, error: 'Your account is not allowed to post.' },
+        { status: 403 }
+      );
+    }
+
+    // Lightweight per-user throttle on publishing.
+    const { checkRateLimit } = await import('@/lib/rate-limit');
+    const rate = checkRateLimit(`confess:${userId}`, 10, 60 * 60 * 1000);
+    if (!rate.success) {
+      return NextResponse.json(
+        { success: false, error: 'You are posting too fast. Please try again later.' },
+        { status: 429 }
+      );
+    }
+
     // Use admin client for DB mutations — the server-side API route is trusted,
     // and the anon-key server client loses session context in Next.js API routes,
     // causing "permission denied" errors.
