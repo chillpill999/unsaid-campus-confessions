@@ -41,6 +41,7 @@ import {
   acceptFriendRequest,
   rejectFriendRequest,
   getDirectMessagesForConv,
+  saveDirectMessageToLocal,
   sendDirectMessage,
   getConversationKey,
   getRemainingTimeFormatted,
@@ -184,16 +185,30 @@ export default function InboxPage() {
     const convKey = getConversationKey(myUsername, activeFriend.username);
     
     // Initial fetch from local + server
-    const msgs = getDirectMessagesForConv(convKey, myUsername);
-    setDmMessages(msgs);
+    const localMsgs = getDirectMessagesForConv(convKey, myUsername);
+    setDmMessages(localMsgs);
 
     fetchDirectMessagesAction(convKey, myUsername).then((serverMsgs) => {
       if (serverMsgs && serverMsgs.length > 0) {
-        const mapped = serverMsgs.map((m) => ({
-          ...m,
-          is_mine: m.sender_username.toLowerCase() === myUsername.toLowerCase(),
-        }));
-        setDmMessages(mapped);
+        setDmMessages((prev) => {
+          const combined = [...prev];
+          serverMsgs.forEach((sm) => {
+            const smIsMine = sm.sender_username.toLowerCase() === myUsername.toLowerCase();
+            const exists = combined.some(
+              (m) =>
+                m.id === sm.id ||
+                (m.content.trim() === sm.content.trim() &&
+                  Math.abs(new Date(m.created_at).getTime() - new Date(sm.created_at).getTime()) < 5000)
+            );
+            if (!exists) {
+              combined.push({
+                ...sm,
+                is_mine: smIsMine,
+              });
+            }
+          });
+          return combined.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+        });
       }
     });
 
@@ -208,18 +223,24 @@ export default function InboxPage() {
           ...msg,
           is_mine: msg.sender_username.toLowerCase() === myUsername.toLowerCase(),
         };
+        saveDirectMessageToLocal(formattedMsg);
         setDmMessages((prev) => {
-          if (prev.some((m) => m.id === formattedMsg.id)) return prev;
+          if (
+            prev.some(
+              (m) =>
+                m.id === formattedMsg.id ||
+                (m.content.trim() === formattedMsg.content.trim() &&
+                  Math.abs(new Date(m.created_at).getTime() - new Date(formattedMsg.created_at).getTime()) < 5000)
+            )
+          ) {
+            return prev;
+          }
           return [...prev, formattedMsg];
         });
       }
     });
 
     dmChannel.subscribe();
-
-    // Note: Removed destructive 5-second interval that was clobbering DM state
-    // with stale localStorage data, causing messages to vanish instantly after sending.
-    // Realtime subscription above handles live message delivery correctly.
 
     return () => {
       supabase.removeChannel(dmChannel);
@@ -248,13 +269,30 @@ export default function InboxPage() {
     const textToSend = customText || directInputMsg;
     if (!textToSend.trim() || !activeFriend) return;
 
-    // Send local + server broadcast
-    const newMsg = sendDirectMessage(myUsername, activeFriend.username, textToSend.trim());
-    setDmMessages((prev) => [...prev, newMsg]);
     if (!customText) setDirectInputMsg('');
 
-    // Trigger server action for multi-device sync
-    await sendDirectMessageAction(myUsername, activeFriend.username, textToSend.trim());
+    // Trigger server action for multi-device sync + realtime broadcast
+    const res = await sendDirectMessageAction(myUsername, activeFriend.username, textToSend.trim());
+    if (res && res.success && res.message) {
+      const formattedMsg: DirectMessage = {
+        ...res.message,
+        is_mine: true,
+      };
+      saveDirectMessageToLocal(formattedMsg);
+      setDmMessages((prev) => {
+        if (
+          prev.some(
+            (m) =>
+              m.id === formattedMsg.id ||
+              (m.content.trim() === formattedMsg.content.trim() &&
+                Math.abs(new Date(m.created_at).getTime() - new Date(formattedMsg.created_at).getTime()) < 5000)
+          )
+        ) {
+          return prev;
+        }
+        return [...prev, formattedMsg];
+      });
+    }
   };
 
   // Send Friend Request
@@ -627,7 +665,7 @@ export default function InboxPage() {
                       24h Volatile Cyber Protocol
                     </div>
                     <p className="text-[11px] text-slate-600 leading-relaxed">
-                      Share your handle (<span className="font-mono text-[#FF6B00] font-bold">@{myUsername}</span>) with friends. Direct messages self-destruct exactly 24 hours after being sent.
+                      Share your handle (<span className="font-mono text-[#FF6B00] font-bold">@{myUsername}</span>) with friends. Direct messages automatically purge 24 hours after being sent.
                     </p>
                   </div>
                 </div>
@@ -676,7 +714,7 @@ export default function InboxPage() {
                         <span>24h Auto-Purge Active</span>
                       </span>
                       <span className="text-[10px] text-pink-700 font-mono bg-white px-2 py-0.5 rounded-lg border border-pink-200">
-                        Self-destruct timer ⏱️
+                        24h Auto-Purge ⏱️
                       </span>
                     </div>
                   </div>

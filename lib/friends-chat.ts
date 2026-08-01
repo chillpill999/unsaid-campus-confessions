@@ -45,25 +45,17 @@ export function getSavedUsername(): string {
   return saved;
 }
 
-export function isUsernameLocked(): boolean {
-  if (typeof window === 'undefined') return false;
-  return localStorage.getItem('unsaid_prod_username_locked') === 'true';
-}
-
-export function lockUsername(): void {
-  if (typeof window !== 'undefined') {
-    localStorage.setItem('unsaid_prod_username_locked', 'true');
-  }
-}
-
 export function saveUsername(username: string): string {
   const clean = username.trim().toLowerCase().replace(/[^a-z0-9_]/g, '');
   if (typeof window !== 'undefined' && clean) {
     localStorage.setItem(STORAGE_KEYS.USERNAME, clean);
-    // Lock permanently after first explicit save
-    localStorage.setItem('unsaid_prod_username_locked', 'true');
   }
   return clean;
+}
+
+export function isUsernameLocked(): boolean {
+  if (typeof window === 'undefined') return false;
+  return Boolean(localStorage.getItem(STORAGE_KEYS.USERNAME));
 }
 
 // ---------------- INITIALIZE CLEAN PRODUCTION STATE ----------------
@@ -82,17 +74,17 @@ export function initializeChatData(myUsername: string) {
     localStorage.setItem(STORAGE_KEYS.USERNAME, myUsername);
   }
 
-  // 2. Initial Friends list if empty (clean empty array for real live users)
+  // 2. Initial Friends list if empty
   if (!localStorage.getItem(STORAGE_KEYS.FRIENDS)) {
     localStorage.setItem(STORAGE_KEYS.FRIENDS, JSON.stringify([]));
   }
 
-  // 3. Initial Friend Requests if empty (clean empty array for real live users)
+  // 3. Initial Friend Requests if empty
   if (!localStorage.getItem(STORAGE_KEYS.FRIEND_REQUESTS)) {
     localStorage.setItem(STORAGE_KEYS.FRIEND_REQUESTS, JSON.stringify([]));
   }
 
-  // 4. Initial Direct Messages if empty (clean empty array for real live users)
+  // 4. Initial Direct Messages if empty
   if (!localStorage.getItem(STORAGE_KEYS.DIRECT_MESSAGES)) {
     localStorage.setItem(STORAGE_KEYS.DIRECT_MESSAGES, JSON.stringify([]));
   }
@@ -207,13 +199,27 @@ export function getFriendsList(): FriendContact[] {
 
 // ---------------- 24-HOUR VOLATILE DIRECT MESSAGES LOGIC ----------------
 
-// PURGE MESSAGES OLDER THAN 24 HOURS
+// PURGE MESSAGES OLDER THAN 24 HOURS OR INVALID EXPIRATION DATES
 export function getAllStoredMessages(): DirectMessage[] {
   if (typeof window === 'undefined') return [];
   try {
     const str = localStorage.getItem(STORAGE_KEYS.DIRECT_MESSAGES);
     if (!str) return [];
-    return JSON.parse(str);
+    const msgs: DirectMessage[] = JSON.parse(str);
+    const now = Date.now();
+
+    // Sanitize and purge expired or legacy bugged 100-year expiration messages
+    const valid = msgs.filter((m) => {
+      const expTime = new Date(m.expires_at).getTime();
+      const createdTime = new Date(m.created_at).getTime();
+      // Must be in the future AND must not exceed 25 hours from creation
+      return expTime > now && expTime <= createdTime + 25 * 60 * 60 * 1000;
+    });
+
+    if (valid.length !== msgs.length) {
+      localStorage.setItem(STORAGE_KEYS.DIRECT_MESSAGES, JSON.stringify(valid));
+    }
+    return valid;
   } catch (err) {
     console.error('Error fetching stored messages:', err);
     return [];
@@ -235,6 +241,15 @@ export function getDirectMessagesForConv(convKey: string, myUsername: string): D
     .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
 }
 
+export function saveDirectMessageToLocal(msg: DirectMessage) {
+  if (typeof window === 'undefined') return;
+  const existing = getAllStoredMessages();
+  if (!existing.some((m) => m.id === msg.id)) {
+    const updated = [...existing, msg];
+    localStorage.setItem(STORAGE_KEYS.DIRECT_MESSAGES, JSON.stringify(updated));
+  }
+}
+
 export function sendDirectMessage(senderUsername: string, receiverUsername: string, content: string): DirectMessage {
   const existing = getAllStoredMessages();
   const convKey = getConversationKey(senderUsername, receiverUsername);
@@ -247,11 +262,10 @@ export function sendDirectMessage(senderUsername: string, receiverUsername: stri
     receiver_username: receiverUsername,
     content: content.trim(),
     created_at: new Date(nowMs).toISOString(),
-    expires_at: new Date(nowMs + 100 * 365 * 24 * 60 * 60 * 1000).toISOString(),
+    expires_at: new Date(nowMs + 24 * 60 * 60 * 1000).toISOString(),
     is_mine: true,
   };
 
-  const updated = [...existing, newMsg];
-  localStorage.setItem(STORAGE_KEYS.DIRECT_MESSAGES, JSON.stringify(updated));
+  saveDirectMessageToLocal(newMsg);
   return newMsg;
 }
