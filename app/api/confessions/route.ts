@@ -8,8 +8,111 @@ export async function GET(req: NextRequest) {
   try {
     const supabase = createServerClient();
     const { searchParams } = new URL(req.url);
+    const code = searchParams.get('code');
     const limit = parseInt(searchParams.get('limit') || '20', 10);
     const cursor = searchParams.get('cursor');
+
+    // ---------------- SINGLE CONFESSION DETAIL LOOKUP BY CODE ----------------
+    if (code) {
+      const cleanCode = code.trim().replace(/^#/, '').toUpperCase();
+
+      // 1. Try public_confessions view
+      const { data: singleView } = await supabase
+        .from('public_confessions')
+        .select('*')
+        .or(`public_code.ilike.${cleanCode},id.eq.${code.trim()}`)
+        .maybeSingle();
+
+      let targetConfession: PublicConfession | null = null;
+
+      if (singleView) {
+        targetConfession = {
+          id: singleView.id,
+          public_code: singleView.public_code || singleView.id.slice(0, 6).toUpperCase(),
+          content: singleView.content,
+          category_name: singleView.category_name || 'Confession',
+          category_slug: singleView.category_slug || 'confession',
+          category_icon: singleView.category_icon || '🔒',
+          image_path: singleView.image_path || null,
+          gender: singleView.gender || 'Male',
+          recipient_gender: singleView.recipient_gender || null,
+          target_batch: singleView.target_batch || null,
+          target_department: singleView.target_department || null,
+          created_at: singleView.created_at,
+          reaction_counts: singleView.reaction_counts || { relatable: 0, funny: 0, support: 0, interesting: 0 },
+          comment_count: singleView.comment_count || 0,
+          poll_data: singleView.poll_options || null,
+        };
+      } else {
+        // 2. Try raw confessions table with admin client fallback
+        const { createAdminClient } = await import('@/lib/supabase/admin');
+        let activeClient: any = supabase;
+        try {
+          activeClient = createAdminClient();
+        } catch {}
+
+        const { data: singleRaw } = await activeClient
+          .from('confessions')
+          .select('*')
+          .or(`public_code.ilike.${cleanCode},id.eq.${code.trim()}`)
+          .maybeSingle();
+
+        if (singleRaw) {
+          targetConfession = {
+            id: singleRaw.id,
+            public_code: singleRaw.public_code || singleRaw.id.slice(0, 6).toUpperCase(),
+            content: singleRaw.content,
+            category_name: singleRaw.category_name || 'Confession',
+            category_slug: singleRaw.category_slug || 'confession',
+            category_icon: singleRaw.category_icon || '🔒',
+            image_path: singleRaw.image_path || null,
+            gender: singleRaw.snapshot_gender || singleRaw.gender || 'Male',
+            recipient_gender: singleRaw.recipient_gender || null,
+            target_batch: singleRaw.target_batch || null,
+            target_department: singleRaw.target_department || null,
+            created_at: singleRaw.created_at,
+            reaction_counts: { relatable: 0, funny: 0, support: 0, interesting: 0 },
+            comment_count: 0,
+            poll_data: singleRaw.poll_options || null,
+          };
+        }
+      }
+
+      // Fetch comments if targetConfession found
+      let commentsList: any[] = [];
+      if (targetConfession) {
+        const { data: commentsData } = await supabase
+          .from('comments')
+          .select('*')
+          .eq('confession_id', targetConfession.id)
+          .eq('is_deleted', false)
+          .order('created_at', { ascending: true });
+
+        if (commentsData) {
+          commentsList = commentsData.map((c: any) => ({
+            id: c.id,
+            confession_id: c.confession_id,
+            content: c.content,
+            anonymous_label: c.anonymous_label || 'Anonymous Student',
+            gender: c.gender || 'Prefer not to say',
+            created_at: c.created_at,
+          }));
+        }
+      }
+
+      if (targetConfession) {
+        return NextResponse.json({
+          success: true,
+          confession: targetConfession,
+          comments: commentsList,
+        });
+      } else {
+        return NextResponse.json(
+          { success: false, error: 'Confession not found' },
+          { status: 404 }
+        );
+      }
+    }
 
     let dbConfessions: PublicConfession[] = [];
     let hasMore = false;

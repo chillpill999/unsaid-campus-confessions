@@ -35,10 +35,27 @@ export default function ConfessionDetailPage() {
           setConfession(json.confession);
           setComments(json.comments || []);
         } else {
-          setConfession(null);
+          // Check MOCK_CONFESSIONS fallback
+          const { MOCK_CONFESSIONS } = await import('@/lib/mock-data');
+          const clean = code.trim().replace(/^#/, '').toLowerCase();
+          const found = MOCK_CONFESSIONS.find(
+            (c) => c.public_code.toLowerCase() === clean || c.id.toLowerCase() === clean
+          );
+          if (found) {
+            setConfession(found);
+            setComments([]);
+          } else {
+            setConfession(null);
+          }
         }
       } catch (err) {
         console.error('Failed to load confession detail:', err);
+        const { MOCK_CONFESSIONS } = await import('@/lib/mock-data');
+        const clean = code.trim().replace(/^#/, '').toLowerCase();
+        const found = MOCK_CONFESSIONS.find(
+          (c) => c.public_code.toLowerCase() === clean || c.id.toLowerCase() === clean
+        );
+        if (found) setConfession(found);
       } finally {
         setLoading(false);
       }
