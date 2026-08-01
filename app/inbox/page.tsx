@@ -124,10 +124,29 @@ export default function InboxPage() {
         const liveFriends = await fetchFriendsListAction(handle);
 
         if (liveRequests && liveRequests.length > 0) {
-          setRequests(liveRequests);
+          setRequests((prev) => {
+            const combinedMap = new Map<string, FriendRequest>();
+            prev.forEach((r) => combinedMap.set(r.id, r));
+            liveRequests.forEach((r) => combinedMap.set(r.id, r));
+            const merged = Array.from(combinedMap.values());
+            if (typeof window !== 'undefined') {
+              localStorage.setItem('unsaid_prod_friend_requests_v2', JSON.stringify(merged));
+            }
+            return merged;
+          });
         }
+
         if (liveFriends && liveFriends.length > 0) {
-          setFriends(liveFriends);
+          setFriends((prev) => {
+            const combinedMap = new Map<string, FriendContact>();
+            prev.forEach((f) => combinedMap.set(f.username.toLowerCase(), f));
+            liveFriends.forEach((f) => combinedMap.set(f.username.toLowerCase(), f));
+            const merged = Array.from(combinedMap.values());
+            if (typeof window !== 'undefined') {
+              localStorage.setItem('unsaid_prod_friends_list_v2', JSON.stringify(merged));
+            }
+            return merged;
+          });
           if (!activeFriend) {
             setActiveFriend(liveFriends[0]);
           }
