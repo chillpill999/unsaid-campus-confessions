@@ -70,6 +70,8 @@ export interface PublicComment {
 export interface UserProfile {
   id: string; // internal UUID
   full_name?: string;
+  email?: string;
+  avatar_url?: string | null;
   username?: string; // Instagram-style student handle (e.g. @alex_lnj)
   name?: string;
   branch?: string;
