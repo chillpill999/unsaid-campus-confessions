@@ -148,7 +148,7 @@ export default function LandingPage() {
           <div className="space-y-1 sm:text-left text-center">
             <div>© 2026 ConfessionLnjpit Campus Platform. All rights reserved.</div>
             <div className="text-[11px] text-[#FF6B00] font-medium flex items-center justify-center sm:justify-start gap-1 font-mono">
-              Made with <Heart className="w-3 h-3 text-[#FF6B00] fill-[#FF6B00] inline" /> love of Hothlali Members
+              Made with <Heart className="w-3.5 h-3.5 text-[#FF6B00] fill-[#FF6B00] inline animate-pulse" /> love of Hothlali Department
             </div>
           </div>
           <div className="flex items-center gap-4 sm:gap-6 font-mono text-[11px] sm:text-xs">

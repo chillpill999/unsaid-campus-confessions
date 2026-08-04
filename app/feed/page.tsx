@@ -217,8 +217,8 @@ export default function FeedPage() {
             </p>
             <div className="pt-3 mt-2 border-t border-slate-100 text-[11px] text-[#FF6B00] font-bold flex items-center gap-1.5 font-mono">
               <span>Made with</span>
-              <Heart className="w-3.5 h-3.5 text-[#FF6B00] fill-[#FF6B00] inline" />
-              <span>love of Hothlali Members</span>
+              <Heart className="w-3.5 h-3.5 text-[#FF6B00] fill-[#FF6B00] inline animate-pulse" />
+              <span>love of Hothlali Department</span>
             </div>
           </div>
         </aside>
@@ -252,6 +252,13 @@ export default function FeedPage() {
                 </button>
               ))}
             </div>
+          </div>
+
+          {/* Mobile Quotation Badge - Prominently Displayed on Mobile Site */}
+          <div className="md:hidden flex items-center justify-center gap-1.5 py-1.5 px-3.5 rounded-full bg-white/90 border border-slate-200/90 text-[11px] font-mono font-bold text-[#FF6B00] shadow-sm w-fit mx-auto my-1">
+            <span>Made with</span>
+            <Heart className="w-3.5 h-3.5 text-[#FF6B00] fill-[#FF6B00] inline animate-pulse" />
+            <span>love of Hothlali Department</span>
           </div>
 
           {/* Realtime Live Pulse Notice Banner */}
