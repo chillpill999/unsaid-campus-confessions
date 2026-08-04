@@ -64,6 +64,9 @@ export const metadata: Metadata = {
     creator: '@lnjpit_confessions',
   },
   category: 'Education & Student Community',
+  verification: {
+    google: 'google697f9ae4698f26f3',
+  },
 };
 
 export const viewport: Viewport = {
