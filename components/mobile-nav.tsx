@@ -54,10 +54,10 @@ export function MobileNav({ onOpenComposer }: MobileNavProps) {
           <div className="flex items-center justify-center relative">
             <button
               onClick={onOpenComposer}
-              className="absolute -top-7 w-13 h-13 sm:w-14 sm:h-14 rounded-full bg-gradient-to-tr from-[#FF6B00] to-[#FF8533] text-white flex items-center justify-center shadow-lg shadow-[#FF6B00]/40 active:scale-90 transition-transform border-[3px] border-white font-black shrink-0"
+              className="absolute -top-6 w-12 h-12 rounded-full bg-[#FF6B00] text-white flex items-center justify-center shadow-lg shadow-[#FF6B00]/40 active:scale-90 transition-all border-[3px] border-white font-black shrink-0"
               aria-label="Create Anonymous Confession"
             >
-              <Plus className="w-6 h-6 stroke-[3]" />
+              <Plus className="w-5.5 h-5.5 stroke-[3]" />
             </button>
           </div>
 
