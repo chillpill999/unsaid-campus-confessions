@@ -136,6 +136,67 @@ export async function toggleReaction(confessionId: string, reactionType: string)
   }
 }
 
+export async function votePoll(confessionId: string, optionId: string) {
+  const supabase = createClient();
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+  if (authError || !user) {
+    throw new Error('Unauthorized');
+  }
+
+  // Use admin client to update the confessions table (bypasses RLS on author-only rows)
+  let admin: any = supabase;
+  try {
+    const { createAdminClient } = await import('@/lib/supabase/admin');
+    admin = createAdminClient();
+  } catch (e) {}
+
+  // Fetch the current poll_options JSONB from the confessions table
+  const { data: confession, error: fetchError } = await admin
+    .from('confessions')
+    .select('id, poll_options')
+    .eq('id', confessionId)
+    .single();
+
+  if (fetchError || !confession || !confession.poll_options) {
+    throw new Error('Confession or poll not found');
+  }
+
+  const pollData = confession.poll_options;
+
+  // Check if user already voted (tracked in poll_options.voters array)
+  const voters: string[] = pollData.voters || [];
+  if (voters.includes(user.id)) {
+    // Already voted - return current state without error
+    return { alreadyVoted: true, poll_options: pollData };
+  }
+
+  // Increment the selected option's vote count
+  const updatedOptions = (pollData.options || []).map((opt: any) =>
+    opt.id === optionId ? { ...opt, votes: (opt.votes || 0) + 1 } : opt
+  );
+
+  const updatedPollData = {
+    ...pollData,
+    total_votes: (pollData.total_votes || 0) + 1,
+    options: updatedOptions,
+    voters: [...voters, user.id],
+  };
+
+  // Persist to database
+  const { error: updateError } = await admin
+    .from('confessions')
+    .update({ poll_options: updatedPollData })
+    .eq('id', confessionId);
+
+  if (updateError) {
+    console.error('Failed to persist poll vote:', updateError);
+    throw new Error('Failed to save poll vote');
+  }
+
+  return { alreadyVoted: false, poll_options: updatedPollData };
+}
+
 export async function toggleBookmark(confessionId: string) {
   const supabase = createClient();
   const { data: { user }, error: authError } = await supabase.auth.getUser();

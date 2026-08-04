@@ -193,11 +193,20 @@ export async function getMyProfileSummary(): Promise<{
       } satisfies PublicConfession;
     });
 
+    // Extract real identity from Google OAuth metadata
+    const realFullName = user.user_metadata?.full_name
+      || user.user_metadata?.name
+      || (user.email ? user.email.split('@')[0] : 'Student');
+    const realEmail = user.email || '';
+    const realAvatarUrl = user.user_metadata?.avatar_url || user.user_metadata?.picture || null;
+
     return {
       profile: profileRow
         ? {
             id: profileRow.id,
-            full_name: 'Student User',
+            full_name: profileRow.full_name || realFullName,
+            email: realEmail,
+            avatar_url: realAvatarUrl,
             gender: profileRow.gender || 'Male',
             college_id: profileRow.college_id || '',
             college_name: profileRow.colleges?.name || 'Loknayak Jai Prakash Institute of Technology',
@@ -207,7 +216,20 @@ export async function getMyProfileSummary(): Promise<{
             account_status: profileRow.account_status || 'active',
             created_at: profileRow.created_at || new Date().toISOString(),
           }
-        : null,
+        : {
+            id: user.id,
+            full_name: realFullName,
+            email: realEmail,
+            avatar_url: realAvatarUrl,
+            gender: 'Prefer not to say' as Gender,
+            college_id: '',
+            college_name: 'Loknayak Jai Prakash Institute of Technology',
+            batch: '2026',
+            department: 'Computer Science & Engineering (CSE)',
+            role: 'student' as const,
+            account_status: 'active' as const,
+            created_at: new Date().toISOString(),
+          },
       stats: {
         confessionsCount: confessionsCount || 0,
         reactionsReceived: reactionsReceived || 0,

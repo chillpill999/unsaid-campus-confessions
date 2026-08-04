@@ -126,7 +126,21 @@ export function ConfessionCard({
 }: ConfessionCardProps) {
   const [isBookmarked, setIsBookmarked] = useState(confession.is_bookmarked || false);
   const [copiedCode, setCopiedCode] = useState(false);
-  const [pollData, setPollData] = useState(confession.poll_data);
+
+  // Restore user's previous vote from localStorage on mount
+  const getLocalVote = (): string | null => {
+    if (typeof window === 'undefined') return null;
+    try {
+      const votes = JSON.parse(localStorage.getItem('unsaid_poll_votes') || '{}');
+      return votes[confession.id] || null;
+    } catch { return null; }
+  };
+
+  const initialPoll = confession.poll_data
+    ? { ...confession.poll_data, user_voted_option_id: confession.poll_data.user_voted_option_id || getLocalVote() }
+    : null;
+  const [pollData, setPollData] = useState(initialPoll);
+  const [isVoting, setIsVoting] = useState(false);
 
   const IconComponent = CATEGORY_ICONS[confession.category_icon] || Lock;
   const theme = CATEGORY_THEMES[confession.category_slug] || CATEGORY_THEMES.confession;
@@ -137,8 +151,11 @@ export function ConfessionCard({
     setTimeout(() => setCopiedCode(false), 2000);
   };
 
-  const handleVotePoll = (optionId: string) => {
-    if (!pollData || pollData.user_voted_option_id) return;
+  const handleVotePoll = async (optionId: string) => {
+    if (!pollData || pollData.user_voted_option_id || isVoting) return;
+    setIsVoting(true);
+
+    // Optimistic UI update
     const updatedOptions = pollData.options.map((opt) =>
       opt.id === optionId ? { ...opt, votes: opt.votes + 1 } : opt
     );
@@ -149,7 +166,35 @@ export function ConfessionCard({
       user_voted_option_id: optionId,
     };
     setPollData(updatedPoll);
+
+    // Save to localStorage immediately
+    try {
+      const votes = JSON.parse(localStorage.getItem('unsaid_poll_votes') || '{}');
+      votes[confession.id] = optionId;
+      localStorage.setItem('unsaid_poll_votes', JSON.stringify(votes));
+    } catch {}
+
+    // Persist to database via server action
+    try {
+      const { votePoll } = await import('@/lib/actions/feed');
+      const result = await votePoll(confession.id, optionId);
+      // If server returned updated poll data, sync it
+      if (result.poll_options) {
+        const serverPoll = result.poll_options;
+        setPollData({
+          question: serverPoll.question || pollData.question,
+          options: serverPoll.options || updatedOptions,
+          total_votes: serverPoll.total_votes || updatedPoll.total_votes,
+          user_voted_option_id: optionId,
+        });
+      }
+    } catch (err) {
+      console.warn('Poll vote persist note:', err);
+    }
+
+    // Broadcast for live listeners
     broadcastPollUpdate(confession.public_code, updatedPoll);
+    setIsVoting(false);
   };
 
   return (

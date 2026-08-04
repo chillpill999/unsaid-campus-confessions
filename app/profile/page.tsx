@@ -82,9 +82,17 @@ export default function ProfilePage() {
         <div className="rounded-[28px] bg-white border border-slate-200/80 p-6 shadow-xl space-y-6">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="flex items-center gap-4">
-              <div className="w-16 h-16 rounded-2xl bg-[#FF6B00] flex items-center justify-center font-black text-white text-2xl shadow-lg shadow-[#FF6B00]/25">
-                {(profile.full_name || 'Student').slice(0, 1).toUpperCase()}
-              </div>
+              {profile.avatar_url ? (
+                <img
+                  src={profile.avatar_url}
+                  alt={profile.full_name || 'Student'}
+                  className="w-16 h-16 rounded-2xl border-2 border-[#FF6B00]/30 object-cover shadow-lg shadow-[#FF6B00]/15"
+                />
+              ) : (
+                <div className="w-16 h-16 rounded-2xl bg-[#FF6B00] flex items-center justify-center font-black text-white text-2xl shadow-lg shadow-[#FF6B00]/25">
+                  {(profile.full_name || 'Student').slice(0, 1).toUpperCase()}
+                </div>
+              )}
               <div>
                 <h1 className="text-xl font-black text-slate-950 font-heading flex items-center gap-2">
                   {profile.full_name}
@@ -95,6 +103,11 @@ export default function ProfilePage() {
                 <p className="text-xs text-slate-500 font-mono mt-0.5">
                   @{username} • {profile.department || 'Engineering'} ({profile.batch || 'LNJPIT'})
                 </p>
+                {profile.email && (
+                  <p className="text-[10px] text-slate-400 font-mono mt-0.5">
+                    {profile.email}
+                  </p>
+                )}
               </div>
             </div>
 
