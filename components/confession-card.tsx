@@ -43,7 +43,7 @@ const CATEGORY_ICONS: Record<string, React.ElementType> = {
   Compass,
 };
 
-// Stitch Google Vibrant Ledger Category Card Color Schemes
+// Premium Theme Palette (Polished Glass & High Contrast Cards)
 const CATEGORY_THEMES: Record<string, {
   cardClass: string;
   pillClass: string;
@@ -52,69 +52,77 @@ const CATEGORY_THEMES: Record<string, {
   textColor: string;
   subtextColor: string;
   dividerColor: string;
+  pollBg: string;
 }> = {
   crush: {
-    cardClass: 'bg-[#FF6B00] text-white border-transparent shadow-xl',
+    cardClass: 'bg-gradient-to-br from-[#FF6B00] to-[#E05E00] text-white border-transparent shadow-xl shadow-[#FF6B00]/20',
     pillClass: 'bg-black/20 text-white border border-white/20',
     iconBg: 'bg-white/20',
     iconColor: 'text-white',
     textColor: 'text-white',
     subtextColor: 'text-white/80',
     dividerColor: 'border-white/20',
+    pollBg: 'bg-black/20 border-white/20 text-white',
   },
   funny: {
-    cardClass: 'bg-[#FCDAD7] text-slate-950 border-transparent shadow-xl',
-    pillClass: 'bg-slate-950/10 text-slate-900 border border-slate-950/10',
-    iconBg: 'bg-[#D1311F]/15',
+    cardClass: 'bg-white text-slate-950 border border-slate-200/90 shadow-xl shadow-slate-200/50',
+    pillClass: 'bg-amber-500/10 text-amber-900 border border-amber-500/20',
+    iconBg: 'bg-amber-500/15',
     iconColor: 'text-[#D1311F]',
     textColor: 'text-slate-950',
-    subtextColor: 'text-slate-700',
-    dividerColor: 'border-slate-950/10',
+    subtextColor: 'text-slate-500',
+    dividerColor: 'border-slate-100',
+    pollBg: 'bg-slate-50 border-slate-200 text-slate-950',
   },
   hostel: {
-    cardClass: 'bg-[#C6EAA5] text-slate-950 border-transparent shadow-xl',
-    pillClass: 'bg-slate-950/10 text-slate-900 border border-slate-950/10',
-    iconBg: 'bg-[#769B6C]/25',
-    iconColor: 'text-[#2E5E24]',
+    cardClass: 'bg-white text-slate-950 border border-slate-200/90 shadow-xl shadow-slate-200/50',
+    pillClass: 'bg-emerald-500/10 text-emerald-900 border border-emerald-500/20',
+    iconBg: 'bg-emerald-500/15',
+    iconColor: 'text-emerald-600',
     textColor: 'text-slate-950',
-    subtextColor: 'text-slate-700',
-    dividerColor: 'border-slate-950/10',
+    subtextColor: 'text-slate-500',
+    dividerColor: 'border-slate-100',
+    pollBg: 'bg-slate-50 border-slate-200 text-slate-950',
   },
   appreciation: {
-    cardClass: 'bg-[#EAE8E3] text-slate-950 border-transparent shadow-xl',
-    pillClass: 'bg-slate-950/10 text-slate-900 border border-slate-950/10',
-    iconBg: 'bg-slate-950/10',
-    iconColor: 'text-slate-900',
+    cardClass: 'bg-white text-slate-950 border border-slate-200/90 shadow-xl shadow-slate-200/50',
+    pillClass: 'bg-purple-500/10 text-purple-900 border border-purple-500/20',
+    iconBg: 'bg-purple-500/15',
+    iconColor: 'text-purple-600',
     textColor: 'text-slate-950',
-    subtextColor: 'text-slate-700',
-    dividerColor: 'border-slate-950/10',
+    subtextColor: 'text-slate-500',
+    dividerColor: 'border-slate-100',
+    pollBg: 'bg-slate-50 border-slate-200 text-slate-950',
   },
   question: {
-    cardClass: 'bg-[#121212] text-white border border-slate-800 shadow-xl',
-    pillClass: 'bg-slate-800 text-slate-300 border border-slate-700',
+    cardClass: 'bg-[#0F172A] text-white border border-slate-800 shadow-xl shadow-slate-950/40',
+    pillClass: 'bg-slate-800/90 text-slate-200 border border-slate-700/80',
     iconBg: 'bg-[#FF6B00]/20',
     iconColor: 'text-[#FF6B00]',
     textColor: 'text-white',
     subtextColor: 'text-slate-400',
     dividerColor: 'border-slate-800',
+    pollBg: 'bg-slate-800/60 border-slate-700/70 text-white',
   },
   'campus-life': {
-    cardClass: 'bg-slate-900 text-white border border-slate-800 shadow-xl',
-    pillClass: 'bg-slate-800 text-slate-300 border border-slate-700',
+    cardClass: 'bg-[#0F172A] text-white border border-slate-800 shadow-xl shadow-slate-950/40',
+    pillClass: 'bg-slate-800/90 text-slate-200 border border-slate-700/80',
     iconBg: 'bg-[#FF6B00]/20',
     iconColor: 'text-[#FF6B00]',
     textColor: 'text-white',
     subtextColor: 'text-slate-400',
     dividerColor: 'border-slate-800',
+    pollBg: 'bg-slate-800/60 border-slate-700/70 text-white',
   },
   confession: {
-    cardClass: 'bg-[#121212] text-white border border-slate-800 shadow-xl',
-    pillClass: 'bg-slate-800 text-slate-300 border border-slate-700',
+    cardClass: 'bg-[#0F172A] text-white border border-slate-800 shadow-xl shadow-slate-950/40',
+    pillClass: 'bg-slate-800/90 text-slate-200 border border-slate-700/80',
     iconBg: 'bg-[#FF6B00]/20',
     iconColor: 'text-[#FF6B00]',
     textColor: 'text-white',
     subtextColor: 'text-slate-400',
     dividerColor: 'border-slate-800',
+    pollBg: 'bg-slate-800/60 border-slate-700/70 text-white',
   },
 };
 
@@ -155,7 +163,6 @@ export function ConfessionCard({
     if (!pollData || pollData.user_voted_option_id || isVoting) return;
     setIsVoting(true);
 
-    // Optimistic UI update
     const updatedOptions = pollData.options.map((opt) =>
       opt.id === optionId ? { ...opt, votes: opt.votes + 1 } : opt
     );
@@ -167,18 +174,15 @@ export function ConfessionCard({
     };
     setPollData(updatedPoll);
 
-    // Save to localStorage immediately
     try {
       const votes = JSON.parse(localStorage.getItem('unsaid_poll_votes') || '{}');
       votes[confession.id] = optionId;
       localStorage.setItem('unsaid_poll_votes', JSON.stringify(votes));
     } catch {}
 
-    // Persist to database via server action
     try {
       const { votePoll } = await import('@/lib/actions/feed');
       const result = await votePoll(confession.id, optionId);
-      // If server returned updated poll data, sync it
       if (result.poll_options) {
         const serverPoll = result.poll_options;
         setPollData({
@@ -192,26 +196,25 @@ export function ConfessionCard({
       console.warn('Poll vote persist note:', err);
     }
 
-    // Broadcast for live listeners
     broadcastPollUpdate(confession.public_code, updatedPoll);
     setIsVoting(false);
   };
 
   return (
-    <article className={`rounded-2xl sm:rounded-[28px] ${theme.cardClass} p-4 sm:p-6 mb-4 relative overflow-hidden transition-all duration-300 hover:-translate-y-0.5 hover:shadow-2xl group`}>
+    <article className={`rounded-3xl ${theme.cardClass} p-4 sm:p-6 mb-4 relative overflow-hidden transition-all duration-300 hover:-translate-y-0.5 hover:shadow-2xl group`}>
       
       {/* Featured Accent Indicator */}
       {confession.is_featured && (
         <div className="absolute top-0 left-0 right-0 h-1.5 bg-[#FF6B00]" />
       )}
 
-      {/* Header: Author Info + Category & Code Tags (Mobile Wrap Layout) */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-3 mb-3.5">
+      {/* Header: Author Info + Category & Code Tags */}
+      <div className="flex items-center justify-between gap-2.5 mb-3">
         
         {/* Left: Avatar + Title */}
-        <div className="flex items-center gap-2.5 sm:gap-3">
+        <div className="flex items-center gap-2.5 min-w-0">
           <div className={`w-9 h-9 sm:w-11 sm:h-11 rounded-2xl ${theme.iconBg} ${theme.iconColor} flex items-center justify-center font-bold shadow-sm shrink-0 group-hover:scale-105 transition-transform`}>
-            <IconComponent className="w-4 h-4 sm:w-5 sm:h-5 stroke-[2.5]" />
+            <IconComponent className="w-4.5 h-4.5 sm:w-5 sm:h-5 stroke-[2.5]" />
           </div>
 
           <div className="flex flex-col min-w-0">
@@ -233,8 +236,8 @@ export function ConfessionCard({
         </div>
 
         {/* Right: Category Pill & Public Code Pill */}
-        <div className="flex items-center gap-1.5 sm:gap-2 self-start sm:self-auto">
-          <span className={`text-[10px] sm:text-xs font-bold px-2.5 py-1 rounded-full ${theme.pillClass}`}>
+        <div className="flex items-center gap-1.5 shrink-0">
+          <span className={`text-[10px] sm:text-xs font-extrabold px-2.5 py-1 rounded-full ${theme.pillClass}`}>
             {confession.category_name}
           </span>
           <button
@@ -258,14 +261,14 @@ export function ConfessionCard({
       )}
 
       {/* Confession Content */}
-      <div className={`text-xs sm:text-base leading-relaxed whitespace-pre-wrap mb-3.5 font-sans font-medium tracking-wide ${theme.textColor}`}>
+      <div className={`text-sm sm:text-base leading-relaxed whitespace-pre-wrap mb-3.5 font-sans font-medium tracking-wide ${theme.textColor}`}>
         {confession.content}
       </div>
 
       {/* Optional Interactive Poll Widget */}
       {pollData && (
-        <div className={`my-3 sm:my-4 p-3 sm:p-4 rounded-2xl bg-black/10 border ${theme.dividerColor} space-y-2`}>
-          <div className={`text-[11px] sm:text-xs font-bold font-mono mb-1.5 uppercase tracking-wider flex items-center gap-1.5 ${theme.textColor}`}>
+        <div className={`my-3 sm:my-4 p-3.5 sm:p-4 rounded-2xl ${theme.pollBg} space-y-2.5`}>
+          <div className={`text-[11px] sm:text-xs font-bold font-mono uppercase tracking-wider flex items-center gap-1.5 ${theme.textColor}`}>
             <Zap className="w-3.5 h-3.5 text-[#FF6B00]" /> Poll: {pollData.question}
           </div>
           {pollData.options.map((opt) => {
@@ -276,14 +279,14 @@ export function ConfessionCard({
                 key={opt.id}
                 onClick={() => handleVotePoll(opt.id)}
                 disabled={Boolean(pollData.user_voted_option_id)}
-                className={`w-full text-left relative overflow-hidden rounded-xl p-2.5 sm:p-3.5 border transition-all text-xs font-bold ${
+                className={`w-full text-left relative overflow-hidden rounded-xl p-2.5 sm:p-3 border transition-all text-xs font-bold ${
                   isVoted
-                    ? 'border-[#FF6B00] bg-[#FF6B00]/20 text-[#FF6B00]'
-                    : `border-black/10 bg-black/5 hover:bg-black/10 ${theme.textColor}`
+                    ? 'border-[#FF6B00] bg-[#FF6B00]/15 text-[#FF6B00]'
+                    : 'border-slate-700/40 bg-slate-800/40 hover:bg-slate-800/80 text-white'
                 }`}
               >
                 <div
-                  className="absolute left-0 top-0 bottom-0 bg-[#FF6B00]/25 transition-all duration-500 pointer-events-none"
+                  className="absolute left-0 top-0 bottom-0 bg-gradient-to-r from-[#FF6B00] to-[#FF8533] opacity-35 transition-all duration-500 pointer-events-none rounded-xl"
                   style={{ width: `${pct}%` }}
                 />
                 <div className="relative flex justify-between items-center z-10">
@@ -301,14 +304,14 @@ export function ConfessionCard({
 
       {/* Anonymous Signal Banner (Crush / Appreciation) */}
       {(confession.category_slug === 'crush' || confession.category_slug === 'appreciation') && (
-        <div className={`my-3 sm:my-4 p-3 sm:p-4 rounded-2xl bg-black/10 border ${theme.dividerColor} flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5 shadow-sm`}>
+        <div className={`my-3 sm:my-4 p-3 sm:p-4 rounded-2xl bg-gradient-to-r from-[#FF6B00]/10 via-[#FF6B00]/5 to-transparent border border-[#FF6B00]/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5 shadow-sm`}>
           <div className={`flex items-center gap-2 text-xs font-bold ${theme.textColor}`}>
             <Eye className="w-4 h-4 text-[#FF6B00] animate-bounce shrink-0" />
             <span>Is this confession about you? 👀</span>
           </div>
           <button
             onClick={() => onOpenThinkAboutYou && onOpenThinkAboutYou(confession.public_code)}
-            className="w-full sm:w-auto px-4 py-2 rounded-xl bg-slate-950 text-white font-black text-xs transition-all flex items-center justify-center gap-1.5 shadow-md hover:bg-slate-900"
+            className="w-full sm:w-auto px-4 py-2 rounded-xl bg-[#FF6B00] hover:bg-[#E05E00] text-white font-black text-xs transition-all flex items-center justify-center gap-1.5 shadow-md shadow-[#FF6B00]/25"
           >
             <Send className="w-3.5 h-3.5" />
             Send Signal
@@ -317,7 +320,7 @@ export function ConfessionCard({
       )}
 
       {/* Footer Controls: Reaction Bar & Action Buttons */}
-      <div className={`pt-3 border-t ${theme.dividerColor} flex flex-col sm:flex-row sm:items-center justify-between gap-3`}>
+      <div className={`pt-3 border-t ${theme.dividerColor} flex flex-wrap items-center justify-between gap-2.5`}>
         {/* Reaction Bar */}
         <ReactionBar
           confessionId={confession.id}
@@ -337,7 +340,7 @@ export function ConfessionCard({
         />
 
         {/* Action Buttons: Comments, Bookmark, Share, Report */}
-        <div className="flex items-center gap-1.5 sm:gap-2 self-end sm:self-auto">
+        <div className="flex items-center gap-1.5 ml-auto">
           <Link
             href={`/confession/${confession.public_code}`}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-all ${theme.pillClass}`}

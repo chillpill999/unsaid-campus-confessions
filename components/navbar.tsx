@@ -61,22 +61,22 @@ export function Navbar({ onOpenComposer, isAdmin: isAdminProp = false }: NavbarP
   ];
 
   return (
-    <header className="sticky top-0 z-40 w-full border-b border-slate-200/80 bg-[#F4F3EF]/90 backdrop-blur-xl">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+    <header className="sticky top-0 z-40 w-full border-b border-slate-200/80 bg-[#F4F3EF]/95 backdrop-blur-2xl">
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-2">
         
-        {/* Brand Logo - Stitch Google Vibrant Orange Accent */}
-        <Link href="/feed" className="flex items-center gap-3 group">
-          <div className="w-10 h-10 rounded-2xl bg-[#FF6B00] flex items-center justify-center text-white font-black shadow-md shadow-[#FF6B00]/25 group-hover:scale-105 transition-transform">
-            <Lock className="w-5 h-5 stroke-[2.5]" />
+        {/* Brand Logo - Stitch Google Vibrant Accent */}
+        <Link href="/feed" className="flex items-center gap-2 sm:gap-3 group shrink-0 min-w-0">
+          <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-[#FF6B00] flex items-center justify-center text-white font-black shadow-md shadow-[#FF6B00]/25 group-hover:scale-105 transition-transform shrink-0">
+            <Lock className="w-4.5 h-4.5 sm:w-5 sm:h-5 stroke-[2.5]" />
           </div>
-          <div>
-            <span className="font-heading font-black text-xl tracking-tight text-slate-950 group-hover:text-[#FF6B00] transition-colors">
-              ConfessionLnjpit
+          <div className="truncate">
+            <span className="font-heading font-black text-base sm:text-xl tracking-tight text-slate-950 group-hover:text-[#FF6B00] transition-colors truncate block">
+              Confession<span className="text-[#FF6B00]">Lnjpit</span>
             </span>
           </div>
         </Link>
 
-        {/* Desktop Nav Items - Stitch Google Light Pill Bar */}
+        {/* Desktop Nav Items - Light Pill Bar */}
         <nav className="hidden md:flex items-center gap-1 bg-white/90 p-1.5 rounded-full border border-slate-200/80 shadow-sm">
           {navItems.map((item) => {
             const Icon = item.icon;
@@ -98,12 +98,12 @@ export function Navbar({ onOpenComposer, isAdmin: isAdminProp = false }: NavbarP
           })}
         </nav>
 
-        {/* Action Controls */}
-        <div className="flex items-center gap-2.5">
+        {/* Action Controls - Mobile Safe Layout */}
+        <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
           {onOpenComposer && (
             <button
               onClick={onOpenComposer}
-              className="hidden sm:flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-[#FF6B00] hover:bg-[#E05E00] text-white font-black text-xs shadow-lg shadow-[#FF6B00]/25 transition-all hover:scale-[1.02] active:scale-[0.98]"
+              className="hidden sm:flex items-center gap-2 px-4 py-2 sm:px-5 sm:py-2.5 rounded-2xl bg-[#FF6B00] hover:bg-[#E05E00] text-white font-black text-xs shadow-lg shadow-[#FF6B00]/25 transition-all hover:scale-[1.02] active:scale-[0.98]"
             >
               <PlusCircle className="w-4 h-4" />
               Confess
@@ -113,32 +113,33 @@ export function Navbar({ onOpenComposer, isAdmin: isAdminProp = false }: NavbarP
           {showAdminLink && (
             <Link
               href="/admin"
-              className={`flex items-center gap-1.5 px-3.5 py-2 rounded-2xl text-xs font-bold border transition-all ${
+              className={`flex items-center gap-1.5 px-2.5 py-1.5 sm:px-3.5 sm:py-2 rounded-xl sm:rounded-2xl text-xs font-bold border transition-all shrink-0 ${
                 pathname.startsWith('/admin')
                   ? 'bg-amber-500 text-slate-950 border-amber-500 font-extrabold shadow-md'
-                  : 'bg-white text-amber-700 border-amber-200 hover:bg-amber-50 shadow-sm'
+                  : 'bg-amber-500/10 text-amber-700 border-amber-300/60 hover:bg-amber-500/20 shadow-sm'
               }`}
-              title="Admin Portal & Safety Governance"
+              title="Admin Portal"
             >
-              <ShieldAlert className="w-4 h-4 text-amber-600" />
-              <span>Admin Portal</span>
+              <ShieldAlert className="w-4 h-4 text-amber-600 shrink-0" />
+              <span className="hidden sm:inline">Admin Portal</span>
+              <span className="sm:hidden text-[11px] font-black text-amber-800">Admin</span>
             </Link>
           )}
 
           <Link
             href="/search"
-            className="w-10 h-10 rounded-2xl bg-white border border-slate-200 flex items-center justify-center text-slate-700 hover:text-slate-950 hover:border-[#FF6B00]/40 transition-all shadow-sm md:hidden"
+            className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl bg-white border border-slate-200 flex items-center justify-center text-slate-700 hover:text-slate-950 hover:border-[#FF6B00]/40 transition-all shadow-sm shrink-0 md:hidden"
             title="Search Confessions"
           >
-            <Search className="w-4.5 h-4.5" />
+            <Search className="w-4 h-4 sm:w-4.5 sm:h-4.5" />
           </Link>
 
           <Link
             href="/profile"
-            className="w-10 h-10 rounded-2xl bg-white border border-slate-200 flex items-center justify-center text-slate-700 hover:text-slate-950 hover:border-[#FF6B00]/40 transition-all shadow-sm"
+            className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl bg-white border border-slate-200 flex items-center justify-center text-slate-700 hover:text-slate-950 hover:border-[#FF6B00]/40 transition-all shadow-sm shrink-0"
             title="Profile & Settings"
           >
-            <User className="w-4.5 h-4.5" />
+            <User className="w-4 h-4 sm:w-4.5 sm:h-4.5" />
           </Link>
         </div>
       </div>
