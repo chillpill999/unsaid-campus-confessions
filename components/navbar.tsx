@@ -126,6 +126,14 @@ export function Navbar({ onOpenComposer, isAdmin: isAdminProp = false }: NavbarP
           )}
 
           <Link
+            href="/search"
+            className="w-10 h-10 rounded-2xl bg-white border border-slate-200 flex items-center justify-center text-slate-700 hover:text-slate-950 hover:border-[#FF6B00]/40 transition-all shadow-sm md:hidden"
+            title="Search Confessions"
+          >
+            <Search className="w-4.5 h-4.5" />
+          </Link>
+
+          <Link
             href="/profile"
             className="w-10 h-10 rounded-2xl bg-white border border-slate-200 flex items-center justify-center text-slate-700 hover:text-slate-950 hover:border-[#FF6B00]/40 transition-all shadow-sm"
             title="Profile & Settings"
