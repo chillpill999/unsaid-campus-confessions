@@ -5,10 +5,9 @@ import Link from 'next/link';
 import { Navbar } from '@/components/navbar';
 import { MobileNav } from '@/components/mobile-nav';
 import { ConfessionCard } from '@/components/confession-card';
-import { Settings, AtSign } from 'lucide-react';
-import { getSavedUsername, saveUsername, isUsernameLocked } from '@/lib/friends-chat';
+import { Settings, AtSign, Loader2 } from 'lucide-react';
 import { PublicConfession, UserProfile } from '@/lib/types';
-import { getMyProfile, getMyStatsAndConfessions } from '@/lib/actions/profile';
+import { getMyProfile, getMyStatsAndConfessions, saveUsernameAction } from '@/lib/actions/profile';
 
 const EMPTY_PROFILE: UserProfile = {
   id: '',
@@ -35,20 +34,25 @@ export default function ProfilePage() {
   const [profileLoaded, setProfileLoaded] = useState(false);
   const [statsLoaded, setStatsLoaded] = useState(false);
   const [activeTab, setActiveTab] = useState<'my-confessions' | 'saved'>('my-confessions');
-  const [username, setUsername] = useState<string>('student_lnj');
+  const [username, setUsername] = useState<string>('...');
   const [isEditingUsername, setIsEditingUsername] = useState(false);
   const [usernameInput, setUsernameInput] = useState('');
-  const [usernameLocked, setUsernameLocked] = useState(false);
+  const [usernameLocked, setUsernameLocked] = useState(true);
+  const [usernameSaving, setUsernameSaving] = useState(false);
+  const [usernameError, setUsernameError] = useState('');
 
   useEffect(() => {
-    const saved = getSavedUsername();
-    setUsername(saved);
-    setUsernameInput(saved);
-    setUsernameLocked(isUsernameLocked());
-
-    // Phase 1: Load profile header FAST (single query)
+    // Phase 1: Load profile header FAST (single query) — includes DB username
     getMyProfile().then((p) => {
-      if (p) setProfile(p);
+      if (p) {
+        setProfile(p);
+        // Username from database — synced across all devices
+        const dbUsername = p.username || (p.email ? p.email.split('@')[0] : 'student');
+        setUsername(dbUsername);
+        setUsernameInput(dbUsername);
+        // If a username is already set in DB, it's locked
+        setUsernameLocked(!!p.username);
+      }
       setProfileLoaded(true);
     }).catch(() => setProfileLoaded(true));
 
@@ -60,15 +64,30 @@ export default function ProfilePage() {
     }).catch(() => setStatsLoaded(true));
   }, []);
 
-  const handleSaveUsername = (e: React.FormEvent) => {
+  const handleSaveUsername = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (usernameLocked) return;
+    if (usernameLocked || usernameSaving) return;
     const clean = usernameInput.trim().toLowerCase().replace(/[^a-z0-9_]/g, '');
-    if (!clean) return;
-    saveUsername(clean);
-    setUsername(clean);
-    setUsernameLocked(true);
-    setIsEditingUsername(false);
+    if (!clean || clean.length < 3) {
+      setUsernameError('Handle must be at least 3 characters.');
+      return;
+    }
+    setUsernameSaving(true);
+    setUsernameError('');
+    try {
+      const result = await saveUsernameAction(clean);
+      if (result.success && result.username) {
+        setUsername(result.username);
+        setUsernameLocked(true);
+        setIsEditingUsername(false);
+      } else {
+        setUsernameError(result.message);
+      }
+    } catch {
+      setUsernameError('Failed to save. Please try again.');
+    } finally {
+      setUsernameSaving(false);
+    }
   };
 
   return (
@@ -134,7 +153,10 @@ export default function ProfilePage() {
           {isEditingUsername && !usernameLocked ? (
             <form onSubmit={handleSaveUsername} className="p-4 rounded-2xl bg-[#F4F3EF] border border-slate-200 space-y-3">
               <label className="block text-xs font-bold text-slate-800">Claim Student Handle</label>
-              <p className="text-[11px] text-amber-600 font-semibold">⚠️ Choose carefully — your handle is permanent and cannot be changed later.</p>
+              <p className="text-[11px] text-amber-600 font-semibold">⚠️ Choose carefully — your handle is permanent, synced across all devices, and cannot be changed later.</p>
+              {usernameError && (
+                <p className="text-[11px] text-red-500 font-semibold">{usernameError}</p>
+              )}
               <div className="flex gap-2">
                 <div className="relative flex-1">
                   <AtSign className="w-4 h-4 text-[#FF6B00] absolute left-3 top-2.5" />
@@ -149,9 +171,11 @@ export default function ProfilePage() {
                 </div>
                 <button
                   type="submit"
-                  className="px-4 py-2 rounded-xl bg-[#FF6B00] text-white font-bold text-xs shadow-md"
+                  disabled={usernameSaving}
+                  className="px-4 py-2 rounded-xl bg-[#FF6B00] text-white font-bold text-xs shadow-md disabled:opacity-50 flex items-center gap-1.5"
                 >
-                  Lock Handle
+                  {usernameSaving && <Loader2 className="w-3 h-3 animate-spin" />}
+                  {usernameSaving ? 'Saving...' : 'Lock Handle'}
                 </button>
                 <button
                   type="button"

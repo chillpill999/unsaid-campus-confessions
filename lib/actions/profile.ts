@@ -84,9 +84,13 @@ export async function getMyProfile(): Promise<UserProfile | null> {
     const realEmail = user.email || '';
     const realAvatarUrl = user.user_metadata?.avatar_url || user.user_metadata?.picture || null;
 
+    // Derive default username from email prefix
+    const defaultUsername = (user.email ? user.email.split('@')[0] : 'student').toLowerCase().replace(/[^a-z0-9_]/g, '');
+
     return profileRow
       ? {
           id: profileRow.id, full_name: profileRow.full_name || realFullName, email: realEmail, avatar_url: realAvatarUrl,
+          username: profileRow.username || defaultUsername,
           gender: profileRow.gender || 'Male', college_id: profileRow.college_id || '',
           college_name: profileRow.colleges?.name || 'Loknayak Jai Prakash Institute of Technology',
           batch: profileRow.batch || '2026', department: profileRow.department || 'Computer Science & Engineering (CSE)',
@@ -95,6 +99,7 @@ export async function getMyProfile(): Promise<UserProfile | null> {
         }
       : {
           id: user.id, full_name: realFullName, email: realEmail, avatar_url: realAvatarUrl,
+          username: defaultUsername,
           gender: 'Prefer not to say' as Gender, college_id: '',
           college_name: 'Loknayak Jai Prakash Institute of Technology', batch: '2026',
           department: 'Computer Science & Engineering (CSE)', role: 'student' as const,
@@ -188,4 +193,62 @@ export async function getMyProfileSummary() {
     getMyStatsAndConfessions(),
   ]);
   return { profile, ...data };
+}
+
+// ── USERNAME: Save/claim username to DB (synced across all devices) ──
+export async function saveUsernameAction(newUsername: string): Promise<{
+  success: boolean;
+  username?: string;
+  message: string;
+}> {
+  try {
+    const supabase = createClient();
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) {
+      return { success: false, message: 'You must be signed in.' };
+    }
+
+    const clean = newUsername.trim().toLowerCase().replace(/[^a-z0-9_]/g, '');
+    if (!clean || clean.length < 3) {
+      return { success: false, message: 'Username must be at least 3 characters (letters, numbers, underscores).' };
+    }
+    if (clean.length > 30) {
+      return { success: false, message: 'Username must be 30 characters or fewer.' };
+    }
+
+    let admin: any;
+    try { admin = createAdminClient(); } catch { admin = supabase; }
+
+    // Check if this username is already taken by someone else
+    const { data: existing } = await admin
+      .from('profiles')
+      .select('id')
+      .eq('username', clean)
+      .neq('id', user.id)
+      .maybeSingle();
+
+    if (existing) {
+      return { success: false, message: `@${clean} is already taken. Try another handle.` };
+    }
+
+    // Save to DB
+    const { error } = await admin
+      .from('profiles')
+      .update({ username: clean, updated_at: new Date().toISOString() })
+      .eq('id', user.id);
+
+    if (error) {
+      // Unique constraint violation
+      if (error.code === '23505') {
+        return { success: false, message: `@${clean} is already taken. Try another handle.` };
+      }
+      console.warn('saveUsernameAction DB error:', error);
+      return { success: false, message: 'Failed to save username. Please try again.' };
+    }
+
+    return { success: true, username: clean, message: `Handle @${clean} claimed successfully!` };
+  } catch (err: any) {
+    console.warn('saveUsernameAction catch:', err);
+    return { success: false, message: 'An error occurred. Please try again.' };
+  }
 }
