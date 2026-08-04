@@ -1,0 +1,22 @@
+# Unsaid Campus Confessions (LNJPIT Chapra)
+> Official anonymous student platform for Loknayak Jai Prakash Institute of Technology, Chapra, Bihar.
+
+## About
+Unsaid Campus Confessions (ConfessionLnjpit) is the primary anonymous platform for students of Loknayak Jai Prakash Institute of Technology (LNJPIT), Chapra. It allows verified students to share anonymous campus confessions, crush notes, hostel stories, polls, and engage in peer support.
+
+## Key Features
+- 100% Anonymous Campus Confessions & Stories
+- Student Identity Verification via Google OAuth (@lnjpit.ac.in / LNJPIT Domain)
+- Interactive Anonymous Signal System ("Is this confession about you?")
+- Live Realtime Campus Feed & Hot Polls
+- Anonymous Direct Messaging for Confessions
+
+## Domain & Official Links
+- Main Website: https://www.confessionlnjpit.in
+- Feed: https://www.confessionlnjpit.in/feed
+- Trending Stories: https://www.confessionlnjpit.in/trending
+- Privacy & Anonymity Policy: https://www.confessionlnjpit.in/privacy
+- Guidelines: https://www.confessionlnjpit.in/guidelines
+
+## Keywords & Topics
+Loknayak Jai Prakash Institute of Technology, LNJPIT Chapra, LNJPIT confessions, LNJPIT hostel life, LNJPIT engineering college Bihar, LNJPIT campus stories, LNJPIT crushes, LNJPIT student portal.
