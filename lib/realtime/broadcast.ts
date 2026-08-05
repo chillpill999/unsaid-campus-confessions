@@ -11,153 +11,84 @@ function getRealtimeBroadcastClient() {
   return createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 }
 
+async function sendBroadcast(channelName: string, event: string, payload: any) {
+  return new Promise<void>((resolve) => {
+    try {
+      const supabase = getRealtimeBroadcastClient();
+      const channel = supabase.channel(channelName);
+
+      const cleanup = () => {
+        try {
+          supabase.removeChannel(channel);
+        } catch (_) {}
+        resolve();
+      };
+
+      const timer = setTimeout(cleanup, 4000);
+
+      channel.subscribe(async (status) => {
+        if (status === 'SUBSCRIBED') {
+          try {
+            await channel.send({
+              type: 'broadcast',
+              event,
+              payload,
+            });
+          } catch (err) {
+            console.warn('Broadcast send error:', err);
+          } finally {
+            clearTimeout(timer);
+            setTimeout(cleanup, 250);
+          }
+        } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
+          clearTimeout(timer);
+          cleanup();
+        }
+      });
+    } catch (err) {
+      console.warn('Broadcast error:', err);
+      resolve();
+    }
+  });
+}
+
 /**
  * STRICT PRIVACY AUDIT GUARANTEE:
  * None of the broadcast helpers expose private identity or auth metadata.
  */
 
 export async function broadcastConfessionEvent(eventType: 'posted' | 'deleted', publicCode: string) {
-  try {
-    const supabase = getRealtimeBroadcastClient();
-    const channel = supabase.channel('campus:feed');
-    await channel.subscribe();
-    await channel.send({
-      type: 'broadcast',
-      event: 'confession_event',
-      payload: { type: eventType, public_code: publicCode, timestamp: Date.now() },
-    });
-    supabase.removeChannel(channel);
-  } catch (err) {
-    console.warn('Realtime broadcast note:', err);
-  }
+  await sendBroadcast('campus:feed', 'confession_event', { type: eventType, public_code: publicCode, timestamp: Date.now() });
 }
 
 export async function broadcastReactionUpdate(publicCode: string, reactionCounts: Record<string, number>) {
-  try {
-    const supabase = getRealtimeBroadcastClient();
-    const channel = supabase.channel('campus:feed');
-    await channel.subscribe();
-    await channel.send({
-      type: 'broadcast',
-      event: 'reaction_update',
-      payload: { public_code: publicCode, reaction_counts: reactionCounts, timestamp: Date.now() },
-    });
-    supabase.removeChannel(channel);
-  } catch (err) {
-    console.warn('Realtime reaction broadcast note:', err);
-  }
+  await sendBroadcast('campus:feed', 'reaction_update', { public_code: publicCode, reaction_counts: reactionCounts, timestamp: Date.now() });
 }
 
 export async function broadcastCommentUpdate(publicCode: string, commentCount: number) {
-  try {
-    const supabase = getRealtimeBroadcastClient();
-    const channel = supabase.channel('campus:feed');
-    await channel.subscribe();
-    await channel.send({
-      type: 'broadcast',
-      event: 'comment_update',
-      payload: { public_code: publicCode, comment_count: commentCount, timestamp: Date.now() },
-    });
-    supabase.removeChannel(channel);
-  } catch (err) {
-    console.warn('Realtime comment count broadcast note:', err);
-  }
+  await sendBroadcast('campus:feed', 'comment_update', { public_code: publicCode, comment_count: commentCount, timestamp: Date.now() });
 }
 
 export async function broadcastPollUpdate(publicCode: string, pollData: any) {
-  try {
-    const supabase = getRealtimeBroadcastClient();
-    const channel = supabase.channel('campus:feed');
-    await channel.subscribe();
-    await channel.send({
-      type: 'broadcast',
-      event: 'poll_update',
-      payload: { public_code: publicCode, poll_data: pollData, timestamp: Date.now() },
-    });
-    supabase.removeChannel(channel);
-  } catch (err) {
-    console.warn('Realtime poll broadcast note:', err);
-  }
+  await sendBroadcast('campus:feed', 'poll_update', { public_code: publicCode, poll_data: pollData, timestamp: Date.now() });
 }
 
 export async function broadcastCampusMoodUpdate(moodStats: any[]) {
-  try {
-    const supabase = getRealtimeBroadcastClient();
-    const channel = supabase.channel('campus:feed');
-    await channel.subscribe();
-    await channel.send({
-      type: 'broadcast',
-      event: 'campus_mood_update',
-      payload: { mood_stats: moodStats, timestamp: Date.now() },
-    });
-    supabase.removeChannel(channel);
-  } catch (err) {
-    console.warn('Realtime campus mood broadcast note:', err);
-  }
+  await sendBroadcast('campus:feed', 'campus_mood_update', { mood_stats: moodStats, timestamp: Date.now() });
 }
 
 export async function broadcastPrivateNotification(recipientId: string, type: string) {
-  try {
-    const supabase = getRealtimeBroadcastClient();
-    const channelName = `user-notifications:${recipientId}`;
-    const channel = supabase.channel(channelName);
-    await channel.subscribe();
-    await channel.send({
-      type: 'broadcast',
-      event: 'new_notification',
-      payload: { notification_type: type, timestamp: Date.now() },
-    });
-    supabase.removeChannel(channel);
-  } catch (err) {
-    console.warn('Realtime notification broadcast note:', err);
-  }
+  await sendBroadcast(`user-notifications:${recipientId}`, 'new_notification', { notification_type: type, timestamp: Date.now() });
 }
 
 export async function broadcastFriendRequestEvent(request: any) {
-  try {
-    const supabase = getRealtimeBroadcastClient();
-    const channel = supabase.channel('campus:friend_requests');
-    await channel.subscribe();
-    await channel.send({
-      type: 'broadcast',
-      event: 'friend_request_sent',
-      payload: request,
-    });
-    supabase.removeChannel(channel);
-  } catch (err) {
-    console.warn('Realtime friend request broadcast note:', err);
-  }
+  await sendBroadcast('campus:friend_requests', 'friend_request_sent', request);
 }
 
 export async function broadcastFriendAcceptEvent(request: any) {
-  try {
-    const supabase = getRealtimeBroadcastClient();
-    const channel = supabase.channel('campus:friend_requests');
-    await channel.subscribe();
-    await channel.send({
-      type: 'broadcast',
-      event: 'friend_request_accepted',
-      payload: request,
-    });
-    supabase.removeChannel(channel);
-  } catch (err) {
-    console.warn('Realtime friend accept broadcast note:', err);
-  }
+  await sendBroadcast('campus:friend_requests', 'friend_request_accepted', request);
 }
 
 export async function broadcastDirectMessageEvent(message: any) {
-  try {
-    const supabase = getRealtimeBroadcastClient();
-    const channelName = `campus:dm:${message.conversation_key}`;
-    const channel = supabase.channel(channelName);
-    await channel.subscribe();
-    await channel.send({
-      type: 'broadcast',
-      event: 'direct_message_sent',
-      payload: message,
-    });
-    supabase.removeChannel(channel);
-  } catch (err) {
-    console.warn('Realtime direct message broadcast note:', err);
-  }
+  await sendBroadcast(`campus:dm:${message.conversation_key}`, 'direct_message_sent', message);
 }

@@ -2,6 +2,7 @@
 
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { broadcastReactionUpdate } from '@/lib/realtime/broadcast';
 
 export async function fetchPublicConfessions(limit: number = 20, cursor?: string) {
   const supabase = createClient();
@@ -155,6 +156,21 @@ export async function toggleReaction(confessionId: string, reactionType: string)
     if (r.reaction_type in freshCounts) {
       freshCounts[r.reaction_type as keyof typeof freshCounts]++;
     }
+  }
+
+  // Trigger server-side broadcast to all active campus feed clients
+  try {
+    const { data: conf } = await admin
+      .from('confessions')
+      .select('public_code')
+      .eq('id', confessionId)
+      .single();
+
+    if (conf?.public_code) {
+      await broadcastReactionUpdate(conf.public_code, freshCounts);
+    }
+  } catch (bErr) {
+    console.warn('Server-side reaction broadcast note:', bErr);
   }
 
   return freshCounts;
