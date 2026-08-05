@@ -1,6 +1,7 @@
 'use server';
 
 import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
 
 export async function fetchPublicConfessions(limit: number = 20, cursor?: string) {
   const supabase = createClient();
@@ -36,7 +37,11 @@ export async function fetchPublicConfessions(limit: number = 20, cursor?: string
   const reactionCountsMap = new Map<string, { relatable: number; funny: number; support: number; interesting: number }>();
 
   if (confessionIds.length > 0) {
-    const { data: reactions } = await supabase
+    // Use admin client to bypass RLS for aggregate queries
+    const admin = createAdminClient();
+
+    // 1a. Fetch current user's own reaction (for highlight state)
+    const { data: reactions } = await admin
       .from('reactions')
       .select('confession_id, reaction_type')
       .in('confession_id', confessionIds)
@@ -46,7 +51,8 @@ export async function fetchPublicConfessions(limit: number = 20, cursor?: string
       userReactions[r.confession_id] = r.reaction_type;
     }
 
-    const { data: bookmarks } = await supabase
+    // 1b. Fetch current user's bookmarks
+    const { data: bookmarks } = await admin
       .from('bookmarks')
       .select('confession_id')
       .in('confession_id', confessionIds)
@@ -56,8 +62,8 @@ export async function fetchPublicConfessions(limit: number = 20, cursor?: string
       userBookmarks.add(b.confession_id);
     }
 
-    // 2. Fetch real reaction counts for all confessions in view
-    const { data: reactionCounts } = await supabase
+    // 2. Fetch ALL reaction counts across ALL users (admin bypasses RLS)
+    const { data: reactionCounts } = await admin
       .from('reactions')
       .select('confession_id, reaction_type')
       .in('confession_id', confessionIds);
@@ -114,7 +120,10 @@ export async function toggleReaction(confessionId: string, reactionType: string)
     throw new Error('Unauthorized');
   }
 
-  const { data: existing } = await supabase
+  // Use admin client — reactions table only has INSERT/DELETE grants, missing SELECT/UPDATE
+  const admin = createAdminClient();
+
+  const { data: existing } = await admin
     .from('reactions')
     .select('id, reaction_type')
     .eq('user_id', user.id)
@@ -123,17 +132,32 @@ export async function toggleReaction(confessionId: string, reactionType: string)
 
   if (existing) {
     if (existing.reaction_type === reactionType) {
-      await supabase.from('reactions').delete().eq('id', existing.id);
+      await admin.from('reactions').delete().eq('id', existing.id);
     } else {
-      await supabase.from('reactions').update({ reaction_type: reactionType }).eq('id', existing.id);
+      await admin.from('reactions').update({ reaction_type: reactionType }).eq('id', existing.id);
     }
   } else {
-    await supabase.from('reactions').insert({
+    await admin.from('reactions').insert({
       user_id: user.id,
       confession_id: confessionId,
       reaction_type: reactionType,
     });
   }
+
+  // Return fresh counts so the broadcaster has accurate data
+  const { data: allReactions } = await admin
+    .from('reactions')
+    .select('reaction_type')
+    .eq('confession_id', confessionId);
+
+  const freshCounts = { relatable: 0, funny: 0, support: 0, interesting: 0 };
+  for (const r of (allReactions || [])) {
+    if (r.reaction_type in freshCounts) {
+      freshCounts[r.reaction_type as keyof typeof freshCounts]++;
+    }
+  }
+
+  return freshCounts;
 }
 
 export async function votePoll(confessionId: string, optionId: string) {
