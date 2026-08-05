@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ReactionType } from '@/lib/types';
 
 interface ReactionBarProps {
@@ -33,6 +33,16 @@ export function ReactionBar({
   });
 
   const [activeReaction, setActiveReaction] = useState<ReactionType | null>(initialUserReaction);
+
+  // Sync internal counts when parent updates via realtime broadcast
+  useEffect(() => {
+    setCounts({
+      relatable: initialCounts.relatable || 0,
+      funny: initialCounts.funny || 0,
+      support: initialCounts.support || 0,
+      interesting: initialCounts.interesting || 0,
+    });
+  }, [initialCounts.relatable, initialCounts.funny, initialCounts.support, initialCounts.interesting]);
 
   const handleToggle = (type: ReactionType) => {
     setCounts((prev) => {

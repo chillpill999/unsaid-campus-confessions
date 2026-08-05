@@ -113,6 +113,33 @@ export default function FeedPage() {
         })
         .catch((err) => console.warn('Realtime fetch error:', err));
     },
+    onReactionUpdated: (publicCode: string, reactionCounts: Record<string, number>) => {
+      setConfessions((prev) =>
+        prev.map((c) =>
+          c.public_code === publicCode
+            ? { ...c, reaction_counts: reactionCounts as any }
+            : c
+        )
+      );
+    },
+    onCommentUpdated: (publicCode: string, commentCount: number) => {
+      setConfessions((prev) =>
+        prev.map((c) =>
+          c.public_code === publicCode
+            ? { ...c, comment_count: commentCount }
+            : c
+        )
+      );
+    },
+    onPollUpdated: (publicCode: string, pollData: any) => {
+      setConfessions((prev) =>
+        prev.map((c) =>
+          c.public_code === publicCode
+            ? { ...c, poll_data: pollData }
+            : c
+        )
+      );
+    },
   });
 
   // 4. Cursor Pagination Load More

@@ -25,6 +25,8 @@ export function useRealtimeFeed(callbacks: {
   onPollUpdated?: (publicCode: string, pollData: any) => void;
 }) {
   const [status, setStatus] = useState<RealtimeStatus>('CONNECTING');
+  const callbacksRef = useRef(callbacks);
+  callbacksRef.current = callbacks;
 
   useEffect(() => {
     const channel: RealtimeChannel = supabaseClient.channel('campus:feed');
@@ -32,28 +34,28 @@ export function useRealtimeFeed(callbacks: {
     channel
       .on('broadcast', { event: 'confession_event' }, (payload) => {
         const { type, public_code } = payload.payload || {};
-        if (type === 'posted' && callbacks.onConfessionPosted && public_code) {
-          callbacks.onConfessionPosted(public_code);
-        } else if (type === 'deleted' && callbacks.onConfessionDeleted && public_code) {
-          callbacks.onConfessionDeleted(public_code);
+        if (type === 'posted' && callbacksRef.current.onConfessionPosted && public_code) {
+          callbacksRef.current.onConfessionPosted(public_code);
+        } else if (type === 'deleted' && callbacksRef.current.onConfessionDeleted && public_code) {
+          callbacksRef.current.onConfessionDeleted(public_code);
         }
       })
       .on('broadcast', { event: 'reaction_update' }, (payload) => {
         const { public_code, reaction_counts } = payload.payload || {};
-        if (callbacks.onReactionUpdated && public_code && reaction_counts) {
-          callbacks.onReactionUpdated(public_code, reaction_counts);
+        if (callbacksRef.current.onReactionUpdated && public_code && reaction_counts) {
+          callbacksRef.current.onReactionUpdated(public_code, reaction_counts);
         }
       })
       .on('broadcast', { event: 'comment_update' }, (payload) => {
         const { public_code, comment_count } = payload.payload || {};
-        if (callbacks.onCommentUpdated && public_code && comment_count !== undefined) {
-          callbacks.onCommentUpdated(public_code, comment_count);
+        if (callbacksRef.current.onCommentUpdated && public_code && comment_count !== undefined) {
+          callbacksRef.current.onCommentUpdated(public_code, comment_count);
         }
       })
       .on('broadcast', { event: 'poll_update' }, (payload) => {
         const { public_code, poll_data } = payload.payload || {};
-        if (callbacks.onPollUpdated && public_code && poll_data) {
-          callbacks.onPollUpdated(public_code, poll_data);
+        if (callbacksRef.current.onPollUpdated && public_code && poll_data) {
+          callbacksRef.current.onPollUpdated(public_code, poll_data);
         }
       })
       .subscribe((subscribeStatus) => {
@@ -67,7 +69,7 @@ export function useRealtimeFeed(callbacks: {
     return () => {
       supabaseClient.removeChannel(channel);
     };
-  }, [callbacks]);
+  }, []); // stable — never re-subscribes, always calls latest callbacks via ref
 
   return { status };
 }
