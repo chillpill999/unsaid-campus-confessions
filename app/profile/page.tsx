@@ -8,6 +8,7 @@ import { ConfessionCard } from '@/components/confession-card';
 import { Settings, AtSign, Loader2 } from 'lucide-react';
 import { PublicConfession, UserProfile } from '@/lib/types';
 import { getMyProfile, getMyStatsAndConfessions, saveUsernameAction } from '@/lib/actions/profile';
+import { saveUsername } from '@/lib/friends-chat';
 
 const EMPTY_PROFILE: UserProfile = {
   id: '',
@@ -77,6 +78,7 @@ export default function ProfilePage() {
     try {
       const result = await saveUsernameAction(clean);
       if (result.success && result.username) {
+        saveUsername(result.username);
         setUsername(result.username);
         setUsernameLocked(true);
         setIsEditingUsername(false);

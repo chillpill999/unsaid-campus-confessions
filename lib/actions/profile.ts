@@ -84,13 +84,26 @@ export async function getMyProfile(): Promise<UserProfile | null> {
     const realEmail = user.email || '';
     const realAvatarUrl = user.user_metadata?.avatar_url || user.user_metadata?.picture || null;
 
-    // Derive default username from email prefix
-    const defaultUsername = (user.email ? user.email.split('@')[0] : 'student').toLowerCase().replace(/[^a-z0-9_]/g, '');
+    // Derive deterministic default username from email prefix or user ID
+    const defaultHandle = (user.email ? user.email.split('@')[0] : `student_${user.id.slice(0, 6)}`)
+      .toLowerCase()
+      .replace(/[^a-z0-9_]/g, '');
+
+    let finalUsername = profileRow?.username || defaultHandle;
+
+    // Auto-persist handle to DB if missing so all devices see the exact same handle
+    if (profileRow && !profileRow.username) {
+      try {
+        await admin.from('profiles').update({ username: defaultHandle }).eq('id', user.id);
+      } catch (err) {
+        console.warn('Auto-save username note:', err);
+      }
+    }
 
     return profileRow
       ? {
           id: profileRow.id, full_name: profileRow.full_name || realFullName, email: realEmail, avatar_url: realAvatarUrl,
-          username: profileRow.username || defaultUsername,
+          username: finalUsername,
           gender: profileRow.gender || 'Male', college_id: profileRow.college_id || '',
           college_name: profileRow.colleges?.name || 'Loknayak Jai Prakash Institute of Technology',
           batch: profileRow.batch || '2026', department: profileRow.department || 'Computer Science & Engineering (CSE)',
@@ -99,13 +112,15 @@ export async function getMyProfile(): Promise<UserProfile | null> {
         }
       : {
           id: user.id, full_name: realFullName, email: realEmail, avatar_url: realAvatarUrl,
-          username: defaultUsername,
+          username: finalUsername,
           gender: 'Prefer not to say' as Gender, college_id: '',
           college_name: 'Loknayak Jai Prakash Institute of Technology', batch: '2026',
           department: 'Computer Science & Engineering (CSE)', role: 'student' as const,
           account_status: 'active' as const, created_at: new Date().toISOString(),
         };
-  } catch { return null; }
+  } catch (err) {
+    return null;
+  }
 }
 
 // ── HEAVY: Stats + confessions (all queries fire in ONE Promise.all) ──

@@ -57,6 +57,7 @@ import {
   sendDirectMessageAction,
   fetchDirectMessagesAction
 } from '@/lib/actions/friends';
+import { getMyProfile, saveUsernameAction } from '@/lib/actions/profile';
 import { createClient } from '@supabase/supabase-js';
 
 const rawUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -100,11 +101,11 @@ export default function InboxPage() {
 
   // 1. Initialize Clean Production State & Fetch Live Server Friends/Requests on load
   useEffect(() => {
-    const handle = getSavedUsername();
-    setMyUsername(handle);
-    setUsernameInput(handle);
+    let currentHandle = getSavedUsername();
+    setMyUsername(currentHandle);
+    setUsernameInput(currentHandle);
     setUsernameLocked(isUsernameLocked());
-    initializeChatData(handle);
+    initializeChatData(currentHandle);
 
     // Initial hydration from local cache for instant UI rendering
     const localFriends = getFriendsList();
@@ -114,14 +115,25 @@ export default function InboxPage() {
       setActiveFriend(localFriends[0]);
     }
 
-    // Sync handle with server profile
-    syncUserHandle(handle);
-
-    // Fetch live requests and friend contacts from server
-    const loadLiveServerData = async () => {
+    // Sync handle with server profile and load live data
+    const syncProfileAndLoadData = async () => {
       try {
-        const liveRequests = await fetchFriendRequestsAction(handle);
-        const liveFriends = await fetchFriendsListAction(handle);
+        const p = await getMyProfile();
+        if (p?.username && p.username !== currentHandle) {
+          currentHandle = p.username;
+          setMyUsername(currentHandle);
+          setUsernameInput(currentHandle);
+          setUsernameLocked(true);
+          saveUsername(currentHandle);
+          initializeChatData(currentHandle);
+        } else if (p?.username) {
+          setUsernameLocked(true);
+        }
+
+        await syncUserHandle(currentHandle);
+
+        const liveRequests = await fetchFriendRequestsAction(currentHandle);
+        const liveFriends = await fetchFriendsListAction(currentHandle);
 
         if (liveRequests && liveRequests.length > 0) {
           setRequests((prev) => {
@@ -156,7 +168,7 @@ export default function InboxPage() {
       }
     };
 
-    loadLiveServerData();
+    syncProfileAndLoadData();
   }, []);
 
   // 2. Subscribe to Supabase Realtime Friend Requests Channel

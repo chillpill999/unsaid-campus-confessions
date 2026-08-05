@@ -200,6 +200,64 @@ export async function GET(req: NextRequest) {
       }
     }
 
+    // 3. Compute real aggregate reaction counts & user reactions using admin client
+    if (dbConfessions.length > 0) {
+      try {
+        const { createAdminClient } = await import('@/lib/supabase/admin');
+        const admin = createAdminClient();
+        const confessionIds = dbConfessions.map((c) => c.id);
+
+        const { data: reactionRows } = await admin
+          .from('reactions')
+          .select('confession_id, reaction_type')
+          .in('confession_id', confessionIds);
+
+        const countsMap = new Map<string, { relatable: number; funny: number; support: number; interesting: number }>();
+        for (const r of (reactionRows || [])) {
+          const counts = countsMap.get(r.confession_id) || { relatable: 0, funny: 0, support: 0, interesting: 0 };
+          if (r.reaction_type in counts) {
+            counts[r.reaction_type as keyof typeof counts]++;
+          }
+          countsMap.set(r.confession_id, counts);
+        }
+
+        const { data: { user } } = await supabase.auth.getUser();
+        let userReactMap = new Map<string, string>();
+        let userBookmarkSet = new Set<string>();
+
+        if (user) {
+          const { data: userReacts } = await admin
+            .from('reactions')
+            .select('confession_id, reaction_type')
+            .in('confession_id', confessionIds)
+            .eq('user_id', user.id);
+
+          for (const r of (userReacts || [])) {
+            userReactMap.set(r.confession_id, r.reaction_type);
+          }
+
+          const { data: bookmarks } = await admin
+            .from('bookmarks')
+            .select('confession_id')
+            .in('confession_id', confessionIds)
+            .eq('user_id', user.id);
+
+          for (const b of (bookmarks || [])) {
+            userBookmarkSet.add(b.confession_id);
+          }
+        }
+
+        dbConfessions = dbConfessions.map((c) => ({
+          ...c,
+          reaction_counts: countsMap.get(c.id) || { relatable: 0, funny: 0, support: 0, interesting: 0 },
+          user_reaction: (userReactMap.get(c.id) as any) || null,
+          is_bookmarked: userBookmarkSet.has(c.id),
+        }));
+      } catch (err) {
+        console.warn('API reaction counts enhancement note:', err);
+      }
+    }
+
     nextCursor = dbConfessions.length > 0 ? dbConfessions[dbConfessions.length - 1].created_at : null;
 
     return NextResponse.json({ success: true, confessions: dbConfessions, nextCursor, hasMore });

@@ -37,12 +37,7 @@ export function getConversationKey(userA: string, userB: string): string {
 export function getSavedUsername(): string {
   if (typeof window === 'undefined') return 'student_lnj';
   const saved = localStorage.getItem(STORAGE_KEYS.USERNAME);
-  if (!saved) {
-    const randomHandle = `student_${Math.floor(1000 + Math.random() * 9000)}`;
-    localStorage.setItem(STORAGE_KEYS.USERNAME, randomHandle);
-    return randomHandle;
-  }
-  return saved;
+  return saved || 'student_lnj';
 }
 
 export function saveUsername(username: string): string {
