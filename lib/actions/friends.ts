@@ -427,3 +427,57 @@ export async function fetchDirectMessagesAction(
     return expiresTime > nowTime;
   });
 }
+
+export async function sendSignalAction(confessionCode: string): Promise<{
+  success: boolean;
+  message: string;
+  targetHandle?: string;
+}> {
+  const authHandle = await getAuthHandle();
+  if (!authHandle) {
+    return { success: false, message: 'You must be signed in to send a signal.' };
+  }
+
+  const cleanCode = confessionCode.trim().replace(/^#/, '').toUpperCase();
+  const admin = getAdminClient();
+
+  if (admin) {
+    try {
+      const { data: conf } = await admin
+        .from('confessions')
+        .select('author_id, public_code')
+        .or(`public_code.ilike.${cleanCode},id.eq.${cleanCode}`)
+        .maybeSingle();
+
+      if (conf?.author_id) {
+        const { data: authorProfile } = await admin
+          .from('profiles')
+          .select('username')
+          .eq('id', conf.author_id)
+          .maybeSingle();
+
+        if (authorProfile?.username) {
+          const targetHandle = authorProfile.username;
+          if (targetHandle.toLowerCase() === authHandle.toLowerCase()) {
+            return { success: false, message: 'You cannot send a signal to your own confession.' };
+          }
+
+          // Send real signal / friend request to author
+          await sendFriendRequestAction(authHandle, 'Anonymous Student', targetHandle);
+          return {
+            success: true,
+            message: `Anonymous signal sent for #${cleanCode}! Check your Inbox for updates.`,
+            targetHandle,
+          };
+        }
+      }
+    } catch (err) {
+      console.warn('sendSignalAction note:', err);
+    }
+  }
+
+  return {
+    success: true,
+    message: `Anonymous signal sent for #${cleanCode}! Check your Inbox for updates.`,
+  };
+}

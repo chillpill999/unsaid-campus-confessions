@@ -82,10 +82,9 @@ export async function GET(req: NextRequest) {
       let commentsList: any[] = [];
       if (targetConfession) {
         const { data: commentsData } = await supabase
-          .from('comments')
-          .select('*')
+          .from('public_comments')
+          .select('id, confession_id, parent_comment_id, content, anonymous_label, gender, created_at')
           .eq('confession_id', targetConfession.id)
-          .eq('is_deleted', false)
           .order('created_at', { ascending: true });
 
         if (commentsData) {

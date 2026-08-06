@@ -329,9 +329,7 @@ export function ConfessionCard({
           customPillClass={theme.pillClass}
           onReact={async (type) => {
             try {
-              const freshCounts = await toggleReaction(confession.id, type);
-              // Broadcast the accurate server-computed counts to all clients
-              broadcastReactionUpdate(confession.public_code, freshCounts);
+              await toggleReaction(confession.id, type);
             } catch (err) {
               console.warn('Reaction note:', err);
             }

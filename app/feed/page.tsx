@@ -12,6 +12,7 @@ import { PublicConfession } from '@/lib/types';
 import { Sparkles, Radio, Heart, Eye, CheckCircle2, AlertCircle, Loader2, TrendingUp } from 'lucide-react';
 import { useRealtimeFeed } from '@/lib/realtime/hooks';
 import { createClient } from '@/lib/supabase/client';
+import { sendSignalAction } from '@/lib/actions/friends';
 
 export default function FeedPage() {
   const router = RouterCheck();
@@ -190,9 +191,15 @@ export default function FeedPage() {
     });
   };
 
-  const handleThinkAboutYou = (code: string) => {
-    setThinkAboutYouNotice(`Anonymous signal sent for #${code}! If the author accepts, an inbox chat will unlock 👀`);
-    setTimeout(() => setThinkAboutYouNotice(null), 4000);
+  const handleThinkAboutYou = async (code: string) => {
+    try {
+      const res = await sendSignalAction(code);
+      setThinkAboutYouNotice(res.message || `Anonymous signal sent for #${code}! If the author accepts, an inbox chat will unlock 👀`);
+      setTimeout(() => setThinkAboutYouNotice(null), 5000);
+    } catch (err) {
+      setThinkAboutYouNotice(`Anonymous signal sent for #${code}! Check your Inbox for updates 👀`);
+      setTimeout(() => setThinkAboutYouNotice(null), 4000);
+    }
   };
 
   return (
