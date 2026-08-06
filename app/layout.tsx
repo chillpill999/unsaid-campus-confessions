@@ -5,18 +5,21 @@ import { JsonLd } from '@/components/json-ld';
 export const metadata: Metadata = {
   metadataBase: new URL('https://www.confessionlnjpit.in'),
   title: {
-    default: 'LNJPIT Confessions — Loknayak Jai Prakash Institute of Technology (Chapra)',
-    template: '%s | LNJPIT Confessions',
+    default: 'LNJPIT Confession — Loknayak Jai Prakash Institute of Technology (LNJPIT Chapra)',
+    template: '%s | LNJPIT Confession',
   },
   description:
-    'The official 100% anonymous student platform for Loknayak Jai Prakash Institute of Technology (LNJPIT Chapra, Bihar). Share anonymous campus confessions, crush signals, hostel stories, and peer discussions safely.',
+    'The official 100% anonymous campus portal for Loknayak Jai Prakash Institute of Technology (LNJPIT Chapra, Bihar). Share anonymous LNJPIT confessions, crush signals, hostel stories, and campus discussions safely.',
   applicationName: 'ConfessionLnjpit',
   authors: [{ name: 'LNJPIT Student Community' }],
   generator: 'Next.js',
   keywords: [
-    'LNJPIT confessions',
+    'LNJPIT confession',
+    'Lnjpit confession',
+    'lnjpit confessions',
     'LNJPIT Chapra',
     'Loknayak Jai Prakash Institute of Technology',
+    'Loknayak Jai Prakash Institute of Technology Chapra',
     'LNJPIT campus confessions',
     'LNJPIT hostel stories',
     'LNJPIT crushes',
@@ -25,10 +28,14 @@ export const metadata: Metadata = {
     'confession lnjpit',
     'LNJPIT student portal',
     'LNJPIT anonymous chat',
-    'Loknayak Jai Prakash Institute of Technology Chapra',
     'LNJPIT Chapra confession page',
     'LNJPIT college life',
     'confessionlnjpit.in',
+    'LNJPIT CSE',
+    'LNJPIT ECE',
+    'LNJPIT Civil',
+    'LNJPIT Mechanical',
+    'LNJPIT Electrical',
   ],
   referrer: 'origin-when-cross-origin',
   creator: 'LNJPIT Campus Community',
@@ -48,9 +55,9 @@ export const metadata: Metadata = {
     canonical: 'https://www.confessionlnjpit.in',
   },
   openGraph: {
-    title: 'LNJPIT Confessions — Loknayak Jai Prakash Institute of Technology',
+    title: 'LNJPIT Confession — Loknayak Jai Prakash Institute of Technology (Chapra)',
     description:
-      'Say what you couldn’t say. Verified LNJPIT students, 100% anonymous campus confessions, crushes, hostel stories, and real-time feeds.',
+      'Official 100% anonymous student platform for Loknayak Jai Prakash Institute of Technology (LNJPIT Chapra, Bihar). Confessions, crush signals, hostel life & peer support.',
     url: 'https://www.confessionlnjpit.in',
     siteName: 'ConfessionLnjpit',
     locale: 'en_IN',
@@ -58,7 +65,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'LNJPIT Confessions — Loknayak Jai Prakash Institute of Technology',
+    title: 'LNJPIT Confession — Loknayak Jai Prakash Institute of Technology (Chapra)',
     description:
       'The anonymous space for Loknayak Jai Prakash Institute of Technology (LNJPIT Chapra) campus stories, crushes, and confessions.',
     creator: '@lnjpit_confessions',
@@ -70,7 +77,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: '#F4F3EF',
+  themeColor: '#FF6B00',
   width: 'device-width',
   initialScale: 1,
   maximumScale: 5,

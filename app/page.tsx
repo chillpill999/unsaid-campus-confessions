@@ -103,18 +103,17 @@ export default function LandingPage() {
         <div className="max-w-5xl mx-auto space-y-8 sm:space-y-12">
           <div className="text-center space-y-1.5">
             <h2 className="text-xl sm:text-3xl font-black text-slate-950 font-heading">How ConfessionLnjpit Works</h2>
-            <p className="text-slate-600 text-xs sm:text-sm font-sans">Built for authentic campus interaction with strict safety guardrails.</p>
+            <p className="text-slate-600 text-xs sm:text-sm font-sans">Built for authentic LNJPIT Chapra campus interaction with strict safety guardrails.</p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
-            
             <div className="rounded-2xl sm:rounded-[28px] bg-white border border-slate-200 p-5 sm:p-6 space-y-2.5 sm:space-y-3 shadow-md">
               <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-[#FF6B00]/20 text-[#FF6B00] border border-[#FF6B00]/30 flex items-center justify-center font-black text-base sm:text-lg font-mono">
                 1
               </div>
               <h3 className="text-sm sm:text-base font-bold text-slate-950">Google Verification</h3>
               <p className="text-xs text-slate-600 leading-relaxed">
-                Log in securely using your real Google account. We verify that you are a real student.
+                Log in securely using your real Google account. We verify that you are a real LNJPIT student.
               </p>
             </div>
 
@@ -137,7 +136,65 @@ export default function LandingPage() {
                 Authorized administrators can resolve identities for severe safety or abuse investigations with full audit logging.
               </p>
             </div>
+          </div>
+        </div>
+      </section>
 
+      {/* High-Impact SEO Information Section for Google Search Engines */}
+      <section className="py-12 sm:py-16 px-4 border-t border-slate-200/80 bg-white">
+        <div className="max-w-4xl mx-auto space-y-8">
+          <div className="space-y-3 text-center sm:text-left">
+            <h2 className="text-2xl sm:text-3xl font-black text-slate-950 font-heading">
+              LNJPIT Confession — Loknayak Jai Prakash Institute of Technology (Chapra)
+            </h2>
+            <p className="text-xs sm:text-sm text-slate-600 leading-relaxed font-sans">
+              Welcome to <strong>ConfessionLnjpit</strong>, the official anonymous student community platform designed exclusively for <strong>Loknayak Jai Prakash Institute of Technology (LNJPIT Chapra, Bihar)</strong>. Whether you are a B.Tech student in Computer Science & Engineering (CSE), Electronics & Communication (ECE), Electrical Engineering (EE), Civil Engineering, or Mechanical Engineering, this platform allows you to voice your unsaid thoughts safely.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
+            <div className="p-5 rounded-2xl bg-[#F4F3EF] border border-slate-200/80 space-y-2">
+              <h3 className="text-sm font-bold text-slate-900 font-heading flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-[#FF6B00]" />
+                LNJPIT Campus Confessions & Stories
+              </h3>
+              <p className="text-xs text-slate-600 leading-relaxed">
+                Explore real, unedited anonymous campus confessions from LNJPIT hostels, library sessions, semester exams, and college events. Share your own stories without fear of judgment or exposure.
+              </p>
+            </div>
+
+            <div className="p-5 rounded-2xl bg-[#F4F3EF] border border-slate-200/80 space-y-2">
+              <h3 className="text-sm font-bold text-slate-900 font-heading flex items-center gap-2">
+                <Heart className="w-4 h-4 text-[#FF6B00]" />
+                Anonymous Crush Signals & Peer Support
+              </h3>
+              <p className="text-xs text-slate-600 leading-relaxed">
+                Got a crush in your batch or department at LNJPIT Chapra? Send anonymous crush signals and start private, end-to-end encrypted anonymous chats without revealing who you are.
+              </p>
+            </div>
+          </div>
+
+          {/* Search Engine FAQ Section */}
+          <div className="space-y-4 pt-4 border-t border-slate-200">
+            <h3 className="text-lg font-black text-slate-950 font-heading">
+              Frequently Asked Questions (LNJPIT Chapra Student Portal)
+            </h3>
+
+            <div className="space-y-3 font-sans text-xs sm:text-sm">
+              <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-1">
+                <h4 className="font-bold text-slate-900">How do I search or post on LNJPIT Confessions?</h4>
+                <p className="text-slate-600">
+                  Visit <Link href="/feed" className="text-[#FF6B00] font-bold underline">confessionlnjpit.in/feed</Link> to browse the live campus feed, search confessions by public code or department, and submit your own confession anonymously after single sign-in.
+                </p>
+              </div>
+
+              <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-1">
+                <h4 className="font-bold text-slate-900">Is ConfessionLnjpit safe and 100% anonymous?</h4>
+                <p className="text-slate-600">
+                  Yes! All public confessions and comments strip author metadata at the database level. Your peers will only see your anonymous snapshot label and gender.
+                </p>
+              </div>
+            </div>
           </div>
         </div>
       </section>
