@@ -160,7 +160,7 @@ export default function LandingPage() {
               LNJPIT Confession — Loknayak Jai Prakash Institute of Technology (Chapra)
             </h2>
             <p className="text-xs sm:text-sm text-slate-600 leading-relaxed font-sans">
-              Welcome to <strong>ConfessionLnjpit</strong>, the official anonymous student community platform designed exclusively for <strong>Loknayak Jai Prakash Institute of Technology (LNJPIT Chapra, Bihar)</strong>. Whether you are a B.Tech student in Computer Science & Engineering (CSE), Electronics & Communication (ECE), Electrical Engineering (EE), Civil Engineering, or Mechanical Engineering, this platform allows you to voice your unsaid thoughts safely.
+              Welcome to <strong>ConfessionLnjpit</strong>, the official anonymous student community platform designed exclusively for <strong>Loknayak Jai Prakash Institute of Technology (LNJPIT Chapra, Bihar)</strong>. Whether you are a B.Tech student in Computer Science & Engineering (CSE), Food Processing & Preservation (FPP), Electrical Engineering (EE), Civil Engineering, or Mechanical Engineering, this platform allows you to voice your unsaid thoughts safely.
             </p>
           </div>
 

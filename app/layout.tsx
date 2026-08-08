@@ -32,7 +32,7 @@ export const metadata: Metadata = {
     'LNJPIT college life',
     'confessionlnjpit.in',
     'LNJPIT CSE',
-    'LNJPIT ECE',
+    'LNJPIT FPP',
     'LNJPIT Civil',
     'LNJPIT Mechanical',
     'LNJPIT Electrical',
