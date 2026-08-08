@@ -70,7 +70,7 @@ export default function ConfessionDetailClient({ code }: { code: string }) {
         if (confession) {
           setConfession({
             ...confession,
-            comment_count: (confession.comment_count || 0) + 1,
+            comment_count: typeof json.comment_count === 'number' ? json.comment_count : (confession.comment_count || 0) + 1,
           });
         }
       } else {

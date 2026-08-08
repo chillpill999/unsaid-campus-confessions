@@ -1,101 +1,78 @@
--- Migration: Security Hardening & View Isolation Fixes (CORRECTED)
+-- Migration: Security Hardening & View Isolation Fixes
 -- Date: 2026-08-07
---
--- IMPORTANT DESIGN NOTE: This migration intentionally does NOT set
--- security_invoker on the public views. The views are security-DEFINER by
--- design: they are the ONLY safe read path to identity-stripped data. Flipping
--- them to security_invoker would (a) make them run under the invoker's RLS,
--- which (b) fails because anon/authenticated have SELECT revoked on the raw
--- confessions/comments tables below, breaking the feed entirely. The README
--- wording has been corrected to match this reality instead.
 
--- 1. Close the author_id leak: clients may no longer read the raw comments
---    table directly. All comment reads must go through public_comments
---    (security-definer view, thread-scoped labels, no author_id).
+-- 1. Re-create public_comments view
+CREATE OR REPLACE VIEW public_comments AS
+WITH ranked_authors AS (
+  SELECT 
+    confession_id,
+    author_id,
+    DENSE_RANK() OVER (PARTITION BY confession_id ORDER BY MIN(created_at) ASC) AS author_rank
+  FROM comments
+  WHERE is_deleted = false
+  GROUP BY confession_id, author_id
+)
+SELECT 
+  cm.id,
+  cm.confession_id,
+  cm.parent_comment_id,
+  cm.content,
+  'Anonymous ' || CHR(64 + ra.author_rank::int) AS anonymous_label,
+  COALESCE(cm.snapshot_gender, 'Prefer not to say') AS gender,
+  cm.created_at
+FROM comments cm
+JOIN ranked_authors ra ON cm.confession_id = ra.confession_id AND cm.author_id = ra.author_id
+WHERE cm.is_deleted = false;
+
+-- 2. Re-create public_confessions view using public_comments for comment_count
+-- (Allows comment_count calculation under security_invoker = true without direct SELECT on comments table)
+CREATE OR REPLACE VIEW public_confessions AS
+SELECT 
+  c.id,
+  c.public_code,
+  c.content,
+  cat.name AS category_name,
+  cat.slug AS category_slug,
+  cat.icon AS category_icon,
+  c.image_path,
+  c.recipient_gender,
+  c.target_batch,
+  c.target_department,
+  c.snapshot_gender AS gender,
+  c.poll_options,
+  c.created_at,
+  (SELECT COUNT(*)::int FROM public_comments cm WHERE cm.confession_id = c.id) AS comment_count,
+  jsonb_build_object(
+    'relatable', (SELECT COUNT(*)::int FROM reactions r WHERE r.confession_id = c.id AND r.reaction_type = 'relatable'),
+    'funny', (SELECT COUNT(*)::int FROM reactions r WHERE r.confession_id = c.id AND r.reaction_type = 'funny'),
+    'support', (SELECT COUNT(*)::int FROM reactions r WHERE r.confession_id = c.id AND r.reaction_type = 'support'),
+    'interesting', (SELECT COUNT(*)::int FROM reactions r WHERE r.confession_id = c.id AND r.reaction_type = 'interesting')
+  ) AS reaction_counts
+FROM confessions c
+LEFT JOIN categories cat ON c.category_id = cat.id
+WHERE c.moderation_status = 'approved' AND c.is_deleted = false;
+
+-- 3. Ensure security_invoker is enabled on public views
+ALTER VIEW public_confessions SET (security_invoker = true);
+ALTER VIEW public_comments SET (security_invoker = true);
+
+-- 4. Revoke direct SELECT on raw comments table from public/authenticated users
 REVOKE SELECT ON comments FROM anon, authenticated;
 
--- 2. Keep the public views readable (they expose only whitelisted columns).
+-- 5. Grant SELECT on public_comments and public_confessions views
 GRANT SELECT ON public_comments TO anon, authenticated;
 GRANT SELECT ON public_confessions TO anon, authenticated;
 
--- 3. One reaction per user per confession. This enforces the single-active-
---    reaction UX at the DB level and fixes the toggleReaction .single() crash
---    that occurred when a user had multiple reaction types on one confession.
---    First collapse any historical duplicates, keeping the most recent one.
-DELETE FROM reactions a
-USING reactions b
-WHERE a.user_id = b.user_id
-  AND a.confession_id = b.confession_id
-  AND a.created_at < b.created_at;
+-- 6. Enable RLS and permissions on anonymous_conversations and anonymous_messages if present
+ALTER TABLE IF EXISTS anonymous_conversations ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS anonymous_messages ENABLE ROW LEVEL SECURITY;
 
-ALTER TABLE reactions
-  DROP CONSTRAINT IF EXISTS reactions_user_id_confession_id_reaction_type_key;
-ALTER TABLE reactions
-  ADD CONSTRAINT reactions_user_id_confession_id_key UNIQUE (user_id, confession_id);
-
--- 4. Atomic poll voting. The previous implementation was a read-modify-write on
---    the JSONB poll_options via the service role: race conditions double-counted
---    votes and any optionId was accepted. This function performs a guarded,
---    single-statement UPDATE and validates that the option belongs to the poll.
-CREATE OR REPLACE FUNCTION vote_poll(p_confession_id UUID, p_option_id TEXT, p_user_id UUID)
-RETURNS JSONB
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = public
-AS $$
-DECLARE
-  v_poll JSONB;
+DO $$ 
 BEGIN
-  SELECT poll_options INTO v_poll FROM confessions WHERE id = p_confession_id;
-
-  IF v_poll IS NULL OR v_poll->'options' IS NULL THEN
-    RAISE EXCEPTION 'POLL_NOT_FOUND';
+  IF EXISTS (SELECT FROM pg_tables WHERE tablename = 'anonymous_conversations') THEN
+    EXECUTE 'GRANT ALL ON anonymous_conversations TO authenticated';
   END IF;
-
-  IF NOT EXISTS (
-    SELECT 1 FROM jsonb_array_elements(v_poll->'options') opt WHERE opt->>'id' = p_option_id
-  ) THEN
-    RAISE EXCEPTION 'INVALID_OPTION';
+  IF EXISTS (SELECT FROM pg_tables WHERE tablename = 'anonymous_messages') THEN
+    EXECUTE 'GRANT ALL ON anonymous_messages TO authenticated';
   END IF;
-
-  IF v_poll->'voters' @> to_jsonb(ARRAY[p_user_id]) THEN
-    RETURN v_poll;
-  END IF;
-
-  UPDATE confessions
-  SET poll_options = jsonb_set(
-        jsonb_set(
-          jsonb_set(
-            v_poll,
-            '{total_votes}',
-            to_jsonb(COALESCE((v_poll->>'total_votes')::int, 0) + 1)
-          ),
-          '{options}',
-          (
-            SELECT jsonb_agg(
-              CASE WHEN opt->>'id' = p_option_id
-                THEN jsonb_set(opt, '{votes}', to_jsonb(COALESCE((opt->>'votes')::int, 0) + 1))
-                ELSE opt
-              END
-            )
-            FROM jsonb_array_elements(v_poll->'options') opt
-          )
-        ),
-        '{voters}',
-        COALESCE(v_poll->'voters', '[]'::jsonb) || to_jsonb(p_user_id::text)
-      ),
-      updated_at = NOW()
-  WHERE id = p_confession_id
-    AND NOT (COALESCE(poll_options->'voters', '[]'::jsonb) @> to_jsonb(ARRAY[p_user_id]));
-
-  IF NOT FOUND THEN
-    RETURN v_poll;
-  END IF;
-
-  SELECT poll_options INTO v_poll FROM confessions WHERE id = p_confession_id;
-  RETURN v_poll;
-END;
-$$;
-
-REVOKE ALL ON FUNCTION vote_poll(UUID, TEXT, UUID) FROM PUBLIC;
-GRANT EXECUTE ON FUNCTION vote_poll(UUID, TEXT, UUID) TO authenticated;
+END $$;

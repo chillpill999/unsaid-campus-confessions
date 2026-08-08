@@ -108,6 +108,7 @@ export async function GET(req: NextRequest) {
             gender: c.gender || 'Prefer not to say',
             created_at: c.created_at,
           }));
+          targetConfession.comment_count = commentsList.length;
         }
       }
 
