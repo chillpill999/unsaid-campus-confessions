@@ -15,13 +15,17 @@ export async function GET(req: NextRequest) {
     // ---------------- SINGLE CONFESSION DETAIL LOOKUP BY CODE ----------------
     if (code) {
       const cleanCode = code.trim().replace(/^#/, '').toUpperCase();
+      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(code.trim());
 
       // 1. Try public_confessions view
-      const { data: singleView } = await supabase
-        .from('public_confessions')
-        .select('*')
-        .or(`public_code.ilike.${cleanCode},id.eq.${code.trim()}`)
-        .maybeSingle();
+      let viewQuery = supabase.from('public_confessions').select('*');
+      if (isUuid) {
+        viewQuery = viewQuery.or(`public_code.ilike.${cleanCode},id.eq.${code.trim()}`);
+      } else {
+        viewQuery = viewQuery.ilike('public_code', cleanCode);
+      }
+
+      const { data: singleView } = await viewQuery.maybeSingle();
 
       let targetConfession: PublicConfession | null = null;
 
@@ -51,11 +55,19 @@ export async function GET(req: NextRequest) {
           activeClient = createAdminClient();
         } catch {}
 
-        const { data: singleRaw } = await activeClient
+        let rawQuery = activeClient
           .from('confessions')
           .select('*')
-          .or(`public_code.ilike.${cleanCode},id.eq.${code.trim()}`)
-          .maybeSingle();
+          .eq('moderation_status', 'approved')
+          .eq('is_deleted', false);
+
+        if (isUuid) {
+          rawQuery = rawQuery.or(`public_code.ilike.${cleanCode},id.eq.${code.trim()}`);
+        } else {
+          rawQuery = rawQuery.ilike('public_code', cleanCode);
+        }
+
+        const { data: singleRaw } = await rawQuery.maybeSingle();
 
         if (singleRaw) {
           targetConfession = {

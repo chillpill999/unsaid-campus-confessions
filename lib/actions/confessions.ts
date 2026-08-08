@@ -3,6 +3,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { generatePublicCode } from '@/lib/utils';
 import { Gender } from '@/lib/types';
+import { checkRateLimit } from '@/lib/rate-limit';
 
 export async function createConfession(data: {
   content: string;
@@ -21,6 +22,21 @@ export async function createConfession(data: {
 
     if (authError || !user) {
       return { success: false, error: 'You must be logged in to post a confession.' };
+    }
+
+    const { data: statusProfile } = await supabase
+      .from('profiles')
+      .select('account_status')
+      .eq('id', user.id)
+      .maybeSingle();
+
+    if (statusProfile && (statusProfile.account_status === 'banned' || statusProfile.account_status === 'suspended')) {
+      return { success: false, error: 'Your account is not allowed to post.' };
+    }
+
+    const rate = checkRateLimit(`confess:${user.id}`, 10, 60 * 60 * 1000);
+    if (!rate.success) {
+      return { success: false, error: 'You are posting too fast. Please try again later.' };
     }
 
     if (!data.content.trim() || data.content.length > 1000) {

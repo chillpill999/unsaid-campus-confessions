@@ -39,19 +39,25 @@ export async function syncUserHandle(username: string) {
     const cleanHandle = username.trim().toLowerCase().replace(/^@/, '').replace(/[^a-z0-9_]/g, '');
     if (!cleanHandle) return { success: false, message: 'Invalid username format.' };
 
-    if (user) {
-      const client = getAdminClient() || supabase;
-      await client
-        .from('profiles')
-        .update({ username: cleanHandle, updated_at: new Date().toISOString() })
-        .eq('id', user.id);
+    if (!user) {
+      return { success: false, message: 'You must be signed in to save your handle.' };
+    }
+
+    const client = getAdminClient() || supabase;
+    const { error } = await client
+      .from('profiles')
+      .update({ username: cleanHandle, updated_at: new Date().toISOString() })
+      .eq('id', user.id);
+
+    if (error) {
+      console.warn('syncUserHandle DB error:', error);
+      return { success: false, message: 'Failed to save your handle. Please try again.' };
     }
 
     return { success: true, username: cleanHandle };
   } catch (err: any) {
     console.warn('syncUserHandle note:', err?.message);
-    const cleanHandle = username.trim().toLowerCase().replace(/^@/, '').replace(/[^a-z0-9_]/g, '');
-    return { success: true, username: cleanHandle };
+    return { success: false, message: 'Failed to save your handle. Please try again.' };
   }
 }
 
@@ -431,7 +437,6 @@ export async function fetchDirectMessagesAction(
 export async function sendSignalAction(confessionCode: string): Promise<{
   success: boolean;
   message: string;
-  targetHandle?: string;
 }> {
   const authHandle = await getAuthHandle();
   if (!authHandle) {
@@ -441,43 +446,56 @@ export async function sendSignalAction(confessionCode: string): Promise<{
   const cleanCode = confessionCode.trim().replace(/^#/, '').toUpperCase();
   const admin = getAdminClient();
 
-  if (admin) {
-    try {
-      const { data: conf } = await admin
-        .from('confessions')
-        .select('author_id, public_code')
-        .or(`public_code.ilike.${cleanCode},id.eq.${cleanCode}`)
-        .maybeSingle();
-
-      if (conf?.author_id) {
-        const { data: authorProfile } = await admin
-          .from('profiles')
-          .select('username')
-          .eq('id', conf.author_id)
-          .maybeSingle();
-
-        if (authorProfile?.username) {
-          const targetHandle = authorProfile.username;
-          if (targetHandle.toLowerCase() === authHandle.toLowerCase()) {
-            return { success: false, message: 'You cannot send a signal to your own confession.' };
-          }
-
-          // Send real signal / friend request to author
-          await sendFriendRequestAction(authHandle, 'Anonymous Student', targetHandle);
-          return {
-            success: true,
-            message: `Anonymous signal sent for #${cleanCode}! Check your Inbox for updates.`,
-            targetHandle,
-          };
-        }
-      }
-    } catch (err) {
-      console.warn('sendSignalAction note:', err);
-    }
+  if (!admin) {
+    return { success: false, message: 'Signal service is unavailable. Please try again later.' };
   }
 
-  return {
-    success: true,
-    message: `Anonymous signal sent for #${cleanCode}! Check your Inbox for updates.`,
-  };
+  try {
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(confessionCode.trim());
+    let confQuery = admin
+      .from('confessions')
+      .select('author_id, public_code')
+      .eq('moderation_status', 'approved')
+      .eq('is_deleted', false);
+
+    if (isUuid) {
+      confQuery = confQuery.or(`public_code.ilike.${cleanCode},id.eq.${cleanCode}`);
+    } else {
+      confQuery = confQuery.ilike('public_code', cleanCode);
+    }
+
+    const { data: conf } = await confQuery.maybeSingle();
+
+    if (!conf?.author_id) {
+      return { success: false, message: 'Confession not found.' };
+    }
+
+    const { data: authorProfile } = await admin
+      .from('profiles')
+      .select('username')
+      .eq('id', conf.author_id)
+      .maybeSingle();
+
+    if (!authorProfile?.username) {
+      return { success: false, message: 'Signal could not be delivered to this confession.' };
+    }
+
+    const targetHandle = authorProfile.username;
+    if (targetHandle.toLowerCase() === authHandle.toLowerCase()) {
+      return { success: false, message: 'You cannot send a signal to your own confession.' };
+    }
+
+    const frResult = await sendFriendRequestAction(authHandle, 'Anonymous Student', targetHandle);
+    if (!frResult.success) {
+      return { success: false, message: frResult.message || 'Signal could not be delivered.' };
+    }
+
+    return {
+      success: true,
+      message: `Anonymous signal sent for #${cleanCode}! Check your Inbox for updates.`,
+    };
+  } catch (err) {
+    console.warn('sendSignalAction note:', err);
+    return { success: false, message: 'Signal could not be delivered. Please try again.' };
+  }
 }

@@ -31,7 +31,7 @@ Students authenticate securely via **Google OAuth**, but all public interactions
 | :--- | :--- |
 | 🔒 **100% Database Anonymity** | PostgreSQL views (`public_confessions`, `public_comments`) strip `author_id` and auth metadata before sending data to the client. zero identity leakage. |
 | ⚡ **Realtime WebSocket Feed** | Live broadcast events for instant reaction count updates, comment counts, poll progress, and campus posts across all connected devices. |
-| 💌 **Anonymous Signal & DMs** | "Send Signal" button on crush confessions opens end-to-end private anonymous messaging threads without revealing either student's identity. |
+| 💌 **Anonymous Signal & DMs** | "Send Signal" button on crush confessions opens private anonymous messaging threads without revealing either student's identity. |
 | 🪪 **Multi-Device Unified Identity** | Automatic cross-device handle synchronization via Supabase `profiles` table. Log in on phone, laptop, or tablet and maintain the exact same `@handle`. |
 | 📊 **Hot Campus Polls** | Create & vote on interactive polls with dynamic CSS gradient progress bars and instant vote persistence. |
 | 🛡️ **Audited Admin Moderation** | Authorized administrators can investigate severe abuse or safety reports with append-only audit logging (`identity_access_logs`). |
@@ -76,8 +76,8 @@ Students authenticate securely via **Google OAuth**, but all public interactions
    Students see only `Anonymous • Gender` (e.g. `Anonymous • Male`). Real names, emails, Google profile pictures, and Supabase `auth.users` UUIDs are **never** rendered on client components.
 2. **Thread-Scoped Comment Labels**:
    Comments feature dynamic labels (`Anonymous A`, `Anonymous B`) calculated per confession thread. Users receive distinct labels across different threads to prevent cross-post correlation.
-3. **Security Invoker Views**:
-   Public feeds execute via `public_confessions` and `public_comments` views with `security_invoker = true` to clear Supabase dashboard security warnings while restricting column exposure.
+3. **Safe Read-Only Views**:
+   Public feeds execute via the `public_confessions` and `public_comments` views, which expose only whitelisted columns and never leak `author_id`. Direct SELECT on the raw `confessions` and `comments` tables is revoked from `anon`/`authenticated`, so the views are the only client read path.
 4. **Append-Only Identity Reveal Logs**:
    Admin identity reveals require an explicit safety justification and generate immutable audit logs in `identity_access_logs`.
 

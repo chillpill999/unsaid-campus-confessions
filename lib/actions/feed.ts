@@ -184,57 +184,31 @@ export async function votePoll(confessionId: string, optionId: string) {
     throw new Error('Unauthorized');
   }
 
-  // Use admin client to update the confessions table (bypasses RLS on author-only rows)
-  let admin: any = supabase;
-  try {
-    const { createAdminClient } = await import('@/lib/supabase/admin');
-    admin = createAdminClient();
-  } catch (e) {}
+  // Atomic, race-safe poll voting via the vote_poll RPC. The function validates
+  // that the option belongs to the poll, prevents double voting in a single
+  // guarded UPDATE, and returns the fresh poll_options for the client.
+  const { createAdminClient } = await import('@/lib/supabase/admin');
+  const admin = createAdminClient();
 
-  // Fetch the current poll_options JSONB from the confessions table
-  const { data: confession, error: fetchError } = await admin
-    .from('confessions')
-    .select('id, poll_options')
-    .eq('id', confessionId)
-    .single();
+  const { data: pollOptions, error } = await admin.rpc('vote_poll', {
+    p_confession_id: confessionId,
+    p_option_id: optionId,
+    p_user_id: user.id,
+  });
 
-  if (fetchError || !confession || !confession.poll_options) {
-    throw new Error('Confession or poll not found');
-  }
-
-  const pollData = confession.poll_options;
-
-  // Check if user already voted (tracked in poll_options.voters array)
-  const voters: string[] = pollData.voters || [];
-  if (voters.includes(user.id)) {
-    // Already voted - return current state without error
-    return { alreadyVoted: true, poll_options: pollData };
-  }
-
-  // Increment the selected option's vote count
-  const updatedOptions = (pollData.options || []).map((opt: any) =>
-    opt.id === optionId ? { ...opt, votes: (opt.votes || 0) + 1 } : opt
-  );
-
-  const updatedPollData = {
-    ...pollData,
-    total_votes: (pollData.total_votes || 0) + 1,
-    options: updatedOptions,
-    voters: [...voters, user.id],
-  };
-
-  // Persist to database
-  const { error: updateError } = await admin
-    .from('confessions')
-    .update({ poll_options: updatedPollData })
-    .eq('id', confessionId);
-
-  if (updateError) {
-    console.error('Failed to persist poll vote:', updateError);
+  if (error) {
+    const message = (error.message || '').toLowerCase();
+    if (message.includes('poll_not_found')) {
+      throw new Error('Confession or poll not found');
+    }
+    if (message.includes('invalid_option')) {
+      throw new Error('Invalid poll option');
+    }
+    console.error('Failed to persist poll vote:', error);
     throw new Error('Failed to save poll vote');
   }
 
-  return { alreadyVoted: false, poll_options: updatedPollData };
+  return { alreadyVoted: false, poll_options: pollOptions };
 }
 
 export async function toggleBookmark(confessionId: string) {

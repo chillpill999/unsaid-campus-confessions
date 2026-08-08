@@ -88,7 +88,7 @@ export function JsonLd() {
         acceptedAnswer: {
           '@type': 'Answer',
           text:
-            'When a crush or appreciation confession is posted, any student can click "Send Signal" to open an end-to-end encrypted anonymous conversation with the author without revealing either person’s identity.',
+            'When a crush or appreciation confession is posted, any student can click "Send Signal" to open a private anonymous conversation thread with the author without revealing either person’s identity.',
         },
       },
     ],

@@ -1,7 +1,8 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { createClient } from '@/lib/supabase/client';
 import { 
   Lock, 
   ShieldCheck, 
@@ -20,6 +21,17 @@ import {
 } from 'lucide-react';
 
 export default function LandingPage() {
+  const [isSignedIn, setIsSignedIn] = useState(false);
+
+  useEffect(() => {
+    let mounted = true;
+    const supabase = createClient();
+    supabase.auth.getUser().then(({ data }) => {
+      if (mounted) setIsSignedIn(Boolean(data.user));
+    }).catch(() => {});
+    return () => { mounted = false; };
+  }, []);
+
   return (
     <div className="min-h-screen bg-[#F4F3EF] text-slate-900 flex flex-col selection:bg-[#FF6B00] selection:text-white">
       
@@ -43,10 +55,10 @@ export default function LandingPage() {
               Privacy & Anonymity
             </Link>
             <Link
-              href="/login"
+              href={isSignedIn ? '/feed' : '/login'}
               className="px-4 py-2 sm:px-5 sm:py-2.5 rounded-2xl bg-[#FF6B00] hover:bg-[#E05E00] text-white font-black text-xs transition-all shadow-md shadow-[#FF6B00]/25 shrink-0"
             >
-              Join Campus
+              {isSignedIn ? 'Go to Feed' : 'Join Campus'}
             </Link>
           </div>
         </div>
@@ -84,10 +96,10 @@ export default function LandingPage() {
             </Link>
 
             <Link
-              href="/login"
+              href={isSignedIn ? '/feed' : '/login'}
               className="w-full sm:w-auto px-6 py-3.5 sm:py-4 rounded-2xl bg-white hover:bg-slate-50 text-slate-800 font-bold text-xs sm:text-sm border border-slate-200 transition-colors flex items-center justify-center font-mono shadow-sm"
             >
-              Google Student Sign-In
+              {isSignedIn ? 'Continue as Student' : 'Google Student Sign-In'}
             </Link>
           </div>
 

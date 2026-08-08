@@ -12,12 +12,20 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   let description = `Read anonymous LNJPIT student confession #${cleanCode} on ConfessionLnjpit, the official campus portal for Loknayak Jai Prakash Institute of Technology (LNJPIT Chapra, Bihar).`;
 
   try {
-    const admin = createAdminClient();
-    const { data: conf } = await admin
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(params?.code || '');
+    let confQuery = admin
       .from('confessions')
       .select('content, category_id, created_at')
-      .or(`public_code.ilike.${cleanCode},id.eq.${cleanCode}`)
-      .maybeSingle();
+      .eq('moderation_status', 'approved')
+      .eq('is_deleted', false);
+
+    if (isUuid) {
+      confQuery = confQuery.or(`public_code.ilike.${cleanCode},id.eq.${cleanCode}`);
+    } else {
+      confQuery = confQuery.ilike('public_code', cleanCode);
+    }
+
+    const { data: conf } = await confQuery.maybeSingle();
 
     if (conf && conf.content) {
       const snippet = conf.content.slice(0, 140).trim();

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { broadcastCommentUpdate } from '@/lib/realtime/broadcast';
+import { checkRateLimit } from '@/lib/rate-limit';
 
 export async function POST(req: NextRequest) {
   try {
@@ -12,6 +13,27 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(
         { success: false, error: 'You must be signed in to post comments.' },
         { status: 401 }
+      );
+    }
+
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('account_status')
+      .eq('id', user.id)
+      .maybeSingle();
+
+    if (profile && (profile.account_status === 'banned' || profile.account_status === 'suspended')) {
+      return NextResponse.json(
+        { success: false, error: 'Your account is not allowed to comment.' },
+        { status: 403 }
+      );
+    }
+
+    const rate = checkRateLimit(`comment:${user.id}`, 30, 60 * 60 * 1000);
+    if (!rate.success) {
+      return NextResponse.json(
+        { success: false, error: 'You are commenting too fast. Please try again later.' },
+        { status: 429 }
       );
     }
 
@@ -27,9 +49,9 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    if (content.length > 1000) {
+    if (content.length > 500) {
       return NextResponse.json(
-        { success: false, error: 'Comment must be 1000 characters or fewer.' },
+        { success: false, error: 'Comment must be 500 characters or fewer.' },
         { status: 400 }
       );
     }

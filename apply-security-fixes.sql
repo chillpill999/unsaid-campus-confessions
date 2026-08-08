@@ -1,27 +1,8 @@
--- Migration: Security Hardening & View Isolation Fixes (CORRECTED)
--- Date: 2026-08-07
---
--- IMPORTANT DESIGN NOTE: This migration intentionally does NOT set
--- security_invoker on the public views. The views are security-DEFINER by
--- design: they are the ONLY safe read path to identity-stripped data. Flipping
--- them to security_invoker would (a) make them run under the invoker's RLS,
--- which (b) fails because anon/authenticated have SELECT revoked on the raw
--- confessions/comments tables below, breaking the feed entirely. The README
--- wording has been corrected to match this reality instead.
-
--- 1. Close the author_id leak: clients may no longer read the raw comments
---    table directly. All comment reads must go through public_comments
---    (security-definer view, thread-scoped labels, no author_id).
 REVOKE SELECT ON comments FROM anon, authenticated;
 
--- 2. Keep the public views readable (they expose only whitelisted columns).
 GRANT SELECT ON public_comments TO anon, authenticated;
 GRANT SELECT ON public_confessions TO anon, authenticated;
 
--- 3. One reaction per user per confession. This enforces the single-active-
---    reaction UX at the DB level and fixes the toggleReaction .single() crash
---    that occurred when a user had multiple reaction types on one confession.
---    First collapse any historical duplicates, keeping the most recent one.
 DELETE FROM reactions a
 USING reactions b
 WHERE a.user_id = b.user_id
@@ -33,10 +14,6 @@ ALTER TABLE reactions
 ALTER TABLE reactions
   ADD CONSTRAINT reactions_user_id_confession_id_key UNIQUE (user_id, confession_id);
 
--- 4. Atomic poll voting. The previous implementation was a read-modify-write on
---    the JSONB poll_options via the service role: race conditions double-counted
---    votes and any optionId was accepted. This function performs a guarded,
---    single-statement UPDATE and validates that the option belongs to the poll.
 CREATE OR REPLACE FUNCTION vote_poll(p_confession_id UUID, p_option_id TEXT, p_user_id UUID)
 RETURNS JSONB
 LANGUAGE plpgsql

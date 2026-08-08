@@ -2,6 +2,7 @@
 
 import { createClient } from '@/lib/supabase/server';
 import { broadcastCommentUpdate } from '@/lib/realtime/broadcast';
+import { checkRateLimit } from '@/lib/rate-limit';
 
 export async function fetchPublicComments(confessionId: string) {
   const supabase = createClient();
@@ -45,6 +46,21 @@ export async function createComment(confessionId: string, content: string, paren
 
   if (authError || !user) {
     throw new Error('Unauthorized');
+  }
+
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('account_status')
+    .eq('id', user.id)
+    .maybeSingle();
+
+  if (profile && (profile.account_status === 'banned' || profile.account_status === 'suspended')) {
+    throw new Error('Your account is not allowed to comment.');
+  }
+
+  const rate = checkRateLimit(`comment:${user.id}`, 30, 60 * 60 * 1000);
+  if (!rate.success) {
+    throw new Error('You are commenting too fast. Please try again later.');
   }
 
   if (!content.trim() || content.length > 500) {

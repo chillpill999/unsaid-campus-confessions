@@ -31,26 +31,13 @@ export default function ConfessionDetailClient({ code }: { code: string }) {
           setConfession(json.confession);
           setComments(json.comments || []);
         } else {
-          const { MOCK_CONFESSIONS } = await import('@/lib/mock-data');
-          const clean = code.trim().replace(/^#/, '').toLowerCase();
-          const found = MOCK_CONFESSIONS.find(
-            (c) => c.public_code.toLowerCase() === clean || c.id.toLowerCase() === clean
-          );
-          if (found) {
-            setConfession(found);
-            setComments([]);
-          } else {
-            setConfession(null);
-          }
+          setErrorMsg(json.error || 'Confession not found.');
+          setConfession(null);
         }
       } catch (err) {
         console.error('Failed to load confession detail:', err);
-        const { MOCK_CONFESSIONS } = await import('@/lib/mock-data');
-        const clean = code.trim().replace(/^#/, '').toLowerCase();
-        const found = MOCK_CONFESSIONS.find(
-          (c) => c.public_code.toLowerCase() === clean || c.id.toLowerCase() === clean
-        );
-        if (found) setConfession(found);
+        setErrorMsg('Failed to load this confession. Please try again.');
+        setConfession(null);
       } finally {
         setLoading(false);
       }
@@ -87,28 +74,11 @@ export default function ConfessionDetailClient({ code }: { code: string }) {
           });
         }
       } else {
-        const mockComment: PublicComment = {
-          id: `comment-${Date.now()}`,
-          confession_id: confession.id,
-          content: commentText.trim(),
-          anonymous_label: 'Anonymous Student',
-          gender: 'Prefer not to say',
-          created_at: new Date().toISOString(),
-        };
-        setComments((prev) => [...prev, mockComment]);
-        setCommentText('');
+        setErrorMsg(json.error || 'Failed to post comment. Please try again.');
       }
     } catch (err: any) {
-      const mockComment: PublicComment = {
-        id: `comment-${Date.now()}`,
-        confession_id: confession.id,
-        content: commentText.trim(),
-        anonymous_label: 'Anonymous Student',
-        gender: 'Prefer not to say',
-        created_at: new Date().toISOString(),
-      };
-      setComments((prev) => [...prev, mockComment]);
-      setCommentText('');
+      console.error('Failed to post comment:', err);
+      setErrorMsg('Failed to post comment. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
