@@ -12,6 +12,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   let description = `Read anonymous LNJPIT student confession #${cleanCode} on ConfessionLnjpit, the official campus portal for Loknayak Jai Prakash Institute of Technology (LNJPIT Chapra, Bihar).`;
 
   try {
+    const admin = createAdminClient();
     const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(params?.code || '');
     let confQuery = admin
       .from('confessions')
