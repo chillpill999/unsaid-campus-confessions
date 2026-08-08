@@ -1,30 +1,79 @@
 'use client';
 
-import React, { useState } from 'react';
-import { Sparkles, CheckCircle2 } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { Sparkles, CheckCircle2, Loader2 } from 'lucide-react';
 import { CampusMood, MoodStat } from '@/lib/types';
-import { MOCK_CAMPUS_MOOD } from '@/lib/mock-data';
+
+const MOOD_META: { mood: CampusMood; label: string; emoji: string }[] = [
+  { mood: 'chaos', label: 'Chaos', emoji: '😂' },
+  { mood: 'exhausted', label: 'Exhausted', emoji: '😴' },
+  { mood: 'trauma', label: 'Assignment Trauma', emoji: '😭' },
+  { mood: 'romantic', label: 'Romantic', emoji: '❤️' },
+  { mood: 'motivated', label: 'Motivated', emoji: '🔥' },
+  { mood: 'surviving', label: 'Surviving', emoji: '🫠' },
+];
+
+function buildMoods(stats: Record<string, number>): MoodStat[] {
+  const total = Object.values(stats).reduce((acc, c) => acc + c, 0);
+  return MOOD_META.map((meta) => {
+    const count = stats[meta.mood] || 0;
+    return {
+      mood: meta.mood,
+      label: meta.label,
+      emoji: meta.emoji,
+      percentage: total > 0 ? Math.round((count / total) * 100) : 0,
+      count,
+    };
+  });
+}
 
 export function CampusMoodWidget() {
-  const [moods, setMoods] = useState<MoodStat[]>(MOCK_CAMPUS_MOOD);
+  const [moods, setMoods] = useState<MoodStat[]>(buildMoods({}));
+  const [loading, setLoading] = useState(true);
   const [userVotedMood, setUserVotedMood] = useState<CampusMood | null>(null);
 
-  const handleVote = (selectedMood: CampusMood) => {
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const { getMoodStats } = await import('@/lib/actions/feed');
+        const stats = await getMoodStats();
+        if (!mounted) return;
+        const byMood: Record<string, number> = {};
+        stats.forEach((s) => { byMood[s.mood] = s.count; });
+        setMoods(buildMoods(byMood));
+      } catch (err) {
+        console.warn('Mood stats load note:', err);
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    })();
+    return () => { mounted = false; };
+  }, []);
+
+  const handleVote = async (selectedMood: CampusMood) => {
     if (userVotedMood) return; // Only 1 vote per day
 
+    // Optimistic local update
     setMoods((prev) => {
-      const total = prev.reduce((acc, curr) => acc + (curr.mood === selectedMood ? curr.count + 1 : curr.count), 0);
-      return prev.map((m) => {
-        const count = m.mood === selectedMood ? m.count + 1 : m.count;
-        return {
-          ...m,
-          count,
-          percentage: Math.round((count / total) * 100),
-        };
-      });
+      const next = prev.map((m) =>
+        m.mood === selectedMood ? { ...m, count: m.count + 1 } : m
+      );
+      const total = next.reduce((acc, m) => acc + m.count, 0);
+      return next.map((m) => ({
+        ...m,
+        percentage: total > 0 ? Math.round((m.count / total) * 100) : 0,
+      }));
     });
-
     setUserVotedMood(selectedMood);
+
+    try {
+      const { voteMood } = await import('@/lib/actions/feed');
+      await voteMood(selectedMood);
+    } catch (err) {
+      console.warn('Mood vote note:', err);
+      setUserVotedMood(null);
+    }
   };
 
   return (

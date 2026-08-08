@@ -1,8 +1,25 @@
 -- Migration: Security Hardening & View Isolation Fixes
 -- Date: 2026-08-07
 
--- 1. Re-create public_comments view
-CREATE OR REPLACE VIEW public_comments AS
+-- 1. Add snapshot_gender column to comments (used by the public_comments view)
+--    Backfill from profiles so existing comments keep their author's gender.
+ALTER TABLE comments ADD COLUMN IF NOT EXISTS snapshot_gender VARCHAR(50);
+
+UPDATE comments cm
+SET snapshot_gender = COALESCE(
+  (SELECT p.gender FROM profiles p WHERE p.id = cm.author_id),
+  cm.snapshot_gender
+)
+WHERE cm.snapshot_gender IS NULL;
+
+-- 2. Recreate public_comments view
+--    (DROP first: CREATE OR REPLACE VIEW cannot change an existing column's
+--    type, and the gender column's height changes between the base schema's
+--    varchar(50) and the fresh snapshot_gender expression.)
+DROP VIEW IF EXISTS public_confessions;
+DROP VIEW IF EXISTS public_comments;
+
+CREATE VIEW public_comments AS
 WITH ranked_authors AS (
   SELECT 
     confession_id,
@@ -26,7 +43,7 @@ WHERE cm.is_deleted = false;
 
 -- 2. Re-create public_confessions view using public_comments for comment_count
 -- (Allows comment_count calculation under security_invoker = true without direct SELECT on comments table)
-CREATE OR REPLACE VIEW public_confessions AS
+CREATE VIEW public_confessions AS
 SELECT 
   c.id,
   c.public_code,
@@ -52,9 +69,13 @@ FROM confessions c
 LEFT JOIN categories cat ON c.category_id = cat.id
 WHERE c.moderation_status = 'approved' AND c.is_deleted = false;
 
--- 3. Ensure security_invoker is enabled on public views
-ALTER VIEW public_confessions SET (security_invoker = true);
-ALTER VIEW public_comments SET (security_invoker = true);
+-- 3. Views run with OWNER privileges (security_invoker = false) so the safe
+--    public views stay readable by anon/authenticated despite the REVOKEd
+--    table-level SELECT on confessions/comments. Flipping security_invoker = true
+--    hides the feed because callers lack table-level SELECT — do NOT enable it
+--    without adding matching column-scoped GRANTs.
+ALTER VIEW public_confessions SET (security_invoker = false);
+ALTER VIEW public_comments   SET (security_invoker = false);
 
 -- 4. Revoke direct SELECT on raw comments table from public/authenticated users
 REVOKE SELECT ON comments FROM anon, authenticated;

@@ -9,6 +9,24 @@ export function cn(...inputs: ClassValue[]) {
  * Generates a random 6-character public confession code (e.g. #CF7K2P).
  * Cryptographically random, non-sequential, contains no timestamps or user IDs.
  */
+/**
+ * Strips sensitive voter identity metadata from poll data before it is sent to
+ * the client. Poll votes are stored as an array of raw user UUIDs in
+ * poll_options->'voters'; exposing that array would leak who voted.
+ */
+export function sanitizePollData(raw: any): any {
+  if (!raw || typeof raw !== 'object') return raw;
+  const { voters, ...safe } = raw;
+  if (safe.options && Array.isArray(safe.options)) {
+    safe.options = safe.options.map((opt: any) => ({
+      id: opt.id,
+      text: opt.text,
+      votes: opt.votes,
+    }));
+  }
+  return safe;
+}
+
 export function generatePublicCode(): string {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
   let result = 'CF';

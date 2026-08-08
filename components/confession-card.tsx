@@ -30,6 +30,7 @@ interface ConfessionCardProps {
   confession: PublicConfession;
   onOpenReport?: (confessionCode: string) => void;
   onOpenThinkAboutYou?: (confessionCode: string) => void;
+  onUnsave?: (id: string) => void;
   isDetailView?: boolean;
 }
 
@@ -130,6 +131,7 @@ export function ConfessionCard({
   confession,
   onOpenReport,
   onOpenThinkAboutYou,
+  onUnsave,
   isDetailView = false,
 }: ConfessionCardProps) {
   const [isBookmarked, setIsBookmarked] = useState(confession.is_bookmarked || false);
@@ -347,7 +349,19 @@ export function ConfessionCard({
           </Link>
 
           <button
-            onClick={() => setIsBookmarked(!isBookmarked)}
+            onClick={async (e) => {
+              e.preventDefault();
+              try {
+                const { toggleBookmark } = await import('@/lib/actions/feed');
+                const res = await toggleBookmark(confession.id);
+                setIsBookmarked(res.bookmarked);
+                if (!res.bookmarked && onUnsave) {
+                  onUnsave(confession.id);
+                }
+              } catch (err) {
+                console.warn('Bookmark toggle note:', err);
+              }
+            }}
             className={`p-2 rounded-full transition-all ${theme.pillClass} ${
               isBookmarked ? 'bg-[#FF6B00] text-white border-transparent' : ''
             }`}

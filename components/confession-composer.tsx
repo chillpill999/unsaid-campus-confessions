@@ -214,7 +214,7 @@ export function ConfessionComposer({ onClose, onPostSuccess }: ConfessionCompose
           <div>
             <h3 className="text-lg font-black text-slate-950 flex items-center gap-2 font-heading">
               <Sparkles className="w-5 h-5 text-[#FF6B00]" />
-              Say what you couldn't say.
+              Say what you couldn&apos;t say.
             </h3>
             <p className="text-xs text-slate-500 font-medium">
               Posting as <span className="text-[#FF6B00] font-bold font-mono">Anonymous • {userGender}</span>

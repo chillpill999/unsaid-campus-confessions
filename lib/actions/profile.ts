@@ -3,6 +3,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { Gender, PublicConfession, UserProfile } from '@/lib/types';
+import { sanitizePollData } from '@/lib/utils';
 
 export async function createProfile(data: {
   gender: Gender;
@@ -184,7 +185,7 @@ export async function getMyStatsAndConfessions(): Promise<{
         category_icon: cat?.icon || '🔒', image_path: row.image_path || null,
         recipient_gender: row.recipient_gender || null, target_batch: row.target_batch || null,
         target_department: row.target_department || null, gender: row.snapshot_gender || 'Male',
-        poll_data: row.poll_options || null, created_at: row.created_at,
+        poll_data: sanitizePollData(row.poll_options) || null, created_at: row.created_at,
         reaction_counts: reactionCountsByConfession.get(row.id) || { relatable: 0, funny: 0, support: 0, interesting: 0 },
         comment_count: commentCountsByConfession.get(row.id) || 0,
         is_mine: true, can_edit: true,

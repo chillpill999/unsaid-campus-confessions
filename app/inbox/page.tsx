@@ -835,7 +835,7 @@ export default function InboxPage() {
                     <Radio className="w-8 h-8 text-[#FF6B00] animate-pulse" />
                   </div>
                   <div>
-                    <h3 className="text-base font-bold text-slate-950 font-heading">Select a classmate's signal to chat</h3>
+                    <h3 className="text-base font-bold text-slate-950 font-heading">Select a classmate&apos;s signal to chat</h3>
                     <p className="text-xs text-slate-500 mt-1">
                       Messages in direct chats auto-delete after 24 hours.
                     </p>

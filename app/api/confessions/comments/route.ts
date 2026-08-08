@@ -112,12 +112,30 @@ export async function POST(req: NextRequest) {
     // Fetch public_code to trigger broadcast
     const { data: conf } = await admin
       .from('confessions')
-      .select('public_code')
+      .select('public_code, author_id')
       .eq('id', confession_id)
       .maybeSingle();
 
     if (conf?.public_code) {
       broadcastCommentUpdate(conf.public_code, freshCommentCount).catch(() => {});
+    }
+
+    // 4. Notify the confession author (they wrote it), unless they are the commenter.
+    if (conf?.author_id && conf.author_id !== user.id) {
+      try {
+        await admin.from('notifications').insert({
+          recipient_id: conf.author_id,
+          type: 'comment',
+          confession_id,
+          comment_id: inserted.id,
+          metadata: {
+            text: 'Someone commented on your confession 👀',
+            confession_code: conf.public_code,
+          },
+        });
+      } catch (notifErr) {
+        console.warn('Comment notification insert note:', notifErr);
+      }
     }
 
     return NextResponse.json({

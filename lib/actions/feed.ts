@@ -3,6 +3,8 @@
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { broadcastReactionUpdate } from '@/lib/realtime/broadcast';
+import { sanitizePollData } from '@/lib/utils';
+import { PublicConfession } from '@/lib/types';
 
 export async function fetchPublicConfessions(limit: number = 20, cursor?: string) {
   const supabase = createClient();
@@ -90,11 +92,11 @@ export async function fetchPublicConfessions(limit: number = 20, cursor?: string
     target_batch: c.target_batch,
     target_department: c.target_department,
     gender: c.gender,
-    poll_data: c.poll_options,
+    poll_data: sanitizePollData(c.poll_options),
     created_at: c.created_at,
     reaction_counts: reactionCountsMap.get(c.id) || { relatable: 0, funny: 0, support: 0, interesting: 0 },
     comment_count: c.comment_count || 0,
-    user_reaction: userReactions[c.id] || null,
+    user_reaction: (userReactions[c.id] as PublicConfession['user_reaction']) || null,
     is_bookmarked: userBookmarks.has(c.id),
     // The public_confessions view does not expose author_id (anonymity), so a
     // feed row can never be flagged as "mine".
@@ -162,12 +164,29 @@ export async function toggleReaction(confessionId: string, reactionType: string)
   try {
     const { data: conf } = await admin
       .from('confessions')
-      .select('public_code')
+      .select('public_code, author_id')
       .eq('id', confessionId)
       .single();
 
     if (conf?.public_code) {
       await broadcastReactionUpdate(conf.public_code, freshCounts);
+
+      // Notify the confession author of a brand-new reaction (not on removals).
+      if (!existing && conf.author_id && conf.author_id !== user.id) {
+        try {
+          await admin.from('notifications').insert({
+            recipient_id: conf.author_id,
+            type: 'reaction',
+            confession_id: confessionId,
+            metadata: {
+              reaction_type: reactionType,
+              confession_code: conf.public_code,
+            },
+          });
+        } catch (notifErr) {
+          console.warn('Reaction notification insert note:', notifErr);
+        }
+      }
     }
   } catch (bErr) {
     console.warn('Server-side reaction broadcast note:', bErr);
@@ -208,7 +227,7 @@ export async function votePoll(confessionId: string, optionId: string) {
     throw new Error('Failed to save poll vote');
   }
 
-  return { alreadyVoted: false, poll_options: pollOptions };
+  return { alreadyVoted: false, poll_options: sanitizePollData(pollOptions) };
 }
 
 export async function toggleBookmark(confessionId: string) {
@@ -236,4 +255,134 @@ export async function toggleBookmark(confessionId: string) {
     });
     return { bookmarked: true };
   }
+}
+
+export async function getMoodStats(): Promise<{ mood: string; count: number }[]> {
+  const supabase = createClient();
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+  if (authError || !user) {
+    throw new Error('Unauthorized');
+  }
+
+  let admin: any;
+  try { admin = createAdminClient(); } catch { admin = supabase; }
+
+  const { data } = await admin.from('mood_votes').select('mood');
+  const statsMap = new Map<string, number>();
+  for (const row of (data || [])) {
+    statsMap.set(row.mood, (statsMap.get(row.mood) || 0) + 1);
+  }
+  return Array.from(statsMap.entries()).map(([mood, count]) => ({ mood, count }));
+}
+
+export async function voteMood(mood: string): Promise<{ success: boolean; message: string }> {
+  const supabase = createClient();
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+  if (authError || !user) {
+    throw new Error('Unauthorized');
+  }
+
+  let admin: any;
+  try { admin = createAdminClient(); } catch { admin = supabase; }
+
+  // One vote per user per day (enforced by mood_votes.vote_date + unique(user_id, vote_date))
+  const today = new Date().toISOString().slice(0, 10);
+
+  const { error } = await admin.from('mood_votes').upsert(
+    {
+      user_id: user.id,
+      mood,
+      vote_date: today,
+    },
+    { onConflict: 'user_id,vote_date' }
+  );
+
+  if (error) {
+    if (error.code === '23505') {
+      return { success: false, message: 'You already voted today. One vote per student daily.' };
+    }
+    console.warn('Mood vote DB error:', error);
+    return { success: false, message: 'Failed to record your mood vote.' };
+  }
+
+  // Realtime sync to all connected clients
+  try {
+    const refreshed = await admin.from('mood_votes').select('mood');
+    const statsMap = new Map<string, number>();
+    for (const r of (refreshed.data || [])) {
+      statsMap.set(r.mood, (statsMap.get(r.mood) || 0) + 1);
+    }
+    const stats = Array.from(statsMap.entries()).map(([m, c]) => ({ mood: m, count: c }));
+    const { broadcastCampusMoodUpdate } = await import('@/lib/realtime/broadcast');
+    await broadcastCampusMoodUpdate(pjToWidget(stats));
+  } catch (err) {
+    console.warn('Mood broadcast note:', err);
+  }
+
+  return { success: true, message: 'Mood vote recorded.' };
+}
+
+function pjToWidget(stats: { mood: string; count: number }[]) {
+  const total = stats.reduce((acc, s) => acc + s.count, 0);
+  return stats.map((s) => ({
+    mood: s.mood,
+    count: s.count,
+    percentage: total > 0 ? Math.round((s.count / total) * 100) : 0,
+  }));
+}
+
+export async function getBookmarkedConfessions(): Promise<PublicConfession[]> {
+  const supabase = createClient();
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+  if (authError || !user) {
+    throw new Error('Unauthorized');
+  }
+
+  let admin: any;
+  try { admin = createAdminClient(); } catch { admin = supabase; }
+
+  // 1. Fetch the user's bookmark rows
+  const { data: bookmarkRows } = await admin
+    .from('bookmarks')
+    .select('confession_id, created_at')
+    .eq('user_id', user.id)
+    .order('created_at', { ascending: false });
+
+  const confessionIds = (bookmarkRows || []).map((b: any) => b.confession_id);
+  if (confessionIds.length === 0) return [];
+
+  // 2. Fetch those confessions from the safe public view
+  const { data: viewRows } = await admin
+    .from('public_confessions')
+    .select('*')
+    .in('id', confessionIds);
+
+  const rowsById = new Map((viewRows || []).map((r: any) => [r.id, r]));
+
+  // 3. Preserve bookmark order (most recently saved first)
+  const ordered = (bookmarkRows || [])
+    .map((b: any) => rowsById.get(b.confession_id))
+    .filter(Boolean);
+
+  return ordered.map((row: any) => ({
+    id: row.id,
+    public_code: row.public_code || row.id.slice(0, 6).toUpperCase(),
+    content: row.content,
+    category_name: row.category_name || 'Confession',
+    category_slug: row.category_slug || 'confession',
+    category_icon: row.category_icon || '🔒',
+    image_path: row.image_path || null,
+    gender: row.gender || 'Male',
+    recipient_gender: row.recipient_gender || null,
+    target_batch: row.target_batch || null,
+    target_department: row.target_department || null,
+    created_at: row.created_at,
+    reaction_counts: row.reaction_counts || { relatable: 0, funny: 0, support: 0, interesting: 0 },
+    comment_count: row.comment_count || 0,
+    poll_data: sanitizePollData(row.poll_options) || null,
+    is_bookmarked: true,
+  }));
 }

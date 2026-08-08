@@ -27,7 +27,7 @@ export function ConfessionOfTheDay({ confession }: ConfessionOfTheDayProps) {
 
         {/* Content */}
         <p className="text-slate-100 text-sm font-medium leading-relaxed my-3">
-          "{confession.content}"
+          &ldquo;{confession.content}&rdquo;
         </p>
 
         {/* Footer */}

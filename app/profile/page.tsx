@@ -269,7 +269,7 @@ export default function ProfilePage() {
               ))
             ) : (
               <div className="rounded-[28px] bg-white border border-slate-200/80 p-8 text-center space-y-2 shadow-sm">
-                <p className="text-xs font-bold text-slate-700">You haven't posted any confessions yet.</p>
+                <p className="text-xs font-bold text-slate-700">You haven&apos;t posted any confessions yet.</p>
                 <p className="text-[11px] text-slate-500 font-mono">Your confessions remain 100% anonymous to other students.</p>
               </div>
             )}

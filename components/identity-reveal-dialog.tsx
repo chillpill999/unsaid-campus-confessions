@@ -203,7 +203,7 @@ export function IdentityRevealDialog({
                 <div>
                   <span className="text-slate-500 block text-[10px] font-mono uppercase">Batch / Dept:</span>
                   <span className="font-bold text-slate-900">
-                    {revealedIdentity.department || 'N/A'} ('{revealedIdentity.batch.slice(-2)})
+                    {revealedIdentity.department || 'N/A'} (Batch {revealedIdentity.batch.slice(-2)})
                   </span>
                 </div>
                 <div>

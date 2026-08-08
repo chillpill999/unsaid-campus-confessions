@@ -57,8 +57,8 @@ async function runPersistenceTests() {
   const feedPath = path.join(process.cwd(), 'app', 'feed', 'page.tsx');
   const feedContent = fs.readFileSync(feedPath, 'utf8');
 
-  const hasLoadMore = feedContent.includes('loadMoreConfessions') && feedContent.includes('hasMore');
-  const prependsRealtime = feedContent.includes('uniqueNew') && feedContent.includes('[...uniqueNew, ...prev]');
+  const hasLoadMore = feedContent.includes('loadMoreConfessions') && feedContent.includes('hasMore') && feedContent.includes('cursor') && feedContent.includes('setConfessions((prev) => [...prev, ...json.confessions])');
+  const prependsRealtime = feedContent.includes('existingCodes') && feedContent.includes('[...newItems, ...prev]');
 
   if (hasLoadMore && prependsRealtime) {
     console.log('✅ PASS [PERSIST-05]: Feed page supports cursor pagination and realtime prepend without erasing historical posts.');

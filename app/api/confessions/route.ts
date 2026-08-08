@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient as createServerClient } from '@/lib/supabase/server';
-import { generatePublicCode } from '@/lib/utils';
+import { generatePublicCode, sanitizePollData } from '@/lib/utils';
 import { PublicConfession } from '@/lib/types';
 import { broadcastConfessionEvent } from '@/lib/realtime/broadcast';
 
@@ -45,7 +45,7 @@ export async function GET(req: NextRequest) {
           created_at: singleView.created_at,
           reaction_counts: singleView.reaction_counts || { relatable: 0, funny: 0, support: 0, interesting: 0 },
           comment_count: singleView.comment_count || 0,
-          poll_data: singleView.poll_options || null,
+          poll_data: sanitizePollData(singleView.poll_options) || null,
         };
       } else {
         // 2. Try raw confessions table with admin client fallback
@@ -85,7 +85,7 @@ export async function GET(req: NextRequest) {
             created_at: singleRaw.created_at,
             reaction_counts: { relatable: 0, funny: 0, support: 0, interesting: 0 },
             comment_count: 0,
-            poll_data: singleRaw.poll_options || null,
+            poll_data: sanitizePollData(singleRaw.poll_options) || null,
           };
         }
       }
@@ -162,7 +162,7 @@ export async function GET(req: NextRequest) {
         created_at: row.created_at,
         reaction_counts: row.reaction_counts || { relatable: 0, funny: 0, support: 0, interesting: 0 },
         comment_count: row.comment_count || 0,
-        poll_data: row.poll_options || null,
+        poll_data: sanitizePollData(row.poll_options) || null,
       }));
     } else {
       // 2. Direct query fallback on confessions table
@@ -207,7 +207,7 @@ export async function GET(req: NextRequest) {
           created_at: row.created_at,
           reaction_counts: { relatable: 0, funny: 0, support: 0, interesting: 0 },
           comment_count: 0,
-          poll_data: row.poll_options || null,
+          poll_data: sanitizePollData(row.poll_options) || null,
         }));
       }
     }

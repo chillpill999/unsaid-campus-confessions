@@ -122,7 +122,7 @@ export default function AdminUsersPage() {
                 </div>
                 <div>
                   <span className="text-[10px] text-slate-500 font-mono uppercase block">Batch Year:</span>
-                  <strong className="text-slate-950 font-bold">'{acc.batch || '2026'}</strong>
+                  <strong className="text-slate-950 font-bold">Batch {acc.batch || '2026'}</strong>
                 </div>
                 <div>
                   <span className="text-[10px] text-slate-500 font-mono uppercase block">System Role:</span>

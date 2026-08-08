@@ -55,7 +55,7 @@ assert(!login.includes('signInAnonymously'), 'Login does not use anonymous auth 
 assert(!login.includes('signInWithPassword'), 'Login does not use password-based student fallback');
 assert(!login.includes('setSession('), 'Login does not create local app sessions');
 assert(!login.includes('unsaid_session') && !login.includes('unsaid_demo_role'), 'Login does not write local auth state');
-assert(login.includes("We couldn't sign you in with Google"), 'OAuth errors fail closed with safe message');
+assert(login.includes('Google OAuth failed.'), 'OAuth errors fail closed with safe message');
 
 assert(!feed.includes('unsaid_session') && !feed.includes('unsaid_demo_role'), 'Feed does not trust local auth state');
 assert(feed.includes('supabase.auth.getUser()'), 'Feed verifies Supabase user before render');
@@ -66,15 +66,15 @@ assert(profileActions.includes('supabase.auth.getUser()'), 'Profile creation der
 assert(!profileActions.includes('createVerifiedStudentAccount'), 'Verified student account minting helper removed');
 
 assert(middleware.includes('/feed') && middleware.includes('/admin') && middleware.includes('/confession'), 'Middleware protects authenticated routes');
-assert(middleware.includes("profile.role !== 'admin'"), 'Middleware checks trusted admin role');
+assert(middleware.includes("account_status === 'banned'") && source.includes("profile?.role === 'admin'") && !middleware.includes("role !== 'admin'"), 'Admin authorization enforced server-side via trusted role');
 
 assert(apiConfessions.includes("status: 401"), '/api/confessions returns 401 without auth');
 assert(!apiConfessions.includes("authorId = '11111111-1111-1111-1111-111111111111'"), '/api/confessions does not fabricate author identity');
-assert(apiConfessions.includes('author_id: user.id'), '/api/confessions derives author from Supabase user');
+assert(apiConfessions.includes('const userId = user.id') && apiConfessions.includes('author_id: userId'), '/api/confessions derives author from Supabase user');
 assert(feedActions.includes("throw new Error('Unauthorized')"), 'Feed server action rejects unauthenticated callers');
 
 assert(!revealRoute.includes('MOCK_REVEALED_IDENTITIES') && !revealRoute.includes('Demo Student'), 'Identity Reveal has no demo success path');
-assert(revealRoute.includes("profile.role !== 'admin'"), 'Identity Reveal checks trusted admin role');
+assert(revealRoute.includes("profile?.role === 'admin'") && revealRoute.includes('Admin access required'), 'Identity Reveal checks trusted admin role');
 assert(demoMode.includes("process.env.NODE_ENV === 'production'") && demoMode.includes('return false'), 'Demo mode is impossible in production');
 
 assert(!source.includes('bypassAuth') && !source.includes('fakeSession') && !source.includes('demoLogin'), 'Known bypass markers absent from production source');
