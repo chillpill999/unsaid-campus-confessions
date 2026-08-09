@@ -82,6 +82,8 @@ export interface UserProfile {
   department?: string;
   role: UserRole;
   account_status: AccountStatus;
+  provider?: string;
+  last_sign_in_at?: string | null;
   created_at: string;
 }
 

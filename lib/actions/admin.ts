@@ -78,58 +78,83 @@ export async function adminFetchUsers() {
   await requireAdmin();
   const admin = createAdminClient();
 
-  const { data: profiles, error } = await admin
+  const { data: profiles } = await admin
     .from('profiles')
-    .select('*')
+    .select('*, colleges(name)')
     .order('created_at', { ascending: false });
 
-  let authMap: Record<string, any> = {};
+  let allAuthUsers: any[] = [];
   try {
-    const { data: authData } = await admin.auth.admin.listUsers();
-    if (authData && authData.users) {
-      authData.users.forEach((u) => {
-        authMap[u.id] = {
-          email: u.email,
-          full_name: u.user_metadata?.full_name || u.user_metadata?.name || (u.email ? u.email.split('@')[0] : 'Student'),
-          avatar_url: u.user_metadata?.avatar_url || u.user_metadata?.picture || null,
-        };
-      });
+    let page = 1;
+    const perPage = 1000;
+    while (true) {
+      const { data: authData, error: authErr } = await admin.auth.admin.listUsers({ page, perPage });
+      if (authErr || !authData || !authData.users || authData.users.length === 0) {
+        break;
+      }
+      allAuthUsers.push(...authData.users);
+      if (authData.users.length < perPage) {
+        break;
+      }
+      page++;
     }
   } catch (err) {
     console.warn('listUsers admin fetch note:', err);
   }
 
-  if (error && !profiles) {
-    return Object.keys(authMap).map((id) => ({
-      id,
-      full_name: authMap[id].full_name || 'LNJPIT Student',
-      email: authMap[id].email || 'N/A',
-      username: authMap[id].email ? authMap[id].email.split('@')[0] : 'student',
-      college_name: 'LNJPIT',
-      batch: '2026',
-      department: 'CSE',
-      role: (authMap[id].email || '').includes('aryanrockstar') ? 'admin' : 'student',
-      account_status: 'active',
-      avatar_url: authMap[id].avatar_url,
-      created_at: new Date().toISOString(),
-    }));
-  }
+  const authUsersMap = new Map(allAuthUsers.map((u: any) => [u.id, u]));
+  const profilesMap = new Map((profiles || []).map((p: any) => [p.id, p]));
 
-  const mergedUsers = (profiles || []).map((p: any) => {
-    const auth = authMap[p.id] || {};
+  const allUserIds = Array.from(new Set([...authUsersMap.keys(), ...profilesMap.keys()]));
+
+  const mergedUsers = allUserIds.map((id) => {
+    const u = authUsersMap.get(id);
+    const p = profilesMap.get(id);
+
+    const realEmail = u?.email || p?.email || 'N/A';
+
+    const metadataName =
+      u?.user_metadata?.full_name ||
+      u?.user_metadata?.name ||
+      (u?.user_metadata?.first_name
+        ? `${u.user_metadata.first_name} ${u.user_metadata.last_name || ''}`.trim()
+        : null);
+
+    const fallbackName = realEmail !== 'N/A' ? realEmail.split('@')[0] : 'LNJPIT Student';
+    const realFullName = p?.full_name || metadataName || fallbackName;
+
+    const realAvatarUrl =
+      p?.avatar_url || u?.user_metadata?.avatar_url || u?.user_metadata?.picture || null;
+
+    const emailPrefix =
+      realEmail !== 'N/A' ? realEmail.split('@')[0].toLowerCase().replace(/[^a-z0-9_]/g, '') : '';
+    const defaultHandle = emailPrefix || `student_${id.slice(0, 6)}`;
+    const username = p?.username || defaultHandle;
+
+    const provider =
+      u?.app_metadata?.provider || (u?.identities && u.identities[0]?.provider) || 'email';
+
     return {
-      ...p,
-      full_name: p.full_name || auth.full_name || 'LNJPIT Student',
-      email: p.email || auth.email || 'N/A',
-      username: p.username || (auth.email ? auth.email.split('@')[0] : 'student'),
-      college_name: p.college_name || 'LNJPIT',
-      batch: p.batch || '2026',
-      department: p.department || 'CSE',
-      role: p.role || 'student',
-      account_status: p.account_status || 'active',
-      avatar_url: p.avatar_url || auth.avatar_url || null,
+      id,
+      full_name: realFullName,
+      email: realEmail,
+      username,
+      college_name: p?.colleges?.name || p?.college_name || 'Loknayak Jai Prakash Institute of Technology',
+      batch: p?.batch || '2026',
+      department: p?.department || 'Computer Science & Engineering (CSE)',
+      gender: p?.gender || 'Prefer not to say',
+      role: p?.role || (realEmail.toLowerCase().includes('aryanrockstar') ? 'admin' : 'student'),
+      account_status: p?.account_status || 'active',
+      avatar_url: realAvatarUrl,
+      provider,
+      last_sign_in_at: u?.last_sign_in_at || null,
+      created_at: p?.created_at || u?.created_at || new Date().toISOString(),
     };
   });
+
+  mergedUsers.sort(
+    (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+  );
 
   return mergedUsers;
 }
@@ -138,12 +163,34 @@ export async function adminUpdateUserStatus(id: string, newStatus: 'active' | 'r
   await requireAdmin();
   const admin = createAdminClient();
 
-  const { error } = await admin
+  const { data: existing } = await admin
     .from('profiles')
-    .update({ account_status: newStatus })
-    .eq('id', id);
+    .select('id')
+    .eq('id', id)
+    .maybeSingle();
 
-  if (error) throw new Error('Failed to update user status');
+  if (existing) {
+    const { error } = await admin
+      .from('profiles')
+      .update({ account_status: newStatus, updated_at: new Date().toISOString() })
+      .eq('id', id);
+
+    if (error) throw new Error('Failed to update user status: ' + error.message);
+  } else {
+    const { error } = await admin
+      .from('profiles')
+      .insert({
+        id,
+        gender: 'Prefer not to say',
+        batch: '2026',
+        department: 'Computer Science & Engineering (CSE)',
+        role: 'student',
+        account_status: newStatus,
+        updated_at: new Date().toISOString(),
+      });
+
+    if (error) throw new Error('Failed to update user status: ' + error.message);
+  }
 }
 
 export async function adminFetchReports() {
@@ -192,9 +239,28 @@ export async function adminFetchStats() {
   todayStart.setHours(0, 0, 0, 0);
   const todayISO = todayStart.toISOString();
 
-  const { count: studentsCount } = await admin
+  let authUserCount = 0;
+  try {
+    let page = 1;
+    const perPage = 1000;
+    while (true) {
+      const { data: authData, error: authErr } = await admin.auth.admin.listUsers({ page, perPage });
+      if (authErr || !authData || !authData.users || authData.users.length === 0) {
+        break;
+      }
+      authUserCount += authData.users.length;
+      if (authData.users.length < perPage) {
+        break;
+      }
+      page++;
+    }
+  } catch {}
+
+  const { count: profilesCount } = await admin
     .from('profiles')
     .select('id', { count: 'exact', head: true });
+
+  const activeStudents = Math.max(authUserCount, profilesCount || 0);
 
   const { count: confessionsCount } = await admin
     .from('confessions')
@@ -212,7 +278,7 @@ export async function adminFetchStats() {
     .eq('status', 'pending');
 
   return {
-    activeStudents: studentsCount || 0,
+    activeStudents,
     confessionsToday: confessionsCount || 0,
     commentsToday: commentsCount || 0,
     reportsPending: reportsCount || 0,
