@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
+import { HeroNetworkCanvas } from '@/components/hero-network-canvas';
 import { 
   Lock, 
   ShieldCheck, 
@@ -66,6 +67,11 @@ export default function LandingPage() {
 
       {/* Hero Section */}
       <section className="relative pt-10 pb-12 sm:pt-20 sm:pb-24 px-4 overflow-hidden">
+        {/* Interactive 3D Particle Network Canvas Background */}
+        <div className="absolute inset-0 z-0 opacity-40 sm:opacity-55 pointer-events-auto">
+          <HeroNetworkCanvas particleCount={65} />
+        </div>
+
         {/* Glow background accents */}
         <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-72 h-72 sm:w-96 sm:h-96 bg-[#FF6B00]/10 rounded-full blur-3xl pointer-events-none" />
         <div className="absolute top-1/3 left-1/3 w-60 h-60 sm:w-80 sm:h-80 bg-[#769B6C]/10 rounded-full blur-3xl pointer-events-none" />

@@ -1,0 +1,35 @@
+{
+  "version": "1.0",
+  "name": "ConfessionLnjpit",
+  "description": "Official anonymous student community and confession portal for Loknayak Jai Prakash Institute of Technology (LNJPIT Chapra, Bihar).",
+  "site": "https://www.confessionlnjpit.in",
+  "actions": [
+    {
+      "id": "browse-feed",
+      "name": "Browse Campus Feed",
+      "description": "Read the latest approved anonymous student confessions, campus polls, and reactions from LNJPIT Chapra.",
+      "method": "declarative",
+      "endpoint": "/feed"
+    },
+    {
+      "id": "search-confessions",
+      "name": "Search Confessions",
+      "description": "Search anonymous LNJPIT confessions by keyword, batch, department (CSE, FPP, CE, ME, EEE), or public code.",
+      "method": "declarative",
+      "endpoint": "/search",
+      "parameters": {
+        "optional": ["q", "department", "batch"]
+      }
+    },
+    {
+      "id": "view-confession-detail",
+      "name": "View Confession Thread",
+      "description": "Read a specific anonymous confession thread and community comments by confession code.",
+      "method": "declarative",
+      "endpoint": "/confession/{code}",
+      "parameters": {
+        "required": ["code"]
+      }
+    }
+  ]
+}
