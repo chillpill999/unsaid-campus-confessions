@@ -3,7 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Lock, Flame, Plus, MessageSquare, User } from 'lucide-react';
+import { Lock, Flame, Plus, Bell, MessageSquare, User } from 'lucide-react';
 
 interface MobileNavProps {
   onOpenComposer: () => void;
@@ -18,8 +18,8 @@ export function MobileNav({ onOpenComposer }: MobileNavProps) {
   ];
 
   const rightNavItems = [
+    { label: 'Activity', href: '/notifications', icon: Bell },
     { label: 'Inbox', href: '/inbox', icon: MessageSquare },
-    { label: 'Profile', href: '/profile', icon: User },
   ];
 
   return (

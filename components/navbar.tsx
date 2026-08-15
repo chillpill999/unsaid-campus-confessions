@@ -24,9 +24,10 @@ interface NavbarProps {
 export function Navbar({ onOpenComposer, isAdmin: isAdminProp = false }: NavbarProps) {
   const pathname = usePathname();
   const [isAdminUser, setIsAdminUser] = useState(isAdminProp);
+  const [unreadCount, setUnreadCount] = useState(0);
 
   useEffect(() => {
-    async function checkRole() {
+    async function checkRoleAndNotifications() {
       try {
         const supabase = createClient();
         const { data: { user } } = await supabase.auth.getUser();
@@ -43,11 +44,22 @@ export function Navbar({ onOpenComposer, isAdmin: isAdminProp = false }: NavbarP
           if (isSuperAdminEmail || profile?.role === 'admin') {
             setIsAdminUser(true);
           }
+
+          // Fetch unread notifications count
+          const { count } = await supabase
+            .from('notifications')
+            .select('*', { count: 'exact', head: true })
+            .eq('recipient_id', user.id)
+            .eq('is_read', false);
+
+          if (typeof count === 'number') {
+            setUnreadCount(count);
+          }
         }
       } catch {}
     }
-    checkRole();
-  }, []);
+    checkRoleAndNotifications();
+  }, [pathname]);
 
   const showAdminLink = isAdminProp || isAdminUser;
 
@@ -81,11 +93,12 @@ export function Navbar({ onOpenComposer, isAdmin: isAdminProp = false }: NavbarP
           {navItems.map((item) => {
             const Icon = item.icon;
             const isActive = pathname === item.href;
+            const isNotifications = item.href === '/notifications';
             return (
               <Link
                 key={item.href}
                 href={item.href}
-                className={`flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold transition-all ${
+                className={`relative flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold transition-all ${
                   isActive
                     ? 'bg-[#FF6B00] text-white shadow-md shadow-[#FF6B00]/20'
                     : 'text-slate-600 hover:text-slate-950 hover:bg-slate-100'
@@ -93,6 +106,11 @@ export function Navbar({ onOpenComposer, isAdmin: isAdminProp = false }: NavbarP
               >
                 <Icon className="w-3.5 h-3.5" />
                 {item.label}
+                {isNotifications && unreadCount > 0 && (
+                  <span className="min-w-4 h-4 px-1 rounded-full bg-rose-500 text-white text-[9px] font-mono font-bold flex items-center justify-center border border-white">
+                    {unreadCount > 9 ? '9+' : unreadCount}
+                  </span>
+                )}
               </Link>
             );
           })}
@@ -125,6 +143,24 @@ export function Navbar({ onOpenComposer, isAdmin: isAdminProp = false }: NavbarP
               <span className="sm:hidden text-[11px] font-black text-amber-800">Admin</span>
             </Link>
           )}
+
+          {/* Notifications Icon (Mobile Header Bell with Badge) */}
+          <Link
+            href="/notifications"
+            className={`relative w-9 h-9 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl border flex items-center justify-center transition-all shadow-sm shrink-0 md:hidden ${
+              pathname === '/notifications'
+                ? 'bg-[#FF6B00] text-white border-[#FF6B00] shadow-md shadow-[#FF6B00]/25'
+                : 'bg-white border-slate-200 text-slate-700 hover:text-slate-950 hover:border-[#FF6B00]/40'
+            }`}
+            title="Notifications"
+          >
+            <Bell className="w-4 h-4 sm:w-4.5 sm:h-4.5" />
+            {unreadCount > 0 && (
+              <span className="absolute -top-1 -right-1 min-w-4 h-4 px-1 rounded-full bg-[#FF6B00] text-white text-[9px] font-mono font-bold flex items-center justify-center border-2 border-white animate-pulse">
+                {unreadCount > 9 ? '9+' : unreadCount}
+              </span>
+            )}
+          </Link>
 
           <Link
             href="/search"
