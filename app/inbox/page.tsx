@@ -271,7 +271,34 @@ export default function InboxPage() {
 
     dmChannel.subscribe();
 
+    // Periodic sync interval while chat is open (guarantees delivery across network drops)
+    const syncInterval = setInterval(() => {
+      fetchDirectMessagesAction(convKey, myUsername).then((serverMsgs) => {
+        if (serverMsgs && serverMsgs.length > 0) {
+          setDmMessages((prev) => {
+            const combined = [...prev];
+            let changed = false;
+            serverMsgs.forEach((sm) => {
+              const smIsMine = sm.sender_username.toLowerCase() === myUsername.toLowerCase();
+              const exists = combined.some((m) => m.id === sm.id);
+              if (!exists) {
+                combined.push({
+                  ...sm,
+                  is_mine: smIsMine,
+                });
+                changed = true;
+              }
+            });
+            return changed
+              ? combined.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
+              : prev;
+          });
+        }
+      });
+    }, 3500);
+
     return () => {
+      clearInterval(syncInterval);
       supabase.removeChannel(dmChannel);
     };
   }, [activeFriend, myUsername, inboxMode]);

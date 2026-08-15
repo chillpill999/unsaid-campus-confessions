@@ -14,17 +14,39 @@ function getAdminClient() {
 }
 
 /**
- * Derives the authenticated user's campus handle from their verified session
- * email (local part), so actions are bound to the real caller and cannot be
- * spoofed with an arbitrary username from the client. Returns null when the
- * caller is not signed in.
+ * Derives the authenticated user's campus handle from their canonical profile
+ * in Supabase (falling back to verified session email local-part).
  */
 async function getAuthHandle(): Promise<string | null> {
   try {
     const supabase = createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user?.email) return null;
-    return user.email.split('@')[0].toLowerCase().replace(/[^a-z0-9_]/g, '');
+    const { data: { user }, error } = await supabase.auth.getUser();
+    if (!user || error) return null;
+
+    const admin = getAdminClient();
+    const client = admin || supabase;
+
+    // 1. Fetch user's canonical handle from profiles table
+    const { data: profile } = await client
+      .from('profiles')
+      .select('username')
+      .eq('id', user.id)
+      .maybeSingle();
+
+    if (profile?.username) {
+      return profile.username.trim().toLowerCase().replace(/^@/, '').replace(/[^a-z0-9_]/g, '');
+    }
+
+    // 2. Fallback to email prefix and auto-persist to profiles
+    if (user.email) {
+      const emailHandle = user.email.split('@')[0].toLowerCase().replace(/[^a-z0-9_]/g, '');
+      if (admin && emailHandle) {
+        await admin.from('profiles').update({ username: emailHandle }).eq('id', user.id);
+      }
+      return emailHandle;
+    }
+
+    return null;
   } catch {
     return null;
   }
