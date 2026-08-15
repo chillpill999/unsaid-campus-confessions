@@ -172,13 +172,28 @@ export function HeroNetworkCanvas({
         ctx.shadowBlur = 0;
       }
 
-      animationFrameId = requestAnimationFrame(render);
+      if (isVisible) {
+        animationFrameId = requestAnimationFrame(render);
+      }
     };
 
-    render();
+    let isVisible = true;
+    const observer = new IntersectionObserver(([entry]) => {
+      const previouslyVisible = isVisible;
+      isVisible = entry.isIntersecting;
+      if (isVisible && !previouslyVisible) {
+        cancelAnimationFrame(animationFrameId);
+        animationFrameId = requestAnimationFrame(render);
+      }
+    }, { threshold: 0.05 });
+
+    observer.observe(canvas);
+
+    animationFrameId = requestAnimationFrame(render);
 
     return () => {
       cancelAnimationFrame(animationFrameId);
+      observer.disconnect();
       window.removeEventListener('resize', handleResize);
       canvas.removeEventListener('mousemove', handleMouseMove);
       canvas.removeEventListener('mouseleave', handleMouseLeave);

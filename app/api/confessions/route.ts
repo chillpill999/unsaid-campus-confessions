@@ -270,9 +270,14 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    nextCursor = dbConfessions.length > 0 ? dbConfessions[dbConfessions.length - 1].created_at : null;
-
-    return NextResponse.json({ success: true, confessions: dbConfessions, nextCursor, hasMore });
+    return NextResponse.json(
+      { success: true, confessions: dbConfessions, nextCursor, hasMore },
+      {
+        headers: {
+          'Cache-Control': 'public, s-maxage=5, stale-while-revalidate=30',
+        },
+      }
+    );
   } catch (err: any) {
     console.error('GET /api/confessions catch:', err);
     return NextResponse.json({ success: false, error: err.message }, { status: 500 });

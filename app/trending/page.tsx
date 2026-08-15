@@ -13,6 +13,21 @@ export default function TrendingPage() {
   const [loading, setLoading] = useState(true);
   const [isComposerOpen, setIsComposerOpen] = useState(false);
 
+  // 1. Instant 0ms Cache Hydration on mount
+  useEffect(() => {
+    try {
+      const cached = sessionStorage.getItem('trending_confessions_cache');
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setConfessions(parsed);
+          setLoading(false);
+        }
+      }
+    } catch {}
+  }, []);
+
+  // 2. Fetch fresh trending confessions in background
   useEffect(() => {
     let mounted = true;
 
@@ -30,6 +45,9 @@ export default function TrendingPage() {
             return bEngage - aEngage;
           });
           setConfessions(sorted);
+          try {
+            sessionStorage.setItem('trending_confessions_cache', JSON.stringify(sorted));
+          } catch {}
         }
       } catch (err) {
         console.warn('Failed to load trending confessions:', err);

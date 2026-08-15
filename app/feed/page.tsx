@@ -39,7 +39,21 @@ export default function FeedPage() {
     }
   }
 
-  // 1. Enforce strict auth verification on client load
+  // 1. Instant 0ms SWR Local Cache Hydration on mount
+  useEffect(() => {
+    try {
+      const cached = sessionStorage.getItem('feed_confessions_cache');
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setConfessions(parsed);
+          setLoading(false);
+        }
+      }
+    } catch {}
+  }, []);
+
+  // 2. Auth verification on client load
   useEffect(() => {
     async function verifyAuthSession() {
       try {
@@ -61,11 +75,10 @@ export default function FeedPage() {
     verifyAuthSession();
   }, [router]);
 
-  // 2. Fetch Initial Confessions from Supabase PostgreSQL API
+  // 3. Fetch Initial Confessions from Supabase PostgreSQL API
   const fetchConfessions = useCallback(async () => {
-    if (!isAuthVerified) return;
-
-    setLoading(true);
+    // Only trigger full-screen loading spinner if there's no cached data
+    setLoading((prev) => (confessions.length === 0 ? true : prev));
     try {
       const res = await fetch('/api/confessions?limit=20');
       const json = await res.json();
@@ -74,6 +87,9 @@ export default function FeedPage() {
         setConfessions(json.confessions);
         setHasMore(json.hasMore || false);
         setNextCursor(json.nextCursor || null);
+        try {
+          sessionStorage.setItem('feed_confessions_cache', JSON.stringify(json.confessions));
+        } catch {}
       } else {
         const { fetchPublicConfessions } = await import('@/lib/actions/feed');
         const fallbackData = await fetchPublicConfessions();
@@ -91,11 +107,11 @@ export default function FeedPage() {
     } finally {
       setLoading(false);
     }
-  }, [isAuthVerified]);
+  }, [confessions.length]);
 
   useEffect(() => {
     fetchConfessions();
-  }, [fetchConfessions]);
+  }, []);
 
   // 3. Enable Realtime Feed Synchronization across all clients
   useRealtimeFeed({

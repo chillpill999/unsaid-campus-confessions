@@ -105,7 +105,22 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${inter.variable} ${outfit.variable}`}>
       <head>
+        <link rel="preconnect" href="https://prkecywvrficjylboior.supabase.co" crossOrigin="anonymous" />
+        <link rel="dns-prefetch" href="https://prkecywvrficjylboior.supabase.co" />
         <link rel="mcp-actions" href="/mcp-actions.json" />
+        <script
+          type="speculationrules"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              prerender: [
+                {
+                  where: { href_matches: '/*' },
+                  eagerness: 'moderate',
+                },
+              ],
+            }),
+          }}
+        />
         <JsonLd />
       </head>
       <body className="bg-[#F4F3EF] text-slate-900 min-h-screen flex flex-col font-sans selection:bg-[#FF6B00] selection:text-white">
