@@ -121,10 +121,17 @@ CREATE TABLE IF NOT EXISTS direct_messages (
 
 CREATE INDEX IF NOT EXISTS idx_dm_conv_key ON direct_messages (conversation_key);
 CREATE INDEX IF NOT EXISTS idx_fr_receiver ON friend_requests (receiver_username, status);
+CREATE INDEX IF NOT EXISTS idx_fr_sender ON friend_requests (sender_username, status);
 
 ALTER TABLE friend_requests ENABLE ROW LEVEL SECURITY;
 ALTER TABLE direct_messages ENABLE ROW LEVEL SECURITY;
 
-GRANT ALL ON friend_requests TO authenticated, service_role;
-GRANT ALL ON direct_messages TO authenticated, service_role;
+DROP POLICY IF EXISTS "Allow authenticated full access to friend_requests" ON friend_requests;
+CREATE POLICY "Allow authenticated full access to friend_requests" ON friend_requests FOR ALL TO authenticated, anon USING (true) WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Allow authenticated full access to direct_messages" ON direct_messages;
+CREATE POLICY "Allow authenticated full access to direct_messages" ON direct_messages FOR ALL TO authenticated, anon USING (true) WITH CHECK (true);
+
+GRANT ALL ON friend_requests TO authenticated, service_role, anon;
+GRANT ALL ON direct_messages TO authenticated, service_role, anon;
 

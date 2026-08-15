@@ -327,6 +327,23 @@ export default function InboxPage() {
 
     if (!customText) setDirectInputMsg('');
 
+    const convKey = getConversationKey(myUsername, activeFriend.username);
+    const tempId = `temp-${Date.now()}`;
+    const tempMsg: DirectMessage = {
+      id: tempId,
+      conversation_key: convKey,
+      sender_username: myUsername,
+      receiver_username: activeFriend.username,
+      content: textToSend.trim(),
+      created_at: new Date().toISOString(),
+      expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+      is_mine: true,
+    };
+
+    // Optimistic instantaneous render
+    setDmMessages((prev) => [...prev, tempMsg]);
+    saveDirectMessageToLocal(tempMsg);
+
     // Trigger server action for multi-device sync + realtime broadcast
     const res = await sendDirectMessageAction(myUsername, activeFriend.username, textToSend.trim());
     if (res && res.success && res.message && typeof res.message !== 'string') {
@@ -336,17 +353,7 @@ export default function InboxPage() {
       };
       saveDirectMessageToLocal(formattedMsg);
       setDmMessages((prev) => {
-        if (
-          prev.some(
-            (m) =>
-              m.id === formattedMsg.id ||
-              (m.content.trim() === formattedMsg.content.trim() &&
-                Math.abs(new Date(m.created_at).getTime() - new Date(formattedMsg.created_at).getTime()) < 5000)
-          )
-        ) {
-          return prev;
-        }
-        return [...prev, formattedMsg];
+        return prev.map((m) => (m.id === tempId ? formattedMsg : m));
       });
     }
   };

@@ -112,11 +112,12 @@ export async function sendFriendRequestAction(
   }
 
   const admin = getAdminClient();
+  const client = admin || createClient();
 
   // 1. Check existing in Supabase DB first if table available
-  if (admin) {
+  if (client) {
     try {
-      const { data: existingDb } = await admin
+      const { data: existingDb } = await client
         .from('friend_requests')
         .select('*')
         .eq('sender_username', cleanSender)
@@ -161,9 +162,9 @@ export async function sendFriendRequestAction(
   GLOBAL_FRIEND_REQUESTS.unshift(newRequest);
 
   // Save to Supabase DB if table available
-  if (admin) {
+  if (client) {
     try {
-      await admin.from('friend_requests').insert({
+      await client.from('friend_requests').insert({
         id: newRequest.id,
         sender_username: newRequest.sender_username,
         sender_name: newRequest.sender_name,
@@ -197,11 +198,12 @@ export async function fetchFriendRequestsAction(username: string): Promise<Frien
   if (!clean) return [];
 
   const admin = getAdminClient();
+  const client = admin || createClient();
   let dbRequests: FriendRequest[] = [];
 
-  if (admin) {
+  if (client) {
     try {
-      const { data } = await admin
+      const { data } = await client
         .from('friend_requests')
         .select('*')
         .or(`receiver_username.eq.${clean},sender_username.eq.${clean}`)
@@ -239,10 +241,11 @@ export async function acceptFriendRequestAction(
   let req: FriendRequest | undefined = GLOBAL_FRIEND_REQUESTS.find((r) => r.id === requestId);
 
   const admin = getAdminClient();
+  const client = admin || createClient();
 
-  if (admin) {
+  if (client) {
     try {
-      const { data } = await admin.from('friend_requests').select('*').eq('id', requestId).single();
+      const { data } = await client.from('friend_requests').select('*').eq('id', requestId).single();
       if (data) req = data as FriendRequest;
     } catch {}
   }
@@ -254,9 +257,9 @@ export async function acceptFriendRequestAction(
   req.status = 'accepted';
 
   // Update in DB
-  if (admin) {
+  if (client) {
     try {
-      await admin.from('friend_requests').update({ status: 'accepted' }).eq('id', requestId);
+      await client.from('friend_requests').update({ status: 'accepted' }).eq('id', requestId);
     } catch {}
   }
 
@@ -343,9 +346,10 @@ export async function rejectFriendRequestAction(requestId: string): Promise<{ su
   }
 
   const admin = getAdminClient();
-  if (admin) {
+  const client = admin || createClient();
+  if (client) {
     try {
-      await admin.from('friend_requests').update({ status: 'rejected' }).eq('id', requestId);
+      await client.from('friend_requests').update({ status: 'rejected' }).eq('id', requestId);
     } catch {}
   }
 
@@ -357,27 +361,58 @@ export async function fetchFriendsListAction(username: string): Promise<FriendCo
   if (!clean) return [];
 
   const admin = getAdminClient();
-  let dbFriends: FriendContact[] = [];
+  const combinedMap = new Map<string, FriendContact>();
 
   if (admin) {
     try {
-      const { data } = await admin.from('friends').select('*').eq('username', clean);
-      if (data && data.length > 0) {
-        dbFriends = data.map((f: any) => ({
-          username: f.friend_username,
-          full_name: f.full_name || `@${f.friend_username}`,
-          department: f.department || 'LNJPIT Campus',
-          batch: f.batch || 'Batch 2024-28',
-          avatar_gradient: f.avatar_gradient || 'from-orange-500 to-amber-500',
-          status: 'accepted',
-        }));
+      // 1. Fetch from friend_requests table where status = 'accepted'
+      const { data: acceptedReqs } = await admin
+        .from('friend_requests')
+        .select('*')
+        .eq('status', 'accepted')
+        .or(`receiver_username.eq.${clean},sender_username.eq.${clean}`)
+        .order('created_at', { ascending: false });
+
+      if (acceptedReqs && acceptedReqs.length > 0) {
+        acceptedReqs.forEach((r: any) => {
+          const isSender = r.sender_username.toLowerCase() === clean;
+          const friendUsername = isSender ? r.receiver_username : r.sender_username;
+          const friendName = isSender
+            ? r.receiver_name || `@${r.receiver_username}`
+            : r.sender_name || `@${r.sender_username}`;
+
+          combinedMap.set(friendUsername.toLowerCase(), {
+            username: friendUsername,
+            full_name: friendName,
+            department: 'LNJPIT Campus',
+            batch: 'Batch 2024-28',
+            avatar_gradient: 'from-orange-500 to-amber-500',
+            status: 'accepted',
+          });
+        });
       }
-    } catch {}
+
+      // 2. Also query friends table if available
+      const { data: friendsData } = await admin.from('friends').select('*').eq('username', clean);
+      if (friendsData && friendsData.length > 0) {
+        friendsData.forEach((f: any) => {
+          combinedMap.set(f.friend_username.toLowerCase(), {
+            username: f.friend_username,
+            full_name: f.full_name || `@${f.friend_username}`,
+            department: f.department || 'LNJPIT Campus',
+            batch: f.batch || 'Batch 2024-28',
+            avatar_gradient: f.avatar_gradient || 'from-orange-500 to-amber-500',
+            status: 'accepted',
+          });
+        });
+      }
+    } catch (err) {
+      console.warn('fetchFriendsListAction DB note:', err);
+    }
   }
 
+  // 3. Fallback merge with memory map
   const memFriends = GLOBAL_FRIENDS_MAP[clean] || [];
-  const combinedMap = new Map<string, FriendContact>();
-  dbFriends.forEach((f) => combinedMap.set(f.username.toLowerCase(), f));
   memFriends.forEach((f) => {
     if (!combinedMap.has(f.username.toLowerCase())) {
       combinedMap.set(f.username.toLowerCase(), f);
@@ -421,9 +456,10 @@ export async function sendDirectMessageAction(
 
   // 1. Persist to Supabase direct_messages table
   const admin = getAdminClient();
-  if (admin) {
+  const client = admin || createClient();
+  if (client) {
     try {
-      await admin.from('direct_messages').insert({
+      await client.from('direct_messages').insert({
         id: newMsg.id,
         conversation_key: newMsg.conversation_key,
         sender_username: newMsg.sender_username,
@@ -452,14 +488,14 @@ export async function fetchDirectMessagesAction(
   conversationKey: string,
   username: string
 ): Promise<DirectMessage[]> {
-  const authHandle = (await getAuthHandle()) || username.trim().toLowerCase().replace(/^@/, '');
-  if (!authHandle || !conversationKey) return [];
+  const cleanUser = username.trim().toLowerCase().replace(/^@/, '');
+  const authHandle = (await getAuthHandle()) || cleanUser;
+  if (!conversationKey) return [];
 
-  const key = conversationKey;
+  const key = conversationKey.toLowerCase();
   const involvesMe =
-    key === `${authHandle}_${authHandle}` ||
-    key.startsWith(authHandle + '_') ||
-    key.endsWith('_' + authHandle);
+    key.includes(cleanUser) ||
+    (authHandle && key.includes(authHandle));
   if (!involvesMe) return [];
 
   const nowIso = new Date().toISOString();
@@ -467,9 +503,10 @@ export async function fetchDirectMessagesAction(
 
   // 1. Fetch from Supabase DB
   const admin = getAdminClient();
-  if (admin) {
+  const client = admin || createClient();
+  if (client) {
     try {
-      const { data: dbData } = await admin
+      const { data: dbData } = await client
         .from('direct_messages')
         .select('*')
         .eq('conversation_key', key)
