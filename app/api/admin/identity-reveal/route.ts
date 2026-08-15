@@ -4,7 +4,7 @@ import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { checkRateLimit } from '@/lib/rate-limit';
 
-const SUPER_ADMIN_EMAIL = 'aryanrockstar2007@gmail.com';
+const SUPER_ADMIN_EMAIL = (process.env.SUPER_ADMIN_EMAIL || 'aryanrockstar2007@gmail.com').toLowerCase();
 
 /**
  * Server-side authorization for identity reveal. Only the super-admin email or

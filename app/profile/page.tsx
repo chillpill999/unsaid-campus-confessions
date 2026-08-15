@@ -105,6 +105,7 @@ export default function ProfilePage() {
               {!profileLoaded ? (
                 <SkeletonPulse className="w-16 h-16 !rounded-2xl" />
               ) : profile.avatar_url ? (
+                /* eslint-disable-next-line @next/next/no-img-element */
                 <img
                   src={profile.avatar_url}
                   alt={profile.full_name || 'Student'}

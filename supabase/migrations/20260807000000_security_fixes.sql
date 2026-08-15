@@ -97,3 +97,34 @@ BEGIN
     EXECUTE 'GRANT ALL ON anonymous_messages TO authenticated';
   END IF;
 END $$;
+
+-- 7. Friend Requests & Direct Messages Tables
+CREATE TABLE IF NOT EXISTS friend_requests (
+  id TEXT PRIMARY KEY,
+  sender_username VARCHAR(100) NOT NULL,
+  sender_name VARCHAR(100),
+  receiver_username VARCHAR(100) NOT NULL,
+  receiver_name VARCHAR(100),
+  status VARCHAR(20) DEFAULT 'pending',
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS direct_messages (
+  id TEXT PRIMARY KEY,
+  conversation_key VARCHAR(255) NOT NULL,
+  sender_username VARCHAR(100) NOT NULL,
+  receiver_username VARCHAR(100) NOT NULL,
+  content TEXT NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  expires_at TIMESTAMPTZ NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_dm_conv_key ON direct_messages (conversation_key);
+CREATE INDEX IF NOT EXISTS idx_fr_receiver ON friend_requests (receiver_username, status);
+
+ALTER TABLE friend_requests ENABLE ROW LEVEL SECURITY;
+ALTER TABLE direct_messages ENABLE ROW LEVEL SECURITY;
+
+GRANT ALL ON friend_requests TO authenticated, service_role;
+GRANT ALL ON direct_messages TO authenticated, service_role;
+

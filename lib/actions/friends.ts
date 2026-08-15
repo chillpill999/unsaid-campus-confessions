@@ -397,7 +397,25 @@ export async function sendDirectMessageAction(
 
   GLOBAL_DIRECT_MESSAGES.push(newMsg);
 
-  // Broadcast DM live over Supabase Realtime channel
+  // 1. Persist to Supabase direct_messages table
+  const admin = getAdminClient();
+  if (admin) {
+    try {
+      await admin.from('direct_messages').insert({
+        id: newMsg.id,
+        conversation_key: newMsg.conversation_key,
+        sender_username: newMsg.sender_username,
+        receiver_username: newMsg.receiver_username,
+        content: newMsg.content,
+        created_at: newMsg.created_at,
+        expires_at: newMsg.expires_at,
+      });
+    } catch (dbErr) {
+      console.warn('direct_messages DB insert note:', dbErr);
+    }
+  }
+
+  // 2. Broadcast DM live over Supabase Realtime channel
   try {
     const { broadcastDirectMessageEvent } = await import('@/lib/realtime/broadcast');
     await broadcastDirectMessageEvent(newMsg);
@@ -415,9 +433,6 @@ export async function fetchDirectMessagesAction(
   const authHandle = (await getAuthHandle()) || username.trim().toLowerCase().replace(/^@/, '');
   if (!authHandle || !conversationKey) return [];
 
-  // Only return messages for a conversation that actually involves this user,
-  // so an authenticated user cannot read a stranger's DM thread by guessing the
-  // conversation key.
   const key = conversationKey;
   const involvesMe =
     key === `${authHandle}_${authHandle}` ||
@@ -425,13 +440,51 @@ export async function fetchDirectMessagesAction(
     key.endsWith('_' + authHandle);
   if (!involvesMe) return [];
 
-  const nowTime = Date.now();
+  const nowIso = new Date().toISOString();
+  let dbMessages: DirectMessage[] = [];
 
-  return GLOBAL_DIRECT_MESSAGES.filter((m) => {
+  // 1. Fetch from Supabase DB
+  const admin = getAdminClient();
+  if (admin) {
+    try {
+      const { data: dbData } = await admin
+        .from('direct_messages')
+        .select('*')
+        .eq('conversation_key', key)
+        .gt('expires_at', nowIso)
+        .order('created_at', { ascending: true });
+
+      if (dbData && dbData.length > 0) {
+        dbMessages = dbData.map((d: any) => ({
+          id: d.id,
+          conversation_key: d.conversation_key,
+          sender_username: d.sender_username,
+          receiver_username: d.receiver_username,
+          content: d.content,
+          created_at: d.created_at,
+          expires_at: d.expires_at,
+        }));
+      }
+    } catch (err) {
+      console.warn('fetchDirectMessagesAction DB note:', err);
+    }
+  }
+
+  // 2. Merge with memory messages
+  const nowTime = Date.now();
+  const memMessages = GLOBAL_DIRECT_MESSAGES.filter((m) => {
     if (m.conversation_key !== key) return false;
     const expiresTime = new Date(m.expires_at).getTime();
     return expiresTime > nowTime;
   });
+
+  const msgMap = new Map<string, DirectMessage>();
+  dbMessages.forEach((m) => msgMap.set(m.id, m));
+  memMessages.forEach((m) => msgMap.set(m.id, m));
+
+  return Array.from(msgMap.values()).sort(
+    (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+  );
 }
 
 export async function sendSignalAction(confessionCode: string): Promise<{

@@ -159,9 +159,7 @@ export default function InboxPage() {
             }
             return merged;
           });
-          if (!activeFriend) {
-            setActiveFriend(liveFriends[0]);
-          }
+          setActiveFriend((current) => current || liveFriends[0]);
         }
       } catch (err) {
         console.warn('Error loading live friends data:', err);

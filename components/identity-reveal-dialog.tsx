@@ -172,6 +172,7 @@ export function IdentityRevealDialog({
             <div className="p-4 rounded-2xl bg-[#F4F3EF] border border-slate-200 space-y-3">
               <div className="flex items-center gap-3 border-b border-slate-200 pb-3">
                 {revealedIdentity.google_avatar_url ? (
+                  /* eslint-disable-next-line @next/next/no-img-element */
                   <img
                     src={revealedIdentity.google_avatar_url}
                     alt="Google Profile"

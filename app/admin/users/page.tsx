@@ -183,6 +183,7 @@ export default function AdminUsersPage() {
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-3.5">
                 <div className="flex items-center gap-3">
                   {acc.avatar_url ? (
+                    /* eslint-disable-next-line @next/next/no-img-element */
                     <img
                       src={acc.avatar_url}
                       alt={acc.full_name || 'Student'}

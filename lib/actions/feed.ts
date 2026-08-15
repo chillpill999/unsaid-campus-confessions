@@ -40,11 +40,8 @@ export async function fetchPublicConfessions(limit: number = 20, cursor?: string
   const reactionCountsMap = new Map<string, { relatable: number; funny: number; support: number; interesting: number }>();
 
   if (confessionIds.length > 0) {
-    // Use admin client to bypass RLS for aggregate queries
-    const admin = createAdminClient();
-
     // 1a. Fetch current user's own reaction (for highlight state)
-    const { data: reactions } = await admin
+    const { data: reactions } = await supabase
       .from('reactions')
       .select('confession_id, reaction_type')
       .in('confession_id', confessionIds)
@@ -55,7 +52,7 @@ export async function fetchPublicConfessions(limit: number = 20, cursor?: string
     }
 
     // 1b. Fetch current user's bookmarks
-    const { data: bookmarks } = await admin
+    const { data: bookmarks } = await supabase
       .from('bookmarks')
       .select('confession_id')
       .in('confession_id', confessionIds)
@@ -64,45 +61,39 @@ export async function fetchPublicConfessions(limit: number = 20, cursor?: string
     for (const b of (bookmarks || [])) {
       userBookmarks.add(b.confession_id);
     }
-
-    // 2. Fetch ALL reaction counts across ALL users (admin bypasses RLS)
-    const { data: reactionCounts } = await admin
-      .from('reactions')
-      .select('confession_id, reaction_type')
-      .in('confession_id', confessionIds);
-
-    for (const r of (reactionCounts || [])) {
-      const counts = reactionCountsMap.get(r.confession_id) || { relatable: 0, funny: 0, support: 0, interesting: 0 };
-      if (r.reaction_type in counts) {
-        counts[r.reaction_type as keyof typeof counts]++;
-      }
-      reactionCountsMap.set(r.confession_id, counts);
-    }
   }
 
-  const result = (confessions || []).map((c: any) => ({
-    id: c.id,
-    public_code: c.public_code,
-    content: c.content,
-    category_name: c.category_name,
-    category_slug: c.category_slug,
-    category_icon: c.category_icon,
-    image_path: c.image_path,
-    recipient_gender: c.recipient_gender,
-    target_batch: c.target_batch,
-    target_department: c.target_department,
-    gender: c.gender,
-    poll_data: sanitizePollData(c.poll_options),
-    created_at: c.created_at,
-    reaction_counts: reactionCountsMap.get(c.id) || { relatable: 0, funny: 0, support: 0, interesting: 0 },
-    comment_count: c.comment_count || 0,
-    user_reaction: (userReactions[c.id] as PublicConfession['user_reaction']) || null,
-    is_bookmarked: userBookmarks.has(c.id),
-    // The public_confessions view does not expose author_id (anonymity), so a
-    // feed row can never be flagged as "mine".
-    is_mine: false,
-    can_edit: false,
-  }));
+  const result = (confessions || []).map((c: any) => {
+    const rawCounts = c.reaction_counts || {};
+    const reactionCounts = {
+      relatable: typeof rawCounts.relatable === 'number' ? rawCounts.relatable : 0,
+      funny: typeof rawCounts.funny === 'number' ? rawCounts.funny : 0,
+      support: typeof rawCounts.support === 'number' ? rawCounts.support : 0,
+      interesting: typeof rawCounts.interesting === 'number' ? rawCounts.interesting : 0,
+    };
+
+    return {
+      id: c.id,
+      public_code: c.public_code,
+      content: c.content,
+      category_name: c.category_name,
+      category_slug: c.category_slug,
+      category_icon: c.category_icon,
+      image_path: c.image_path,
+      recipient_gender: c.recipient_gender,
+      target_batch: c.target_batch,
+      target_department: c.target_department,
+      gender: c.gender,
+      poll_data: sanitizePollData(c.poll_options),
+      created_at: c.created_at,
+      reaction_counts: reactionCounts,
+      comment_count: c.comment_count || 0,
+      user_reaction: (userReactions[c.id] as PublicConfession['user_reaction']) || null,
+      is_bookmarked: userBookmarks.has(c.id),
+      is_mine: false,
+      can_edit: false,
+    };
+  });
 
   return result;
 }
