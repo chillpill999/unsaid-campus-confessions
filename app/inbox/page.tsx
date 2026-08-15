@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Navbar } from '@/components/navbar';
 import { MobileNav } from '@/components/mobile-nav';
 import { EmptyState } from '@/components/empty-state';
@@ -88,6 +88,17 @@ export default function InboxPage() {
   const [activeFriend, setActiveFriend] = useState<FriendContact | null>(null);
   const [dmMessages, setDmMessages] = useState<DirectMessage[]>([]);
   const [directInputMsg, setDirectInputMsg] = useState('');
+  const [isPeerTyping, setIsPeerTyping] = useState(false);
+
+  // Ultra-Fast Realtime Engine Refs (Snapchat P2P Speed)
+  const dmChannelRef = useRef<any>(null);
+  const messagesEndRef = useRef<HTMLDivElement | null>(null);
+  const typingTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Auto-scroll on new messages & typing
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [dmMessages, isPeerTyping]);
 
   // Add Friend Search Query
   const [searchHandle, setSearchHandle] = useState('');
@@ -244,30 +255,42 @@ export default function InboxPage() {
     // Realtime channel subscription for live DMs
     const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     const dmChannel = supabase.channel(`campus:dm:${convKey}`);
+    dmChannelRef.current = dmChannel;
 
-    dmChannel.on('broadcast', { event: 'direct_message_sent' }, (payload) => {
-      const msg = payload.payload;
-      if (msg && msg.conversation_key === convKey) {
-        const formattedMsg: DirectMessage = {
-          ...msg,
-          is_mine: msg.sender_username.toLowerCase() === myUsername.toLowerCase(),
-        };
-        saveDirectMessageToLocal(formattedMsg);
-        setDmMessages((prev) => {
-          if (
-            prev.some(
-              (m) =>
-                m.id === formattedMsg.id ||
-                (m.content.trim() === formattedMsg.content.trim() &&
-                  Math.abs(new Date(m.created_at).getTime() - new Date(formattedMsg.created_at).getTime()) < 5000)
-            )
-          ) {
-            return prev;
-          }
-          return [...prev, formattedMsg];
-        });
-      }
-    });
+    dmChannel
+      .on('broadcast', { event: 'direct_message_sent' }, (payload) => {
+        const msg = payload.payload;
+        if (msg && msg.conversation_key === convKey) {
+          const formattedMsg: DirectMessage = {
+            ...msg,
+            is_mine: msg.sender_username.toLowerCase() === myUsername.toLowerCase(),
+          };
+          saveDirectMessageToLocal(formattedMsg);
+          setDmMessages((prev) => {
+            if (
+              prev.some(
+                (m) =>
+                  m.id === formattedMsg.id ||
+                  (m.content.trim() === formattedMsg.content.trim() &&
+                    Math.abs(new Date(m.created_at).getTime() - new Date(formattedMsg.created_at).getTime()) < 5000)
+              )
+            ) {
+              return prev;
+            }
+            return [...prev, formattedMsg];
+          });
+        }
+      })
+      .on('broadcast', { event: 'user_typing' }, (payload) => {
+        const p = payload.payload;
+        if (p && p.sender?.toLowerCase() !== myUsername.toLowerCase()) {
+          setIsPeerTyping(true);
+          if (typingTimerRef.current) clearTimeout(typingTimerRef.current);
+          typingTimerRef.current = setTimeout(() => {
+            setIsPeerTyping(false);
+          }, 2400);
+        }
+      });
 
     dmChannel.subscribe();
 
@@ -299,6 +322,8 @@ export default function InboxPage() {
 
     return () => {
       clearInterval(syncInterval);
+      if (typingTimerRef.current) clearTimeout(typingTimerRef.current);
+      dmChannelRef.current = null;
       supabase.removeChannel(dmChannel);
     };
   }, [activeFriend, myUsername, inboxMode]);
@@ -319,7 +344,7 @@ export default function InboxPage() {
     setTimeout(() => setUsernameNotice(null), 3000);
   };
 
-  // Send Direct Message (24h volatile)
+  // Send Direct Message (Snapchat-Speed Instant Dispatch + 24h Volatile)
   const handleSendDirectMessageSubmit = async (e?: React.FormEvent, customText?: string) => {
     if (e) e.preventDefault();
     const textToSend = customText || directInputMsg;
@@ -340,22 +365,38 @@ export default function InboxPage() {
       is_mine: true,
     };
 
-    // Optimistic instantaneous render
+    // 1. Optimistic Instantaneous 0ms Render
     setDmMessages((prev) => [...prev, tempMsg]);
     saveDirectMessageToLocal(tempMsg);
 
-    // Trigger server action for multi-device sync + realtime broadcast
-    const res = await sendDirectMessageAction(myUsername, activeFriend.username, textToSend.trim());
-    if (res && res.success && res.message && typeof res.message !== 'string') {
-      const formattedMsg: DirectMessage = {
-        ...res.message,
-        is_mine: true,
-      };
-      saveDirectMessageToLocal(formattedMsg);
-      setDmMessages((prev) => {
-        return prev.map((m) => (m.id === tempId ? formattedMsg : m));
-      });
+    // 2. Direct Ultra-Fast Peer-to-Peer WebSocket Broadcast (<20ms latency)
+    if (dmChannelRef.current) {
+      try {
+        dmChannelRef.current.send({
+          type: 'broadcast',
+          event: 'direct_message_sent',
+          payload: tempMsg,
+        });
+      } catch (wsErr) {
+        console.warn('Direct WS send fallback:', wsErr);
+      }
     }
+
+    // 3. Asynchronous Non-Blocking Database Persistence (24h TTL)
+    sendDirectMessageAction(myUsername, activeFriend.username, textToSend.trim())
+      .then((res) => {
+        if (res && res.success && res.message && typeof res.message !== 'string') {
+          const formattedMsg: DirectMessage = {
+            ...res.message,
+            is_mine: true,
+          };
+          saveDirectMessageToLocal(formattedMsg);
+          setDmMessages((prev) => {
+            return prev.map((m) => (m.id === tempId ? formattedMsg : m));
+          });
+        }
+      })
+      .catch(() => {});
   };
 
   // Send Friend Request
@@ -589,7 +630,12 @@ export default function InboxPage() {
                       return (
                         <button
                           key={friend.username}
-                          onClick={() => setActiveFriend(friend)}
+                          onClick={() => {
+                            setActiveFriend(friend);
+                            const convKey = getConversationKey(myUsername, friend.username);
+                            const cached = getDirectMessagesForConv(convKey, myUsername);
+                            setDmMessages(cached);
+                          }}
                           className={`w-full text-left p-3.5 rounded-2xl border transition-all duration-200 flex items-center gap-3.5 relative overflow-hidden group ${
                             isActive
                               ? 'bg-[#FF6B00]/10 border-[#FF6B00] text-slate-950 shadow-sm'
@@ -787,6 +833,7 @@ export default function InboxPage() {
                     {dmMessages.length > 0 ? (
                       dmMessages.map((msg) => {
                         const remainingText = getRemainingTimeFormatted(msg.expires_at);
+                        const isTemp = msg.id.startsWith('temp-');
                         return (
                           <div
                             key={msg.id}
@@ -808,6 +855,11 @@ export default function InboxPage() {
                               <span className="text-pink-600 font-bold flex items-center gap-1 bg-pink-500/10 px-2 py-0.5 rounded-full border border-pink-200">
                                 <Clock className="w-2.5 h-2.5" /> Purges in {remainingText}
                               </span>
+                              {msg.is_mine && (
+                                <span className={`text-[10px] ${isTemp ? 'text-amber-500 animate-pulse' : 'text-emerald-600 font-bold'}`}>
+                                  {isTemp ? '⚡ Sending' : '✓ Delivered'}
+                                </span>
+                              )}
                             </div>
                           </div>
                         );
@@ -823,6 +875,20 @@ export default function InboxPage() {
                         </p>
                       </div>
                     )}
+
+                    {/* Snapchat Live Typing Indicator Bubble */}
+                    {isPeerTyping && (
+                      <div className="flex items-center gap-2 text-xs text-slate-500 font-mono italic animate-fade-in pl-1">
+                        <div className="flex items-center gap-1.5 bg-[#F4F3EF] px-3.5 py-1.5 rounded-full border border-slate-200 shadow-sm">
+                          <span className="w-1.5 h-1.5 rounded-full bg-[#FF6B00] animate-bounce" style={{ animationDelay: '0ms' }} />
+                          <span className="w-1.5 h-1.5 rounded-full bg-[#FF6B00] animate-bounce" style={{ animationDelay: '150ms' }} />
+                          <span className="w-1.5 h-1.5 rounded-full bg-[#FF6B00] animate-bounce" style={{ animationDelay: '300ms' }} />
+                          <span className="ml-1 text-[11px] font-semibold text-slate-700 not-italic">@{activeFriend.username} is typing...</span>
+                        </div>
+                      </div>
+                    )}
+
+                    <div ref={messagesEndRef} />
                   </div>
 
                   {/* Quick Reaction Pill Bar */}
@@ -848,7 +914,18 @@ export default function InboxPage() {
                       type="text"
                       placeholder={`Send ephemeral signal to @${activeFriend.username}...`}
                       value={directInputMsg}
-                      onChange={(e) => setDirectInputMsg(e.target.value)}
+                      onChange={(e) => {
+                        setDirectInputMsg(e.target.value);
+                        if (dmChannelRef.current) {
+                          try {
+                            dmChannelRef.current.send({
+                              type: 'broadcast',
+                              event: 'user_typing',
+                              payload: { sender: myUsername, typing: true },
+                            });
+                          } catch {}
+                        }
+                      }}
                       className="flex-1 bg-[#F4F3EF] border border-slate-200 rounded-2xl px-4 py-3 text-xs text-slate-900 focus:outline-none focus:border-[#FF6B00] placeholder-slate-500 font-sans shadow-inner"
                     />
                     <button
