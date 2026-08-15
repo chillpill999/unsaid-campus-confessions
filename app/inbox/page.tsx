@@ -260,26 +260,31 @@ export default function InboxPage() {
     dmChannel
       .on('broadcast', { event: 'direct_message_sent' }, (payload) => {
         const msg = payload.payload;
-        if (msg && msg.conversation_key === convKey) {
-          const formattedMsg: DirectMessage = {
-            ...msg,
-            is_mine: msg.sender_username.toLowerCase() === myUsername.toLowerCase(),
-          };
-          saveDirectMessageToLocal(formattedMsg);
-          setDmMessages((prev) => {
-            if (
-              prev.some(
-                (m) =>
-                  m.id === formattedMsg.id ||
-                  (m.content.trim() === formattedMsg.content.trim() &&
-                    Math.abs(new Date(m.created_at).getTime() - new Date(formattedMsg.created_at).getTime()) < 5000)
-              )
-            ) {
-              return prev;
-            }
-            return [...prev, formattedMsg];
-          });
+        if (!msg || msg.conversation_key !== convKey) return;
+
+        // Ignore echo of my own message from WebSocket broadcast (already added optimistically)
+        if (msg.sender_username.toLowerCase() === myUsername.toLowerCase()) {
+          return;
         }
+
+        const formattedMsg: DirectMessage = {
+          ...msg,
+          is_mine: false,
+        };
+        saveDirectMessageToLocal(formattedMsg);
+        setDmMessages((prev) => {
+          if (
+            prev.some(
+              (m) =>
+                m.id === formattedMsg.id ||
+                (m.content.trim() === formattedMsg.content.trim() &&
+                  Math.abs(new Date(m.created_at).getTime() - new Date(formattedMsg.created_at).getTime()) < 5000)
+            )
+          ) {
+            return prev;
+          }
+          return [...prev, formattedMsg];
+        });
       })
       .on('broadcast', { event: 'user_typing' }, (payload) => {
         const p = payload.payload;
@@ -303,7 +308,12 @@ export default function InboxPage() {
             let changed = false;
             serverMsgs.forEach((sm) => {
               const smIsMine = sm.sender_username.toLowerCase() === myUsername.toLowerCase();
-              const exists = combined.some((m) => m.id === sm.id);
+              const exists = combined.some(
+                (m) =>
+                  m.id === sm.id ||
+                  (m.content.trim() === sm.content.trim() &&
+                    Math.abs(new Date(m.created_at).getTime() - new Date(sm.created_at).getTime()) < 5000)
+              );
               if (!exists) {
                 combined.push({
                   ...sm,
@@ -353,9 +363,9 @@ export default function InboxPage() {
     if (!customText) setDirectInputMsg('');
 
     const convKey = getConversationKey(myUsername, activeFriend.username);
-    const tempId = `temp-${Date.now()}`;
-    const tempMsg: DirectMessage = {
-      id: tempId,
+    const msgId = `msg-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`;
+    const newMsg: DirectMessage = {
+      id: msgId,
       conversation_key: convKey,
       sender_username: myUsername,
       receiver_username: activeFriend.username,
@@ -366,8 +376,11 @@ export default function InboxPage() {
     };
 
     // 1. Optimistic Instantaneous 0ms Render
-    setDmMessages((prev) => [...prev, tempMsg]);
-    saveDirectMessageToLocal(tempMsg);
+    setDmMessages((prev) => {
+      if (prev.some((m) => m.id === msgId)) return prev;
+      return [...prev, newMsg];
+    });
+    saveDirectMessageToLocal(newMsg);
 
     // 2. Direct Ultra-Fast Peer-to-Peer WebSocket Broadcast (<20ms latency)
     if (dmChannelRef.current) {
@@ -375,28 +388,15 @@ export default function InboxPage() {
         dmChannelRef.current.send({
           type: 'broadcast',
           event: 'direct_message_sent',
-          payload: tempMsg,
+          payload: newMsg,
         });
       } catch (wsErr) {
         console.warn('Direct WS send fallback:', wsErr);
       }
     }
 
-    // 3. Asynchronous Non-Blocking Database Persistence (24h TTL)
-    sendDirectMessageAction(myUsername, activeFriend.username, textToSend.trim())
-      .then((res) => {
-        if (res && res.success && res.message && typeof res.message !== 'string') {
-          const formattedMsg: DirectMessage = {
-            ...res.message,
-            is_mine: true,
-          };
-          saveDirectMessageToLocal(formattedMsg);
-          setDmMessages((prev) => {
-            return prev.map((m) => (m.id === tempId ? formattedMsg : m));
-          });
-        }
-      })
-      .catch(() => {});
+    // 3. Asynchronous Non-Blocking Database Persistence (24h TTL) with identical message ID
+    sendDirectMessageAction(myUsername, activeFriend.username, textToSend.trim(), msgId).catch(() => {});
   };
 
   // Send Friend Request

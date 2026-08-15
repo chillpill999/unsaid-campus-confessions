@@ -425,7 +425,8 @@ export async function fetchFriendsListAction(username: string): Promise<FriendCo
 export async function sendDirectMessageAction(
   senderUsername: string,
   receiverUsername: string,
-  content: string
+  content: string,
+  clientMessageId?: string
 ): Promise<{ success: boolean; message: DirectMessage | string }> {
   const authHandle = await getAuthHandle();
   if (!authHandle) {
@@ -443,7 +444,7 @@ export async function sendDirectMessageAction(
   const expiresAt = new Date(now.getTime() + 24 * 60 * 60 * 1000).toISOString();
 
   const newMsg: DirectMessage = {
-    id: `msg-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
+    id: clientMessageId || `msg-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
     conversation_key,
     sender_username: cleanSender,
     receiver_username: cleanReceiver,
@@ -459,7 +460,7 @@ export async function sendDirectMessageAction(
   const client = admin || createClient();
   if (client) {
     try {
-      await client.from('direct_messages').insert({
+      await client.from('direct_messages').upsert({
         id: newMsg.id,
         conversation_key: newMsg.conversation_key,
         sender_username: newMsg.sender_username,
@@ -471,14 +472,6 @@ export async function sendDirectMessageAction(
     } catch (dbErr) {
       console.warn('direct_messages DB insert note:', dbErr);
     }
-  }
-
-  // 2. Broadcast DM live over Supabase Realtime channel
-  try {
-    const { broadcastDirectMessageEvent } = await import('@/lib/realtime/broadcast');
-    await broadcastDirectMessageEvent(newMsg);
-  } catch (err) {
-    console.warn('Realtime DM broadcast error:', err);
   }
 
   return { success: true, message: newMsg };
